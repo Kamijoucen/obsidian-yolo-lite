@@ -1,38 +1,30 @@
 import { ChatModel, ChatModelModality } from '../../types/chat-model.types'
 
-import {
-  OPENROUTER_MODEL_CAPABILITIES,
-  type OpenRouterChatModelCapability,
-} from './openrouter-model-capabilities'
+type KnownChatModelCapability = {
+  context: number
+  modalities: ChatModelModality[]
+}
 
-type KnownChatModelCapability = OpenRouterChatModelCapability
-
-// Hand-curated overrides layered on top of the OpenRouter snapshot. Use these
-// for official provider IDs that don't appear verbatim in OpenRouter (e.g.
-// Anthropic's `-latest` aliases, vendor-specific names) or when we want to
-// pin a capability we know the OpenRouter entry gets wrong.
+// Curated capabilities for built-in OpenAI and domestic-provider models.
 const KNOWN_MODEL_CAPABILITIES: Record<string, KnownChatModelCapability> = {
-  ...OPENROUTER_MODEL_CAPABILITIES,
-  'claude-opus-4-1': { context: 200000, modalities: ['text', 'vision'] },
-  'claude-opus-4-0': { context: 200000, modalities: ['text', 'vision'] },
-  'claude-sonnet-4-0': { context: 200000, modalities: ['text', 'vision'] },
-  'claude-3-7-sonnet-latest': {
-    context: 200000,
-    modalities: ['text', 'vision'],
-  },
-  'claude-3-5-sonnet-latest': {
-    context: 200000,
-    modalities: ['text', 'vision'],
-  },
-  'claude-3-5-haiku-latest': {
-    context: 200000,
-    modalities: ['text', 'vision'],
-  },
-  'gemini-2.0-flash': { context: 1048576, modalities: ['text', 'vision'] },
-  'gemini-2.0-flash-lite': { context: 1048576, modalities: ['text', 'vision'] },
+  'gpt-5': { context: 400000, modalities: ['text', 'vision'] },
+  'gpt-5-mini': { context: 400000, modalities: ['text', 'vision'] },
+  'gpt-5-nano': { context: 400000, modalities: ['text', 'vision'] },
+  'gpt-4.1': { context: 1047576, modalities: ['text', 'vision'] },
+  'gpt-4.1-mini': { context: 1047576, modalities: ['text', 'vision'] },
+  'gpt-4.1-nano': { context: 1047576, modalities: ['text', 'vision'] },
+  'gpt-4o': { context: 128000, modalities: ['text', 'vision'] },
+  'gpt-4o-mini': { context: 128000, modalities: ['text', 'vision'] },
+  'o4-mini': { context: 200000, modalities: ['text', 'vision'] },
   'deepseek-v4-flash': { context: 1048576, modalities: ['text'] },
   'deepseek-v4-pro': { context: 1048576, modalities: ['text'] },
   'deepseek-reasoner': { context: 65536, modalities: ['text'] },
+  'kimi-k2.5': { context: 262144, modalities: ['text', 'vision'] },
+  'glm-5': { context: 202752, modalities: ['text'] },
+  'minimax-m2.5': { context: 204800, modalities: ['text'] },
+  'step-3.5-flash': { context: 262144, modalities: ['text'] },
+  'mimo-v2.5': { context: 1048576, modalities: ['text', 'vision'] },
+  'mimo-v2.5-pro': { context: 1048576, modalities: ['text'] },
 }
 
 export function normalizeModelContextLookupKey(modelId: string): string {

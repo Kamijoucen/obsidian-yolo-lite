@@ -18,7 +18,7 @@ const createUrlSchema = (allowedProtocols: string[]) =>
       return allowedProtocols.includes(url.protocol)
     })
 
-export const mcpServerStdioParametersLegacySchema = z
+export const mcpServerStdioShorthandSchema = z
   .object({
     command: nonEmptyStringSchema,
     args: z.array(z.string()).optional(),
@@ -69,7 +69,7 @@ const mcpServerCanonicalParametersSchema = z.discriminatedUnion('transport', [
 
 const mcpServerRawParametersSchema = z.union([
   mcpServerCanonicalParametersSchema,
-  mcpServerStdioParametersLegacySchema,
+  mcpServerStdioShorthandSchema,
 ])
 
 export const mcpServerParametersSchema = mcpServerRawParametersSchema.transform(

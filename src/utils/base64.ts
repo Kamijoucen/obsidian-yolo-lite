@@ -1,6 +1,6 @@
 /**
  * Convert a Uint8Array to a base64 string. Chunked to avoid call-stack limits
- * that `String.fromCharCode(...bytes)` hits on large buffers (PDFs, images).
+ * that `String.fromCharCode(...bytes)` hits on large image buffers.
  */
 export function uint8ArrayToBase64(bytes: Uint8Array): string {
   const chunkSize = 0x8000

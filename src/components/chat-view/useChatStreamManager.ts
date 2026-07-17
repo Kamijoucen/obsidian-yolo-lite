@@ -32,9 +32,7 @@ import {
   LLMModelNotFoundException,
 } from '../../core/llm/exception'
 import { getChatModelClient } from '../../core/llm/manager'
-import type { AutoPromotedTransportMode } from '../../core/llm/requestTransport'
 import type { ResponseDeliveryMode } from '../../core/llm/responseDeliveryMode'
-import { promoteProviderTransportModeToObsidian } from '../../core/llm/transportModePromotion'
 import {
   TERMINAL_COMMAND_TOOL_NAME,
   getLocalFileToolServerName,
@@ -291,7 +289,7 @@ export function useChatStreamManager({
 }: UseChatStreamManagerParams): UseChatStreamManager {
   const app = useApp()
   const plugin = usePlugin()
-  const { settings, setSettings } = useSettings()
+  const { settings } = useSettings()
   const { getMcpManager } = useMcp()
 
   const activeStreamAbortControllersRef = useRef<Map<string, AbortController>>(
@@ -401,18 +399,6 @@ export function useChatStreamManager({
     [buildVisibleConversationMessages, currentConversationId, setChatMessages],
   )
 
-  const handleAutoPromoteTransportMode = useCallback(
-    (providerId: string, mode: AutoPromotedTransportMode) => {
-      void promoteProviderTransportModeToObsidian({
-        getSettings: () => plugin.settings,
-        setSettings,
-        providerId,
-        mode,
-      })
-    },
-    [plugin, setSettings],
-  )
-
   useEffect(() => {
     const agentService = plugin.getAgentService()
 
@@ -512,7 +498,6 @@ export function useChatStreamManager({
         resolvedClient = getChatModelClient({
           settings,
           modelId: requestedModelId,
-          onAutoPromoteTransportMode: handleAutoPromoteTransportMode,
         })
       } catch (error) {
         if (
@@ -522,7 +507,6 @@ export function useChatStreamManager({
           resolvedClient = getChatModelClient({
             settings,
             modelId: settings.chatModels[0].id,
-            onAutoPromoteTransportMode: handleAutoPromoteTransportMode,
           })
         } else {
           throw error
@@ -552,10 +536,8 @@ export function useChatStreamManager({
       const manualApiType = manualProvider?.apiType ?? null
       const manualContextualInjections = buildChatContextualInjections({
         app,
-        includeFocusSync: resolveAssistantIncludeCurrentFileContent(
-          selectedAssistant,
-          settings,
-        ),
+        includeFocusSync:
+          resolveAssistantIncludeCurrentFileContent(selectedAssistant),
         currentFile: currentFileOverride,
         currentFileViewState,
       })
@@ -582,7 +564,6 @@ export function useChatStreamManager({
       const availableTools = effectiveEnableTools
         ? await mcpManager.listAvailableTools({
             includeBuiltinTools: effectiveIncludeBuiltinTools,
-            chatModelModalities: effectiveModel.modalities,
           })
         : []
       const {
@@ -684,7 +665,6 @@ export function useChatStreamManager({
       currentFileOverride,
       currentFileViewState,
       getMcpManager,
-      handleAutoPromoteTransportMode,
       modelId,
       requestContextBuilder,
       settings,
@@ -753,7 +733,6 @@ export function useChatStreamManager({
             return getChatModelClient({
               settings,
               modelId: requestedId,
-              onAutoPromoteTransportMode: handleAutoPromoteTransportMode,
             })
           } catch (error) {
             if (
@@ -763,7 +742,6 @@ export function useChatStreamManager({
               return getChatModelClient({
                 settings,
                 modelId: settings.chatModels[0].id,
-                onAutoPromoteTransportMode: handleAutoPromoteTransportMode,
               })
             }
             throw error
@@ -774,7 +752,6 @@ export function useChatStreamManager({
           ? getChatModelClient({
               settings,
               modelId: assistantContinuation.modelId,
-              onAutoPromoteTransportMode: handleAutoPromoteTransportMode,
             })
           : resolveClientForModelId(targetModelIds[0])
 
@@ -788,7 +765,7 @@ export function useChatStreamManager({
         const modelTopP = resolvedClient.model.topP
         const modelMaxTokens = resolvedClient.model.maxOutputTokens
         const effectiveModel = resolvedClient.model
-        const disabledSkillNames = settings.skills?.disabledSkillIds ?? []
+        const disabledSkillNames = settings.skills?.disabledSkillNames ?? []
         const enabledSkillEntries = selectedAssistant
           ? (await listLiteSkillEntries(app, { settings })).filter((skill) =>
               isSkillEnabledForAssistant({
@@ -831,9 +808,9 @@ export function useChatStreamManager({
           top_p: conversationOverrides?.top_p ?? modelTopP,
           max_tokens: modelMaxTokens,
           primaryRequestTimeoutMs:
-            settings.continuationOptions.primaryRequestTimeoutMs,
+            settings.requestPolicy.primaryRequestTimeoutMs,
           streamFallbackRecoveryEnabled:
-            settings.continuationOptions.streamFallbackRecoveryEnabled,
+            settings.requestPolicy.streamFallbackRecoveryEnabled,
         }
         const effectiveCompactionForRequest = compactionOverride ?? compaction
         const baseInput = {
@@ -859,17 +836,11 @@ export function useChatStreamManager({
           requestParams,
           contextualInjections: buildChatContextualInjections({
             app,
-            includeFocusSync: resolveAssistantIncludeCurrentFileContent(
-              selectedAssistant,
-              settings,
-            ),
+            includeFocusSync:
+              resolveAssistantIncludeCurrentFileContent(selectedAssistant),
             currentFile: currentFileOverride,
             currentFileViewState,
           }),
-          geminiTools: {
-            useWebSearch: conversationOverrides?.useWebSearch ?? false,
-            useUrlContext: conversationOverrides?.useUrlContext ?? false,
-          },
           sourceUserMessageId: assistantContinuation?.sourceUserMessageId,
           continueAssistantMessageId: assistantContinuation?.assistantMessageId,
         }
@@ -1074,7 +1045,6 @@ export function useChatStreamManager({
         resolvedClient = getChatModelClient({
           settings,
           modelId: requestedModelId,
-          onAutoPromoteTransportMode: handleAutoPromoteTransportMode,
         })
       } catch (error) {
         if (
@@ -1084,7 +1054,6 @@ export function useChatStreamManager({
           resolvedClient = getChatModelClient({
             settings,
             modelId: settings.chatModels[0].id,
-            onAutoPromoteTransportMode: handleAutoPromoteTransportMode,
           })
         } else {
           return null
@@ -1120,10 +1089,8 @@ export function useChatStreamManager({
         toolCapabilityMode: chatModeRuntime.toolCapabilityMode,
         contextualInjections: buildChatContextualInjections({
           app,
-          includeFocusSync: resolveAssistantIncludeCurrentFileContent(
-            selectedAssistant,
-            settings,
-          ),
+          includeFocusSync:
+            resolveAssistantIncludeCurrentFileContent(selectedAssistant),
           currentFile: currentFileOverride,
           currentFileViewState,
         }),
@@ -1139,7 +1106,6 @@ export function useChatStreamManager({
       currentFileOverride,
       currentFileViewState,
       getMcpManager,
-      handleAutoPromoteTransportMode,
       modelId,
       requestContextBuilder,
       settings,

@@ -1,6 +1,6 @@
 import { CSSProperties } from 'react'
 
-export type YoloPopoverVariant = 'default' | 'smart-space'
+export type YoloPopoverVariant = 'default' | 'elevated'
 
 /**
  * Props shared by `<YoloDropdownContent>` and `<YoloPopoverContent>`.
@@ -11,7 +11,7 @@ export type YoloPopoverVariant = 'default' | 'smart-space'
  * point of this abstraction. See docs/plans/parsed-wiggling-shore.md.
  */
 export type YoloPopoverProps = {
-  /** Visual preset. `default` matches the chat-sidebar look; `smart-space` matches the SmartSpace floating popover look. */
+  /** Visual preset. `elevated` adds blur, radius, and a stronger shadow. */
   variant?: YoloPopoverVariant
   minWidth?: number | string
   maxWidth?: number | string

@@ -39,7 +39,7 @@ export class KimiMessageAdapter extends OpenAIMessageAdapter {
     } else if (hasToolCalls) {
       // Kimi thinking models (k2-thinking / k2.5) require reasoning_content on
       // every assistant tool-call message for cross-turn reasoning continuity.
-      // Fall back to empty string for legacy history that never captured it.
+      // Use an empty value when the turn has no recorded reasoning text.
       parsed.reasoning_content = ''
     }
 

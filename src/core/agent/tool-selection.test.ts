@@ -131,7 +131,7 @@ describe('selectAllowedTools', () => {
     })
   })
 
-  it('replaces on-demand tools with a permissive stub schema (non-Gemini)', async () => {
+  it('replaces on-demand tools with a permissive stub schema', async () => {
     const availableTools: McpTool[] = [
       {
         name: 'server__tool_a',
@@ -150,7 +150,7 @@ describe('selectAllowedTools', () => {
       toolPreferences: {
         server__tool_a: { enabled: true, disclosureMode: 'on_demand' },
       },
-      apiType: 'anthropic',
+      apiType: 'openai-compatible',
     })
 
     // The loader is injected automatically whenever any surviving tool is
@@ -168,36 +168,6 @@ describe('selectAllowedTools', () => {
       additionalProperties: true,
     })
     expect(stub?.function.description).toContain('load_tool_schemas')
-  })
-
-  it('uses args_json stub form on Gemini', async () => {
-    const availableTools: McpTool[] = [
-      {
-        name: 'server__tool_a',
-        description: 'Tool A',
-        inputSchema: { type: 'object', properties: {} },
-      },
-    ]
-
-    const result = await selectAllowedTools({
-      availableTools,
-      allowedToolNames: ['server__tool_a'],
-      toolPreferences: {
-        server__tool_a: { enabled: true, disclosureMode: 'on_demand' },
-      },
-      apiType: 'gemini',
-    })
-
-    const stub = result.requestTools?.find(
-      (tool) => tool.function.name === 'server__tool_a',
-    )
-    expect(stub?.function.parameters).toEqual({
-      type: 'object',
-      properties: {
-        args_json: expect.objectContaining({ type: 'string' }),
-      },
-      required: ['args_json'],
-    })
   })
 
   it('uses full schemas and skips loader injection when disclosure is disabled', async () => {
@@ -312,7 +282,7 @@ describe('selectAllowedTools', () => {
           approvalMode: 'full_access',
         },
       },
-      apiType: 'anthropic',
+      apiType: 'openai-compatible',
     })
 
     expect(result.hasOnDemandTools).toBe(true)
@@ -348,7 +318,7 @@ describe('selectAllowedTools', () => {
       toolPreferences: {
         server__tool_a: { enabled: true, disclosureMode: 'on_demand' as const },
       },
-      apiType: 'anthropic' as const,
+      apiType: 'openai-compatible' as const,
     }
 
     const before = await selectAllowedTools(params)

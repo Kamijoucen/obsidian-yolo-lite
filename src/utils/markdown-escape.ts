@@ -1,6 +1,6 @@
 /**
  * Escapes special Markdown/HTML characters in generated text to prevent formatting issues.
- * This is particularly important for inline suggestions where angle brackets might be
+ * This is particularly important for generated Markdown where angle brackets might be
  * interpreted as HTML tags.
  *
  * @param text - The text to escape

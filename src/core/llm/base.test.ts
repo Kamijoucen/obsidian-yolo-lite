@@ -27,10 +27,6 @@ class TestProvider extends BaseLLMProvider<LLMProvider> {
     throw new Error('not used')
   }
 
-  getEmbedding(): Promise<number[]> {
-    throw new Error('not used')
-  }
-
   public exposeApplyCustomModelParameters<T extends Record<string, unknown>>(
     model: ChatModel,
     request: T,
@@ -65,7 +61,7 @@ describe('resolveResponseExecutionMode', () => {
   it('passes non-streaming provider mode through even when transport is obsidian', () => {
     const provider = new TestProvider(
       makeProvider({
-        requestTransportMode: 'obsidian',
+        requestTransportMode: { desktop: 'obsidian', mobile: 'obsidian' },
         responseStreamingMode: 'non-streaming',
       }),
     )
@@ -78,7 +74,7 @@ describe('resolveResponseExecutionMode', () => {
   it('keeps auto provider mode on the existing obsidian buffered-streaming path', () => {
     const provider = new TestProvider(
       makeProvider({
-        requestTransportMode: 'obsidian',
+        requestTransportMode: { desktop: 'obsidian', mobile: 'obsidian' },
       }),
     )
 
@@ -90,7 +86,7 @@ describe('resolveResponseExecutionMode', () => {
   it('treats invalid provider streaming mode values as auto', () => {
     const provider = new TestProvider(
       makeProvider({
-        requestTransportMode: 'obsidian',
+        requestTransportMode: { desktop: 'obsidian', mobile: 'obsidian' },
         responseStreamingMode: 'invalid',
       }),
     )
@@ -124,7 +120,7 @@ describe('applyCustomModelParameters', () => {
       makeModel([
         {
           key: 'tools',
-          value: JSON.stringify([{ type: 'openrouter:web_search' }]),
+          value: JSON.stringify([{ type: 'web_search' }]),
           type: 'json',
         },
       ]),
@@ -137,7 +133,7 @@ describe('applyCustomModelParameters', () => {
     )
     expect(result.tools).toEqual([
       { type: 'function', function: { name: 'agent_local__search' } },
-      { type: 'openrouter:web_search' },
+      { type: 'web_search' },
     ])
   })
 
@@ -146,13 +142,13 @@ describe('applyCustomModelParameters', () => {
       makeModel([
         {
           key: 'tools',
-          value: JSON.stringify([{ type: 'openrouter:web_search' }]),
+          value: JSON.stringify([{ type: 'web_search' }]),
           type: 'json',
         },
       ]),
       { model: 'x' } as Record<string, unknown>,
     )
-    expect(result.tools).toEqual([{ type: 'openrouter:web_search' }])
+    expect(result.tools).toEqual([{ type: 'web_search' }])
   })
 
   it('does NOT append arrays for non-whitelisted keys (`messages` stays on overwrite semantics)', () => {

@@ -49,10 +49,10 @@ const AssistantMessageReasoning = memo(function AssistantMessageReasoning({
 
   const stageLabel = useMemo(() => {
     if (stage === 'requesting') {
-      return t('quickAsk.statusRequesting', 'Requesting...')
+      return t('chat.statusRequesting', 'Requesting...')
     }
     if (stage === 'thinking') {
-      return t('quickAsk.statusThinking', 'Thinking...')
+      return t('chat.statusThinking', 'Thinking...')
     }
     return t('chat.reasoning', 'Reasoning')
   }, [stage, t])

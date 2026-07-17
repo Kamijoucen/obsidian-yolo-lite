@@ -33,7 +33,6 @@ import type { AssistantWorkspaceScope } from '../../types/assistant.types'
 import type {
   ChatAssistantMessage,
   ChatConversationCompactionLike,
-  ChatExternalAgentResultMessage,
   ChatMessage,
   ChatSelectedSkill,
   ChatSubagentResultMessage,
@@ -52,9 +51,7 @@ import type {
   MentionableFolder,
   MentionableImage,
   MentionableOffice,
-  MentionablePDF,
   MentionableTextAttachment,
-  MentionableWebSelection,
 } from '../../types/mentionable'
 import type { ToolCallRequest } from '../../types/tool-call.types'
 import {
@@ -65,24 +62,14 @@ import { ToolCallResponseStatus } from '../../types/tool-call.types'
 import { stableStringify } from '../json/stableStringify'
 import { collectWikilinkPaths } from '../llm/annotate-wikilinks'
 import { isImageTFile, tFileToImageDataUrl } from '../llm/image'
-import {
-  chatModelSupportsPdf,
-  chatModelSupportsVision,
-} from '../llm/model-modalities'
+import { chatModelSupportsVision } from '../llm/model-modalities'
 import { getNestedFiles, readTFileContent } from '../obsidian'
-import {
-  PDF_INDEX_MAX_BYTES,
-  PDF_INDEX_MAX_PAGES,
-  extractPdfText,
-  extractPdfTextFromBase64,
-} from '../pdf/extractPdfText'
 import { prefixTimeContext } from '../prompt/timeContext'
 
 import {
   type ContextualInjection,
   appendContextualInjectionsToLastUserMessage,
 } from './contextual-injections'
-import { serializeExternalAgentResultToUserMessage } from './externalAgentResultSerializer'
 import { serializeSubagentResultToUserMessage } from './subagentResultSerializer'
 import { serializeTerminalCommandResultToUserMessage } from './terminalCommandResultSerializer'
 import {
@@ -110,9 +97,6 @@ const escapeXmlAttr = (raw: string): string =>
     .replace(/"/g, '&quot;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
-
-const escapeXmlText = (raw: string): string =>
-  raw.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
 /** Stable signature for the `<previously-loaded-tools>` compaction disclosure
  * message. The disclosure is built by `buildCompactionDisclosureInjection` and
@@ -298,9 +282,8 @@ export function stripUnsupportedImages(
 }
 
 /**
- * Render the canonical `<document>` block for an attached document mentionable
- * (PDF text fallback or Office docs). Native PDF modality goes through the
- * `document` content part path and skips this helper. All attached documents
+ * Render the canonical `<document>` block for an attached document mentionable.
+ * All attached documents
  * are tagged `source="user-attachment"` so the model knows the content is
  * user-uploaded and is not addressable by `fs_read`.
  */
@@ -308,12 +291,9 @@ function renderAttachedDocumentBlock({
   name,
   kind,
   text,
-  pageCount,
-  truncated,
 }: {
   name: string
   kind:
-    | 'pdf'
     | 'docx'
     | 'pptx'
     | 'xlsx'
@@ -327,92 +307,13 @@ function renderAttachedDocumentBlock({
     | 'xml'
     | 'log'
   text: string
-  pageCount?: number
-  /** Set when the fallback extractor itself had to truncate (FALLBACK_MAX_PAGES). */
-  truncated?: boolean
 }): string {
   const attrs = [
     `name="${escapeXmlAttr(name)}"`,
     `type="${kind}"`,
     'source="user-attachment"',
   ]
-  if (pageCount !== undefined) attrs.push(`pages="${pageCount}"`)
-  if (truncated) attrs.push('truncated="true"')
   return `<document ${attrs.join(' ')}>\n${text}\n</document>\n\n`
-}
-
-/**
- * Convert `document` content parts to plain text for models that don't
- * advertise the `pdf` modality. Native-PDF-capable models leave document parts
- * untouched. This is the modality gate — adapters never have to handle a
- * document part for a non-pdf model.
- *
- * Text extraction goes through the shared `pdfTextCacheStore` keyed by content
- * hash: the upload site already wrote pages there during `fileToMentionablePDF`,
- * so the common case is a pure cache hit (no pdfjs invocation per turn). Cache
- * miss (e.g. legacy mentionable, or upload-time write failure) falls back to a
- * fresh extraction and writes the result for next time.
- */
-export async function prepareDocumentsForModel(
-  messages: RequestMessage[],
-  chatModel: ChatModel | null | undefined,
-  context: { app: App; settings: YoloSettings },
-): Promise<RequestMessage[]> {
-  if (chatModelSupportsPdf(chatModel)) {
-    return messages
-  }
-
-  const next: RequestMessage[] = []
-  for (const message of messages) {
-    if (message.role !== 'user' || !Array.isArray(message.content)) {
-      next.push(message)
-      continue
-    }
-
-    const transformed: ContentPart[] = []
-    for (const part of message.content) {
-      if (part.type !== 'document') {
-        transformed.push(part)
-        continue
-      }
-      try {
-        const { pages } = await extractPdfTextFromBase64(
-          context.app,
-          part.data,
-          {
-            settings: context.settings,
-            sourceLabel: `upload:${part.name}`,
-          },
-        )
-        const text = pages
-          .map(({ page, text }) => `--- Page ${page} ---\n${text}`)
-          .join('\n\n')
-        transformed.push({
-          type: 'text',
-          text: renderAttachedDocumentBlock({
-            name: part.name,
-            kind: 'pdf',
-            text,
-            pageCount: part.pageCount ?? pages.length,
-          }),
-        })
-      } catch (error) {
-        console.warn(
-          '[YOLO] Failed to extract PDF text for non-native model, dropping document part',
-          part.name,
-          error,
-        )
-        transformed.push({
-          type: 'text',
-          text: `[PDF "${part.name}" 无法解析为文本，已忽略]`,
-        })
-      }
-    }
-
-    next.push({ ...message, content: transformed })
-  }
-
-  return next
 }
 
 type MentionContextMode = 'light' | 'full'
@@ -610,7 +511,7 @@ export class RequestContextBuilder {
     const compiledMessages = [...messages]
 
     // Only compile the latest user message when needed.
-    // Historical messages without promptContent should be replayed from
+    // Earlier messages without promptContent should be replayed from
     // lightweight snapshots/fallbacks to avoid expensive full-history rebuilds.
     let lastUserMessageIndex = -1
     for (let i = compiledMessages.length - 1; i >= 0; --i) {
@@ -716,11 +617,7 @@ export class RequestContextBuilder {
       { app: this.app, settings: this.settings },
     )
 
-    const requestMessages = await prepareDocumentsForModel(
-      stripUnsupportedImages(withInjections, _model),
-      _model,
-      { app: this.app, settings: this.settings },
-    )
+    const requestMessages = stripUnsupportedImages(withInjections, _model)
 
     return {
       requestMessages,
@@ -786,7 +683,7 @@ export class RequestContextBuilder {
     //   3. Pull every `<user_selected_skills>` block out via regex and emit
     //      each one as a separate Skills section; strip them from the message
     //      so the same text isn't double-counted under Conversation. Extracting
-    //      from the actually-built messages covers historical user messages
+    //      from the actually-built messages covers earlier user messages
     //      too and avoids a redundant `buildSelectedSkillsPrompt` call.
     for (let i = 0; i < requestMessages.length; i += 1) {
       const msg = requestMessages[i]
@@ -923,11 +820,6 @@ export class RequestContextBuilder {
             continue
           }
 
-          if (message.role === 'external_agent_result') {
-            requestMessages.push(this.parseExternalAgentResultMessage(message))
-            continue
-          }
-
           if (message.role === 'subagent_result') {
             requestMessages.push(this.parseSubagentResultMessage(message))
             continue
@@ -973,11 +865,6 @@ export class RequestContextBuilder {
         requestMessages.push(
           ...this.parseAssistantMessage({ message, prunedToolCallIds }),
         )
-        continue
-      }
-
-      if (message.role === 'external_agent_result') {
-        requestMessages.push(this.parseExternalAgentResultMessage(message))
         continue
       }
 
@@ -1050,45 +937,29 @@ export class RequestContextBuilder {
     const assistantQuotes = message.mentionables.filter(
       (m): m is MentionableAssistantQuote => m.type === 'assistant-quote',
     )
-    const pdfs = message.mentionables.filter(
-      (m): m is MentionablePDF => m.type === 'pdf',
-    )
     const offices = message.mentionables.filter(
       (m): m is MentionableOffice => m.type === 'office',
     )
     const textAttachments = message.mentionables.filter(
       (m): m is MentionableTextAttachment => m.type === 'text-attachment',
     )
-    const webSelections = message.mentionables.filter(
-      (m): m is MentionableWebSelection => m.type === 'web-selection',
-    )
     const blockPrompt = blocks
-      .map(
-        ({ file, content, startLine, endLine, pageNumber, contentFormat }) => {
-          const pageTag =
-            pageNumber !== undefined ? ` (page ${pageNumber})` : ''
-          const header = `${file.path}${pageTag}`
-          if (pageNumber !== undefined) {
-            // PDF block: skip line numbering (startLine/endLine are 0)
-            return `\`\`\`${header}\n${content}\n\`\`\`\n`
-          }
-          if (contentFormat === 'markdown-table') {
-            const lineTag =
-              startLine === endLine
-                ? `line ${startLine}`
-                : `lines ${startLine}-${endLine}`
-            return `${file.path} (${lineTag}, table selection)\n\n\`\`\`md\n${content}\n\`\`\`\n`
-          }
-          const numberedContent = this.addLineNumbersToContent({
-            content,
-            startLine,
-          })
-          return `\`\`\`${header}\n${numberedContent}\n\`\`\`\n`
-        },
-      )
+      .map(({ file, content, startLine, endLine, contentFormat }) => {
+        if (contentFormat === 'markdown-table') {
+          const lineTag =
+            startLine === endLine
+              ? `line ${startLine}`
+              : `lines ${startLine}-${endLine}`
+          return `${file.path} (${lineTag}, table selection)\n\n\`\`\`md\n${content}\n\`\`\`\n`
+        }
+        const numberedContent = this.addLineNumbersToContent({
+          content,
+          startLine,
+        })
+        return `\`\`\`${file.path}\n${numberedContent}\n\`\`\`\n`
+      })
       .join('')
     const assistantQuotePrompt = this.buildAssistantQuotePrompt(assistantQuotes)
-    const webSelectionPrompt = this.buildWebSelectionPrompt(webSelections)
     const officePrompt = offices
       .map((doc) =>
         renderAttachedDocumentBlock({
@@ -1107,22 +978,16 @@ export class RequestContextBuilder {
         }),
       )
       .join('')
-    const {
-      documentParts: pdfDocumentParts,
-      legacyText: legacyPdfFallbackText,
-    } = this.buildPdfAttachments(pdfs)
-
     const selectedSkillsPrompt = await this.buildSelectedSkillsPrompt(
       message.selectedSkills,
     )
-    const textContent = `${blockPrompt}${assistantQuotePrompt}${webSelectionPrompt}${officePrompt}${textAttachmentPrompt}${legacyPdfFallbackText}${selectedSkillsPrompt}\n\n${query}\n\n`
-    if (imageParts.length === 0 && pdfDocumentParts.length === 0) {
+    const textContent = `${blockPrompt}${assistantQuotePrompt}${officePrompt}${textAttachmentPrompt}${selectedSkillsPrompt}\n\n${query}\n\n`
+    if (imageParts.length === 0) {
       return withTimeContext(textContent)
     }
 
     return withTimeContext([
       ...imageParts,
-      ...pdfDocumentParts,
       {
         type: 'text',
         text: textContent,
@@ -1138,7 +1003,6 @@ export class RequestContextBuilder {
           mentionable.type === 'file' ||
           mentionable.type === 'folder' ||
           mentionable.type === 'url' ||
-          mentionable.type === 'web-selection' ||
           mentionable.type === 'office' ||
           mentionable.type === 'text-attachment' ||
           mentionable.type === 'assistant-quote',
@@ -1214,7 +1078,6 @@ ${message.annotations
           ...(citationContent ? [citationContent] : []),
         ].join('\n'),
         reasoning: message.reasoning,
-        providerMetadata: message.metadata?.providerMetadata,
         tool_calls: filterContextPrunedAssistantToolCalls(
           message.toolCallRequests
             ?.map((toolCall) => this.normalizeToolCallRequest(toolCall))
@@ -1254,12 +1117,6 @@ ${message.annotations
       name,
       arguments: createCompleteToolCallArguments({ value: args }),
     }
-  }
-
-  private parseExternalAgentResultMessage(
-    message: ChatExternalAgentResultMessage,
-  ): RequestMessage {
-    return serializeExternalAgentResultToUserMessage(message)
   }
 
   private parseSubagentResultMessage(
@@ -1316,26 +1173,17 @@ ${message.annotations
             tool_call: toolCall.request,
             content: toolCall.response.data.text,
           })
-          // Collect hoistable parts (image_url and document) for a follow-up
+          // Collect image parts for a follow-up
           // user message after all tool messages, so the message sequence stays valid.
           const parts = toolCall.response.data.contentParts
           if (parts) {
-            const hoistableParts = parts.filter(
-              (p) => p.type === 'image_url' || p.type === 'document',
-            )
+            const hoistableParts = parts.filter((p) => p.type === 'image_url')
             if (hoistableParts.length > 0) {
-              const hasImage = hoistableParts.some(
-                (p) => p.type === 'image_url',
-              )
-              const hasDoc = hoistableParts.some((p) => p.type === 'document')
-              const headerLabel =
-                hasImage && hasDoc
-                  ? `Attachments from tool call: ${toolCall.request.name}`
-                  : hasDoc
-                    ? `PDF attachments from tool call: ${toolCall.request.name}`
-                    : `Images from tool call: ${toolCall.request.name}`
               collectedContentParts.push(
-                { type: 'text', text: `[${headerLabel}]` },
+                {
+                  type: 'text',
+                  text: `[Images from tool call: ${toolCall.request.name}]`,
+                },
                 ...hoistableParts,
               )
             }
@@ -1483,45 +1331,29 @@ ${message.annotations
     const assistantQuotes = mentionables.filter(
       (m): m is MentionableAssistantQuote => m.type === 'assistant-quote',
     )
-    const pdfs = mentionables.filter(
-      (m): m is MentionablePDF => m.type === 'pdf',
-    )
     const offices = mentionables.filter(
       (m): m is MentionableOffice => m.type === 'office',
     )
     const textAttachments = mentionables.filter(
       (m): m is MentionableTextAttachment => m.type === 'text-attachment',
     )
-    const webSelections = mentionables.filter(
-      (m): m is MentionableWebSelection => m.type === 'web-selection',
-    )
     const blockPrompt = blocks
-      .map(
-        ({ file, content, startLine, endLine, pageNumber, contentFormat }) => {
-          const pageTag =
-            pageNumber !== undefined ? ` (page ${pageNumber})` : ''
-          const header = `${file.path}${pageTag}`
-          if (pageNumber !== undefined) {
-            // PDF block: skip line numbering (startLine/endLine are 0)
-            return `\`\`\`${header}\n${content}\n\`\`\`\n`
-          }
-          if (contentFormat === 'markdown-table') {
-            const lineTag =
-              startLine === endLine
-                ? `line ${startLine}`
-                : `lines ${startLine}-${endLine}`
-            return `${file.path} (${lineTag}, table selection)\n\n\`\`\`md\n${content}\n\`\`\`\n`
-          }
-          const numberedContent = this.addLineNumbersToContent({
-            content,
-            startLine,
-          })
-          return `\`\`\`${header}\n${numberedContent}\n\`\`\`\n`
-        },
-      )
+      .map(({ file, content, startLine, endLine, contentFormat }) => {
+        if (contentFormat === 'markdown-table') {
+          const lineTag =
+            startLine === endLine
+              ? `line ${startLine}`
+              : `lines ${startLine}-${endLine}`
+          return `${file.path} (${lineTag}, table selection)\n\n\`\`\`md\n${content}\n\`\`\`\n`
+        }
+        const numberedContent = this.addLineNumbersToContent({
+          content,
+          startLine,
+        })
+        return `\`\`\`${file.path}\n${numberedContent}\n\`\`\`\n`
+      })
       .join('')
     const assistantQuotePrompt = this.buildAssistantQuotePrompt(assistantQuotes)
-    const webSelectionPrompt = this.buildWebSelectionPrompt(webSelections)
     const officePrompt = offices
       .map((doc) =>
         renderAttachedDocumentBlock({
@@ -1540,11 +1372,6 @@ ${message.annotations
         }),
       )
       .join('')
-    const {
-      documentParts: pdfDocumentParts,
-      legacyText: legacyPdfFallbackText,
-    } = this.buildPdfAttachments(pdfs)
-
     const inlineImageDataUrls = mentionables
       .filter((m): m is MentionableImage => m.type === 'image')
       .map(({ data }) => data)
@@ -1583,28 +1410,11 @@ ${message.annotations
           },
         }),
       ),
-      ...pdfDocumentParts,
       {
         type: 'text',
-        text: `${filePrompt}${blockPrompt}${assistantQuotePrompt}${webSelectionPrompt}${officePrompt}${textAttachmentPrompt}${legacyPdfFallbackText}${selectedSkillsPrompt}\n\n${query}\n\n`,
+        text: `${filePrompt}${blockPrompt}${assistantQuotePrompt}${officePrompt}${textAttachmentPrompt}${selectedSkillsPrompt}\n\n${query}\n\n`,
       },
     ]
-  }
-
-  private buildWebSelectionPrompt(
-    selections: MentionableWebSelection[],
-  ): string {
-    if (selections.length === 0) {
-      return ''
-    }
-
-    return `## Selected web page snippets
-${selections
-  .map((selection) => {
-    const title = selection.title.trim() || selection.url
-    return `<web_selection url="${escapeXmlAttr(selection.url)}" title="${escapeXmlAttr(title)}">\n${escapeXmlText(selection.content)}\n</web_selection>`
-  })
-  .join('\n\n')}\n\n`
   }
 
   private buildAssistantQuotePrompt(
@@ -1621,50 +1431,6 @@ ${quotes
       `<assistant_quote conversationId="${conversationId}" messageId="${messageId}">\n${content}\n</assistant_quote>`,
   )
   .join('\n\n')}\n\n`
-  }
-
-  /**
-   * Single entry that turns PDF mentionables into request payload pieces:
-   *   • `documentParts`: native `document` content parts for new uploads that
-   *     carry raw bytes. Pass-through for adapters that advertise the `pdf`
-   *     modality; `prepareDocumentsForModel` converts to text otherwise.
-   *   • `legacyText`: an `<document type="pdf">` block for legacy mentionables
-   *     that only have the pre-extracted `data` text (serialized before native
-   *     PDF support landed). Empty string when there are no legacy items.
-   */
-  private buildPdfAttachments(pdfs: MentionablePDF[]): {
-    documentParts: ContentPart[]
-    legacyText: string
-  } {
-    const documentParts: ContentPart[] = []
-    const legacyBlocks: string[] = []
-
-    for (const pdf of pdfs) {
-      if (pdf.rawData) {
-        documentParts.push({
-          type: 'document',
-          mediaType: 'application/pdf',
-          name: pdf.name,
-          data: pdf.rawData,
-          pageCount: pdf.pageCount,
-        })
-      } else if (pdf.data) {
-        legacyBlocks.push(
-          renderAttachedDocumentBlock({
-            name: pdf.name,
-            kind: 'pdf',
-            text: pdf.data,
-            pageCount: pdf.pageCount,
-          }),
-        )
-      }
-    }
-
-    return {
-      documentParts,
-      // Each block is a self-contained `<document>` element; join into one.
-      legacyText: legacyBlocks.join(''),
-    }
   }
 
   /**
@@ -1827,7 +1593,7 @@ ${entries}
       // Normalize the same way the real path/skill lookups do, so cosmetic-only
       // edits (trailing slash, whitespace) don't needlessly evict the snapshot.
       baseDir: normalizePath(this.settings.yolo?.baseDir ?? ''),
-      disabledSkillIds: [...(this.settings.skills?.disabledSkillIds ?? [])]
+      disabledSkillNames: [...(this.settings.skills?.disabledSkillNames ?? [])]
         .map((id) => id.trim())
         .sort(),
       currentAssistantId: this.settings.currentAssistantId ?? '',
@@ -1845,8 +1611,7 @@ ${entries}
           }
         : null,
       // Only assistant fields that reach the system prompt — not modelId / icon /
-      // updatedAt, which would over-evict on unrelated edits. `enabledSkills` is
-      // legacy and not consulted by skill filtering, so it is intentionally out.
+      // updatedAt, which would over-evict on unrelated edits.
       assistant: assistant
         ? {
             name: assistant.name,
@@ -1862,8 +1627,8 @@ ${entries}
 
   /**
    * Build the ordered list of system-prompt-side sections. The order is the
-   * same as the legacy string-concat order in `getSystemMessage`, so joining
-   * the string contents with `\n\n` reproduces the original system prompt
+   * same as the canonical order in `getSystemMessage`, so joining the string
+   * contents with `\n\n` reproduces the system prompt
    * byte-for-byte. Buckets are assigned per the breakdown spec.
    */
   private async buildSystemPromptSections(
@@ -1877,7 +1642,7 @@ ${entries}
 
     // Custom-instructions block — split into sub-sections so that memory /
     // skills / system text can be counted independently. Order MUST match the
-    // legacy parts[] order in `buildCustomInstructionsSection`.
+    // canonical parts[] order in `buildCustomInstructionsSection`.
     const customInstructionSubsections =
       await this.buildCustomInstructionsSubsections(hasMemoryTools)
     sections.push(...customInstructionSubsections)
@@ -1950,8 +1715,8 @@ ${entries}
   }
 
   /**
-   * Ordered breakdown of the legacy `customInstructionsSection`. The string
-   * contents joined with `\n\n` reproduce the original block exactly; each
+   * Ordered breakdown of `customInstructionsSection`. The string contents
+   * joined with `\n\n` reproduce the block exactly; each
    * entry is tagged with the bucket the UI should attribute its tokens to.
    *
    * IMPORTANT: this is the single source of truth for memory / skills / global
@@ -2024,7 +1789,7 @@ ${memoryParts.join('\n\n')}
     }
 
     if (this.includeSkills) {
-      const disabledSkillNames = this.settings.skills?.disabledSkillIds ?? []
+      const disabledSkillNames = this.settings.skills?.disabledSkillNames ?? []
       const enabledSkillEntries = currentAssistant
         ? (
             await listLiteSkillEntries(this.app, { settings: this.settings })
@@ -2295,20 +2060,7 @@ ${[...folderPathSet].map((path) => `- \`${path}\``).join('\n')}`)
           if (isImageTFile(file)) {
             return null
           }
-          const ext = file.extension?.toLowerCase() ?? ''
-          let rawContent: string
-          if (ext === 'pdf') {
-            const { pages } = await extractPdfText(this.app, file, {
-              maxBinaryBytes: PDF_INDEX_MAX_BYTES,
-              maxPages: PDF_INDEX_MAX_PAGES,
-              settings: this.settings,
-            })
-            rawContent = pages
-              .map((p) => `<page ${p.page}>\n${p.text}\n</page ${p.page}>`)
-              .join('\n')
-          } else {
-            rawContent = await readTFileContent(file, this.app.vault)
-          }
+          const rawContent = await readTFileContent(file, this.app.vault)
           return { file, content: rawContent }
         } catch (error) {
           console.warn('[YOLO] Failed to read mentioned file', file.path, error)

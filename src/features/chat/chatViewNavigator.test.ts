@@ -1,227 +1,54 @@
-import { TFile } from 'obsidian'
 import type { WorkspaceLeaf } from 'obsidian'
 
+import { ChatView } from '../../ChatView'
 import { CHAT_VIEW_TYPE } from '../../constants'
 import type YoloPlugin from '../../main'
 
 import { ChatViewNavigator } from './chatViewNavigator'
 
 jest.mock('../../ChatView', () => ({
-  ChatView: jest.fn().mockImplementation(function MockChatView(this: {
-    addSelectionToInput: jest.Mock
-    applySelectionToMainInput: jest.Mock
-    appendTextToInput: jest.Mock
-    setMainInputText: jest.Mock
-    focusMainInput: jest.Mock
-    submitMainInput: jest.Mock
-  }) {
-    this.addSelectionToInput = jest.fn()
-    this.applySelectionToMainInput = jest.fn()
-    this.appendTextToInput = jest.fn()
-    this.setMainInputText = jest.fn()
-    this.focusMainInput = jest.fn()
-    this.submitMainInput = jest.fn()
-  }),
+  ChatView: jest.fn().mockImplementation(function MockChatView() {}),
 }))
 
-const { ChatView: MockChatView } = jest.requireMock('../../ChatView')
+const createPlugin = (overrides: {
+  getRightLeaf?: () => WorkspaceLeaf
+  getLeaf?: jest.Mock
+  setPendingPayload?: jest.Mock
+  registerLeaf?: jest.Mock
+}) => {
+  const sessionManager = {
+    resolveTargetLeaf: () => null,
+    setPendingPayload: overrides.setPendingPayload ?? jest.fn(),
+    registerLeaf: overrides.registerLeaf ?? jest.fn(),
+    touchLeafInteracted: jest.fn(),
+    getLeafPlacement: jest.fn(() => 'sidebar'),
+    inferLeafPlacement: jest.fn(() => 'sidebar'),
+  }
+  return {
+    app: {
+      workspace: {
+        revealLeaf: jest.fn().mockResolvedValue(undefined),
+        getActiveViewOfType: jest.fn(() => null),
+        getRightLeaf: overrides.getRightLeaf,
+        getLeaf: overrides.getLeaf,
+      },
+    },
+    settings: { chatOptions: { lastChatPlacement: 'sidebar' } },
+    setSettings: jest.fn().mockResolvedValue(undefined),
+    getChatLeafSessionManager: () => sessionManager,
+  } as unknown as YoloPlugin
+}
 
 describe('ChatViewNavigator', () => {
-  const selectedFile = new TFile()
-  Object.assign(selectedFile, {
-    path: 'note.md',
-    basename: 'note',
-    extension: 'md',
-  })
-
-  const selectedBlock = {
-    content: 'Selected content',
-    file: selectedFile,
-    startLine: 1,
-    endLine: 1,
-  }
-
-  const createPlugin = (
-    overrides: {
-      resolveTargetLeaf?: () => WorkspaceLeaf | null
-      setPendingPayload?: jest.Mock
-      registerLeaf?: jest.Mock
-      touchLeafInteracted?: jest.Mock
-      revealLeaf?: jest.Mock
-      getRightLeaf?: () => WorkspaceLeaf
-      getLeaf?: jest.Mock
-    } = {},
-  ) => {
-    const sessionManager = {
-      resolveTargetLeaf: overrides.resolveTargetLeaf ?? (() => null),
-      setPendingPayload: overrides.setPendingPayload ?? jest.fn(),
-      registerLeaf: overrides.registerLeaf ?? jest.fn(),
-      touchLeafInteracted: overrides.touchLeafInteracted ?? jest.fn(),
-      getLeafPlacement: jest.fn(() => 'sidebar'),
-      inferLeafPlacement: jest.fn(() => 'sidebar'),
-    }
-
-    const workspace = {
-      revealLeaf:
-        overrides.revealLeaf ?? jest.fn().mockResolvedValue(undefined),
-      getActiveViewOfType: jest.fn(() => null),
-      getRightLeaf:
-        overrides.getRightLeaf ??
-        (() => {
-          throw new Error('getRightLeaf should not be called in this test')
-        }),
-      getLeaf:
-        overrides.getLeaf ??
-        jest.fn(() => {
-          throw new Error('getLeaf should not be called in this test')
-        }),
-    }
-
-    return {
-      app: {
-        workspace,
-      },
-      settings: {
-        chatOptions: {
-          lastChatPlacement: 'sidebar',
-        },
-      },
-      setSettings: jest.fn().mockResolvedValue(undefined),
-      getChatLeafSessionManager: () => sessionManager,
-    } as unknown as YoloPlugin
-  }
-
-  beforeEach(() => {
-    MockChatView.mockClear()
-  })
-
-  it('prefills the main chat input without sending when a chat leaf already exists', async () => {
-    const view = new (MockChatView as unknown as new () => {
-      addSelectionToInput: jest.Mock
-      applySelectionToMainInput: jest.Mock
-      appendTextToInput: jest.Mock
-      setMainInputText: jest.Mock
-      focusMainInput: jest.Mock
-      submitMainInput: jest.Mock
-    })()
-    const leaf = { view } as unknown as WorkspaceLeaf
-    const revealLeaf = jest.fn().mockResolvedValue(undefined)
-    const touchLeafInteracted = jest.fn()
-    const plugin = createPlugin({
-      resolveTargetLeaf: () => leaf,
-      revealLeaf,
-      touchLeafInteracted,
-    })
-
-    const navigator = new ChatViewNavigator({ plugin })
-
-    await navigator.openChatWithSelectionAndPrefill(
-      selectedBlock,
-      'Explain this',
-    )
-
-    expect(revealLeaf).toHaveBeenCalledWith(leaf)
-    expect(touchLeafInteracted).toHaveBeenCalledWith(leaf)
-    expect(view.applySelectionToMainInput).toHaveBeenCalledWith(
-      {
-        ...selectedBlock,
-        source: 'selection-pinned',
-      },
-      'Explain this',
-      { assistantId: undefined },
-    )
-    expect(view.setMainInputText).not.toHaveBeenCalled()
-    expect(view.focusMainInput).not.toHaveBeenCalled()
-    expect(view.submitMainInput).not.toHaveBeenCalled()
-  })
-
-  it('submits the main chat input immediately when using direct send', async () => {
-    const view = new (MockChatView as unknown as new () => {
-      addSelectionToInput: jest.Mock
-      applySelectionToMainInput: jest.Mock
-      appendTextToInput: jest.Mock
-      setMainInputText: jest.Mock
-      focusMainInput: jest.Mock
-      submitMainInput: jest.Mock
-    })()
-    const leaf = { view } as unknown as WorkspaceLeaf
-    const plugin = createPlugin({
-      resolveTargetLeaf: () => leaf,
-      revealLeaf: jest.fn().mockResolvedValue(undefined),
-      touchLeafInteracted: jest.fn(),
-    })
-
-    const navigator = new ChatViewNavigator({ plugin })
-
-    await navigator.openChatWithSelectionAndSend(selectedBlock, '')
-
-    expect(view.applySelectionToMainInput).toHaveBeenCalledWith(
-      {
-        ...selectedBlock,
-        source: 'selection-pinned',
-      },
-      '',
-      {
-        submit: true,
-        assistantId: undefined,
-      },
-    )
-    expect(view.setMainInputText).not.toHaveBeenCalled()
-    expect(view.submitMainInput).not.toHaveBeenCalled()
-    expect(view.focusMainInput).not.toHaveBeenCalled()
-  })
-
-  it('stores auto-send payload when it needs to create a new chat leaf', async () => {
-    const setPendingPayload = jest.fn()
-    const registerLeaf = jest.fn()
-    const newLeaf = {
-      setViewState: jest.fn().mockImplementation(function setViewState() {
-        this.view = new (MockChatView as unknown as new () => object)()
-        return Promise.resolve()
-      }),
-    } as unknown as WorkspaceLeaf
-    const plugin = createPlugin({
-      resolveTargetLeaf: () => null,
-      setPendingPayload,
-      registerLeaf,
-      revealLeaf: jest.fn().mockResolvedValue(undefined),
-      getRightLeaf: () => newLeaf,
-    })
-
-    const navigator = new ChatViewNavigator({ plugin })
-
-    await navigator.openChatWithSelectionAndSend(selectedBlock, 'Summarize')
-
-    expect(setPendingPayload).toHaveBeenCalledWith(
-      newLeaf,
-      expect.objectContaining({
-        selectedBlock: {
-          ...selectedBlock,
-          source: 'selection-pinned',
-        },
-        prefillText: 'Summarize',
-        autoSend: true,
-        placement: 'sidebar',
-      }),
-    )
-    expect(registerLeaf).toHaveBeenCalledWith(newLeaf, 'sidebar')
-  })
-
-  it('stores the initial conversation id in view state when creating a chat leaf', async () => {
-    const setViewState = jest.fn().mockImplementation(function setViewState() {
-      this.view = new (MockChatView as unknown as new () => object)()
-      return Promise.resolve()
-    })
-    const newLeaf = {
+  it('stores the initial conversation id in a new sidebar view', async () => {
+    const setViewState = jest.fn().mockResolvedValue(undefined)
+    const leaf = {
       setViewState,
+      view: Object.create(ChatView.prototype),
     } as unknown as WorkspaceLeaf
-    const plugin = createPlugin({
-      resolveTargetLeaf: () => null,
-      revealLeaf: jest.fn().mockResolvedValue(undefined),
-      getRightLeaf: () => newLeaf,
+    const navigator = new ChatViewNavigator({
+      plugin: createPlugin({ getRightLeaf: () => leaf }),
     })
-
-    const navigator = new ChatViewNavigator({ plugin })
 
     await navigator.openChatView({
       placement: 'sidebar',
@@ -231,42 +58,30 @@ describe('ChatViewNavigator', () => {
     expect(setViewState).toHaveBeenCalledWith({
       type: CHAT_VIEW_TYPE,
       active: true,
-      state: {
-        currentConversationId: 'conversation-1',
-      },
+      state: { currentConversationId: 'conversation-1' },
     })
   })
 
-  it('asks Obsidian for a split leaf when opening a new split chat', async () => {
-    const setViewState = jest.fn().mockImplementation(function setViewState() {
-      this.view = new (MockChatView as unknown as new () => object)()
-      return Promise.resolve()
-    })
-    const newLeaf = {
+  it('asks Obsidian for a split leaf when opening a split chat', async () => {
+    const setViewState = jest.fn().mockResolvedValue(undefined)
+    const leaf = {
       setViewState,
+      view: Object.create(ChatView.prototype),
     } as unknown as WorkspaceLeaf
-    const getLeaf = jest.fn(() => newLeaf)
+    const getLeaf = jest.fn(() => leaf)
     const setPendingPayload = jest.fn()
     const registerLeaf = jest.fn()
-    const plugin = createPlugin({
-      resolveTargetLeaf: () => null,
-      setPendingPayload,
-      registerLeaf,
-      revealLeaf: jest.fn().mockResolvedValue(undefined),
-      getLeaf,
+    const navigator = new ChatViewNavigator({
+      plugin: createPlugin({ getLeaf, setPendingPayload, registerLeaf }),
     })
-
-    const navigator = new ChatViewNavigator({ plugin })
 
     await navigator.openChatInSplit(true)
 
     expect(getLeaf).toHaveBeenCalledWith('split')
     expect(setPendingPayload).toHaveBeenCalledWith(
-      newLeaf,
-      expect.objectContaining({
-        placement: 'split',
-      }),
+      leaf,
+      expect.objectContaining({ placement: 'split' }),
     )
-    expect(registerLeaf).toHaveBeenCalledWith(newLeaf, 'split')
+    expect(registerLeaf).toHaveBeenCalledWith(leaf, 'split')
   })
 })

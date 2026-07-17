@@ -6,10 +6,8 @@ export type ResolvedAssistantSkillPolicy = {
 }
 
 /**
- * @param disabledSkillNames Globally disabled skill names (canonical skill
- *   names, trim-only, case-sensitive). The persisted field is still called
- *   `disabledSkillIds` for backwards compatibility — its elements are skill
- *   names.
+ * @param disabledSkillNames Globally disabled canonical skill names. Names
+ *   are trimmed and remain case-sensitive.
  */
 export function getDisabledSkillNameSet(
   disabledSkillNames?: string[],

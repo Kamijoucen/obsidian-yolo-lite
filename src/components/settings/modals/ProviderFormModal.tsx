@@ -1,11 +1,7 @@
 import { App, Notice, Platform } from 'obsidian'
 import { useState } from 'react'
 
-import {
-  PROMPT_CACHING_SETTING,
-  PROVIDER_API_INFO,
-  PROVIDER_PRESET_INFO,
-} from '../../../constants'
+import { PROVIDER_API_INFO, PROVIDER_PRESET_INFO } from '../../../constants'
 import { useLanguage } from '../../../contexts/language-context'
 import YoloPlugin from '../../../main'
 import {
@@ -25,7 +21,6 @@ import {
   getRequestTransportModeValue,
   getResponseStreamingMode,
   providerSupportsTransportModeSelection,
-  reconcileEmbeddingModelsForProviderUpdate,
 } from '../../../utils/llm/provider-config'
 import { sanitizeProviderHeaders } from '../../../utils/llm/provider-headers'
 import { ObsidianButton } from '../../common/ObsidianButton'
@@ -151,50 +146,21 @@ function ProviderFormComponent({
 
         const validatedProvider = validationResult.data
         const providerIdChanged = provider.id !== validatedProvider.id
-        const providerPresetChanged =
-          provider.presetType !== validatedProvider.presetType
-        const providerApiChanged =
-          provider.apiType !== validatedProvider.apiType
         const updatedProviders = [...plugin.settings.providers]
         updatedProviders[providerIndex] = validatedProvider
 
-        const becameOpenRouter =
-          providerPresetChanged && validatedProvider.presetType === 'openrouter'
-        const updatedChatModels =
-          providerIdChanged || becameOpenRouter
-            ? plugin.settings.chatModels.map((model) => {
-                if (model.providerId !== provider.id) {
-                  return model
-                }
-                const updatedModel = {
-                  ...model,
-                  ...(providerIdChanged
-                    ? { providerId: validatedProvider.id }
-                    : {}),
-                  ...(becameOpenRouter &&
-                  model.builtinToolProvider !== 'none' &&
-                  model.builtinToolProvider !== 'openrouter'
-                    ? { builtinToolProvider: 'none' as const }
-                    : {}),
-                }
-                return updatedModel
-              })
-            : plugin.settings.chatModels
-
-        const updatedEmbeddingModels: typeof plugin.settings.embeddingModels =
-          providerIdChanged || providerPresetChanged || providerApiChanged
-            ? reconcileEmbeddingModelsForProviderUpdate({
-                embeddingModels: plugin.settings.embeddingModels,
-                previousProvider: provider,
-                nextProvider: validatedProvider,
-              })
-            : plugin.settings.embeddingModels
+        const updatedChatModels = providerIdChanged
+          ? plugin.settings.chatModels.map((model) =>
+              model.providerId === provider.id
+                ? { ...model, providerId: validatedProvider.id }
+                : model,
+            )
+          : plugin.settings.chatModels
 
         await plugin.setSettings({
           ...plugin.settings,
           providers: updatedProviders,
           chatModels: updatedChatModels,
-          embeddingModels: updatedEmbeddingModels,
         })
       } else {
         if (
@@ -239,15 +205,8 @@ function ProviderFormComponent({
       PROVIDER_API_INFO[apiType].label,
     ]),
   )
-  const shouldHideCredentialFields =
-    formData.presetType === 'chatgpt-oauth' ||
-    formData.presetType === 'gemini-oauth'
-  const shouldShowBaseUrlField =
-    !shouldHideCredentialFields &&
-    !(
-      formData.presetType === 'amazon-bedrock' &&
-      formData.apiType === 'amazon-bedrock'
-    )
+  const shouldHideCredentialFields = formData.presetType === 'chatgpt-oauth'
+  const shouldShowBaseUrlField = !shouldHideCredentialFields
   const requestTransportOptions = {
     browser: t('settings.providers.requestTransportModeBrowser'),
     obsidian: t('settings.providers.requestTransportModeObsidian'),
@@ -262,31 +221,14 @@ function ProviderFormComponent({
     streaming: t('settings.providers.responseStreamingModeStreaming'),
     'non-streaming': t('settings.providers.responseStreamingModeNonStreaming'),
   }
-  type AdditionalSettingEntry =
-    | (typeof providerTypeInfo.additionalSettings)[number]
-    | typeof PROMPT_CACHING_SETTING
-  const baseAdditionalSettings: AdditionalSettingEntry[] =
-    formData.apiType === 'anthropic'
-      ? [PROMPT_CACHING_SETTING, ...providerTypeInfo.additionalSettings]
-      : [...providerTypeInfo.additionalSettings]
-  const visibleAdditionalSettings = baseAdditionalSettings.filter(
+  const visibleAdditionalSettings = providerTypeInfo.additionalSettings.filter(
     (setting) =>
       setting.key !== 'requestTransportMode' ||
       providerSupportsTransportModeSelection(formData),
   )
-  const apiKeyDesc =
-    formData.presetType === 'amazon-bedrock'
-      ? 'Enter your Amazon Bedrock API key / bearer token.'
-      : t('settings.providers.apiKeyDesc')
-  const apiKeyPlaceholder =
-    formData.presetType === 'amazon-bedrock'
-      ? 'Enter your Amazon Bedrock API key'
-      : t('settings.providers.apiKeyPlaceholder')
-  const baseUrlPlaceholder =
-    formData.presetType === 'amazon-bedrock' &&
-    formData.apiType === 'openai-compatible'
-      ? 'https://bedrock-mantle.us-east-1.api.aws'
-      : t('settings.providers.baseUrlPlaceholder')
+  const apiKeyDesc = t('settings.providers.apiKeyDesc')
+  const apiKeyPlaceholder = t('settings.providers.apiKeyPlaceholder')
+  const baseUrlPlaceholder = t('settings.providers.baseUrlPlaceholder')
   const primaryRequestUrlPreview = resolveProviderPrimaryRequestUrl(formData)
 
   return (
@@ -424,9 +366,7 @@ function ProviderFormComponent({
               ? t('settings.providers.requestTransportMode')
               : setting.key === 'responseStreamingMode'
                 ? t('settings.providers.responseStreamingMode')
-                : setting.key === 'promptCaching'
-                  ? t('settings.providers.promptCaching')
-                  : setting.label
+                : setting.label
         const description =
           setting.key === 'noStainless'
             ? t('settings.providers.noStainlessHeadersDesc')
@@ -434,9 +374,7 @@ function ProviderFormComponent({
               ? t('settings.providers.requestTransportModeDesc')
               : setting.key === 'responseStreamingMode'
                 ? t('settings.providers.responseStreamingModeDesc')
-                : setting.key === 'promptCaching'
-                  ? t('settings.providers.promptCachingDesc')
-                  : (setting as { description?: string }).description
+                : (setting as { description?: string }).description
 
         return (
           <ObsidianSetting
@@ -502,27 +440,6 @@ function ProviderFormComponent({
               <ObsidianDropdown
                 value={getResponseStreamingMode(formData.additionalSettings)}
                 options={responseStreamingOptions}
-                onChange={(value: string) =>
-                  setFormData(
-                    (prev) =>
-                      ({
-                        ...prev,
-                        additionalSettings: {
-                          ...(prev.additionalSettings ?? {}),
-                          [setting.key]: value,
-                        },
-                      }) as LLMProvider,
-                  )
-                }
-              />
-            ) : setting.type === 'text' ? (
-              <ObsidianTextInput
-                value={
-                  (formData.additionalSettings as Record<string, string>)?.[
-                    setting.key
-                  ] ?? ''
-                }
-                placeholder={setting.placeholder}
                 onChange={(value: string) =>
                   setFormData(
                     (prev) =>

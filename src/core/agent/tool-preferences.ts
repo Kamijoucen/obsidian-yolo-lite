@@ -111,11 +111,8 @@ export const BUILTIN_DEFAULT_DISABLED_TOOL_SHORT_NAMES: ReadonlySet<string> =
   ])
 
 /**
- * Full set of user-facing built-in tool FQNs that default to on. Used by the
- * settings migration and `getDefaultEnabledForTool` to seed `toolPreferences`
- * for new or upgrading agents. Runtime never fills these in at read time —
- * `toolPreferences` is the single source of truth for per-agent state, and
- * the migration is the only path that writes defaults into it.
+ * Full set of user-facing built-in tool FQNs that default to on for a newly
+ * created assistant.
  *
  * Derived from {@link USER_FACING_LOCAL_TOOL_SHORT_NAMES} (which already
  * excludes the protocol-only `load_tool_schemas`) minus the deny-list above.
@@ -142,14 +139,7 @@ const isLocalFileToolFqn = (toolName: string): boolean => {
 }
 
 /**
- * The default `enabled` value that the **settings migration** writes for a
- * tool when no explicit preference exists. User-facing built-in
- * `yolo_local__*` tools default on (modulo the deny-list); third-party MCP
- * tools and protocol-only tools (e.g. `load_tool_schemas`) default off.
- *
- * Runtime no longer consults this at read time — it is consulted only by
- * the migration that seeds `toolPreferences`. After migration, that map is
- * the single source of truth.
+ * The default enabled state used when constructing a new assistant.
  */
 export const getDefaultEnabledForTool = (toolName: string): boolean => {
   try {
@@ -215,12 +205,7 @@ export const getDefaultApprovalModeForTool = (
 }
 
 /**
- * Builds the freshly-seeded `toolPreferences` map for a new assistant: every
- * default-on built-in tool FQN gets an explicit `{ enabled, approvalMode,
- * disclosureMode }` entry. This is the single helper used by creation paths
- * (default assistant, "new agent" UI) and the v60→v61 migration to keep the
- * "toolPreferences is the only source of truth" invariant intact — without
- * it, newly-created agents would surface zero built-in tools at runtime.
+ * Builds the initial `toolPreferences` map for a new assistant.
  */
 export const buildDefaultBuiltinToolPreferences = (): Record<
   string,
@@ -237,46 +222,16 @@ export const buildDefaultBuiltinToolPreferences = (): Record<
   return result
 }
 
-export const buildAssistantToolPreferencesFromEnabledToolNames = (
-  enabledToolNames?: string[],
-): Record<string, AssistantToolPreference> => {
-  if (!enabledToolNames || enabledToolNames.length === 0) {
-    return {}
-  }
-
-  return enabledToolNames.reduce<Record<string, AssistantToolPreference>>(
-    (acc, toolName) => {
-      acc[toolName] = {
-        enabled: true,
-        approvalMode: getDefaultApprovalModeForTool(toolName),
-        disclosureMode: getDefaultDisclosureModeForTool(toolName),
-      }
-      return acc
-    },
-    {},
-  )
-}
-
 export const getAssistantToolPreferences = (
-  assistant?: Pick<Assistant, 'toolPreferences' | 'enabledToolNames'> | null,
+  assistant?: Pick<Assistant, 'toolPreferences'> | null,
 ): Record<string, AssistantToolPreference> => {
-  const fromEnabledToolNames =
-    buildAssistantToolPreferencesFromEnabledToolNames(
-      assistant?.enabledToolNames,
-    )
-
-  return {
-    ...fromEnabledToolNames,
-    ...(assistant?.toolPreferences ?? {}),
-  }
+  return assistant?.toolPreferences ?? {}
 }
 
 /**
  * The set of tool FQNs the runtime treats as enabled for this assistant.
  * Returns the explicit `enabled: true` entries from `toolPreferences` — no
- * fill-in, no implicit defaults. The settings migration is responsible for
- * making sure every internal tool has an explicit entry by the time runtime
- * reads it, so this function can safely treat absent entries as disabled.
+ * fill-in and no implicit defaults.
  *
  * Honors `includeBuiltinTools`: when false, internal `yolo_local__*` tools
  * are dropped from the result regardless of their preference, matching what
@@ -287,10 +242,7 @@ export const getAssistantToolPreferences = (
  * temporarily off while the user is staging changes).
  */
 export const getEnabledAssistantToolNames = (
-  assistant?: Pick<
-    Assistant,
-    'toolPreferences' | 'enabledToolNames' | 'includeBuiltinTools'
-  > | null,
+  assistant?: Pick<Assistant, 'toolPreferences' | 'includeBuiltinTools'> | null,
 ): string[] => {
   const toolPreferences = getAssistantToolPreferences(assistant)
   const includeBuiltinTools = assistant?.includeBuiltinTools !== false
@@ -306,26 +258,10 @@ export const getEnabledAssistantToolNames = (
 }
 
 /**
- * Subset of `getEnabledAssistantToolNames` that returns only tools the user
- * has *explicitly* turned on (i.e. `toolPreferences[name].enabled === true`).
- * Used by persistence paths to keep the legacy `enabledToolNames` array as a
- * snapshot of user intent rather than baking in derived defaults that should
- * stay implicit and re-derive at read time.
+ * Returns tools the user has explicitly turned on.
  */
-export const getExplicitlyEnabledAssistantToolNames = (
-  assistant?: Pick<Assistant, 'toolPreferences' | 'enabledToolNames'> | null,
-): string[] => {
-  const toolPreferences = getAssistantToolPreferences(assistant)
-  return Object.entries(toolPreferences)
-    .filter(([, preference]) => preference.enabled)
-    .map(([toolName]) => toolName)
-}
-
 /**
- * Drop every `toolPreferences` / `enabledToolNames` entry whose serverName is
- * not in `knownServerNames`. Used to keep agent state in sync when an MCP
- * server is deleted, and by the v61→v62 migration to clean historical orphans
- * left behind by past deletes that didn't cascade.
+ * Drop every tool preference whose serverName is not in `knownServerNames`.
  *
  * `knownServerNames` must include `yolo_local` and every entry currently in
  * `settings.mcp.servers`. Anything else is considered an orphan: the FQN
@@ -333,10 +269,7 @@ export const getExplicitlyEnabledAssistantToolNames = (
  * preference is dead weight that only bloats data.json and confuses UI counts.
  */
 export const pruneOrphanedAssistantToolPreferences = <
-  T extends Pick<
-    Assistant,
-    'toolPreferences' | 'enabledToolNames' | 'toolServerPreferences'
-  >,
+  T extends Pick<Assistant, 'toolPreferences' | 'toolServerPreferences'>,
 >(
   assistant: T,
   knownServerNames: ReadonlySet<string>,
@@ -364,13 +297,6 @@ export const pruneOrphanedAssistantToolPreferences = <
     if (changed) nextPrefs = filtered
   }
 
-  const names = assistant.enabledToolNames
-  let nextNames = names
-  if (Array.isArray(names)) {
-    const filtered = names.filter(isKnown)
-    if (filtered.length !== names.length) nextNames = filtered
-  }
-
   const serverPrefs = assistant.toolServerPreferences
   let nextServerPrefs = serverPrefs
   if (serverPrefs && typeof serverPrefs === 'object') {
@@ -384,33 +310,25 @@ export const pruneOrphanedAssistantToolPreferences = <
     }
   }
 
-  if (
-    nextPrefs === prefs &&
-    nextNames === names &&
-    nextServerPrefs === serverPrefs
-  ) {
+  if (nextPrefs === prefs && nextServerPrefs === serverPrefs) {
     return assistant
   }
   return {
     ...assistant,
     toolPreferences: nextPrefs,
-    enabledToolNames: nextNames,
     toolServerPreferences: nextServerPrefs,
   }
 }
 
 /**
- * Rewrite every `toolPreferences` / `enabledToolNames` entry whose serverName
- * equals `oldServerName` so its FQN uses `newServerName` instead. Used when
+ * Rewrite every tool preference whose serverName equals `oldServerName` so
+ * its FQN uses `newServerName` instead. Used when
  * the user renames an MCP server in the edit modal — without this, the rename
  * would orphan all per-tool preferences for that server and the next
  * `pruneOrphanedAssistantToolPreferences` would silently drop them.
  */
 export const renameAssistantToolPreferencesServer = <
-  T extends Pick<
-    Assistant,
-    'toolPreferences' | 'enabledToolNames' | 'toolServerPreferences'
-  >,
+  T extends Pick<Assistant, 'toolPreferences' | 'toolServerPreferences'>,
 >(
   assistant: T,
   oldServerName: string,
@@ -441,25 +359,6 @@ export const renameAssistantToolPreferencesServer = <
     if (changed) nextPrefs = rebuilt
   }
 
-  const names = assistant.enabledToolNames
-  let nextNames = names
-  if (Array.isArray(names)) {
-    let changed = false
-    const seen = new Set<string>()
-    const rebuilt: string[] = []
-    for (const name of names) {
-      const nextName = rewrite(name)
-      if (nextName !== name) changed = true
-      if (seen.has(nextName)) {
-        changed = true
-        continue
-      }
-      seen.add(nextName)
-      rebuilt.push(nextName)
-    }
-    if (changed) nextNames = rebuilt
-  }
-
   const serverPrefs = assistant.toolServerPreferences
   let nextServerPrefs = serverPrefs
   if (serverPrefs && typeof serverPrefs === 'object') {
@@ -473,26 +372,18 @@ export const renameAssistantToolPreferencesServer = <
     }
   }
 
-  if (
-    nextPrefs === prefs &&
-    nextNames === names &&
-    nextServerPrefs === serverPrefs
-  ) {
+  if (nextPrefs === prefs && nextServerPrefs === serverPrefs) {
     return assistant
   }
   return {
     ...assistant,
     toolPreferences: nextPrefs,
-    enabledToolNames: nextNames,
     toolServerPreferences: nextServerPrefs,
   }
 }
 
 export const isAssistantToolEnabled = (
-  assistant:
-    | Pick<Assistant, 'toolPreferences' | 'enabledToolNames'>
-    | null
-    | undefined,
+  assistant: Pick<Assistant, 'toolPreferences'> | null | undefined,
   toolName: string,
 ): boolean => {
   const toolPreferences = getAssistantToolPreferences(assistant)
@@ -501,10 +392,7 @@ export const isAssistantToolEnabled = (
 
 export const getAssistantToolApprovalMode = (
   assistant:
-    | Pick<
-        Assistant,
-        'toolPreferences' | 'enabledToolNames' | 'toolServerPreferences'
-      >
+    | Pick<Assistant, 'toolPreferences' | 'toolServerPreferences'>
     | null
     | undefined,
   toolName: string,
@@ -518,7 +406,7 @@ export const getAssistantToolApprovalMode = (
       )
     }
   } catch {
-    // Fall through to legacy per-tool/default handling.
+    // Fall through to per-tool/default handling.
   }
 
   const toolPreferences = getAssistantToolPreferences(assistant)
@@ -529,10 +417,7 @@ export const getAssistantToolApprovalMode = (
 }
 
 export const getAssistantToolDisclosureMode = (
-  assistant:
-    | Pick<Assistant, 'toolPreferences' | 'enabledToolNames'>
-    | null
-    | undefined,
+  assistant: Pick<Assistant, 'toolPreferences'> | null | undefined,
   toolName: string,
   options?: {
     enableToolDisclosure?: boolean

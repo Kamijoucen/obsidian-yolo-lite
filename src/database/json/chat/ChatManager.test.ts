@@ -127,23 +127,6 @@ describe('ChatManager', () => {
         expect(metadata.schemaVersion).toBe(chat.schemaVersion)
       }
     })
-
-    test('should parse legacy filename format', () => {
-      const title = 'Legacy Chat Title'
-      const encodedTitle = encodeURIComponent(title)
-      const updatedAt = 1620000000000
-      const id = '123e4567-e89b-12d3-a456-426614174000'
-      const legacyFileName = `v${CHAT_SCHEMA_VERSION}_${encodedTitle}_${updatedAt}_${id}.json`
-
-      const metadata = chatManager.parseFileNameForTest(legacyFileName)
-      expect(metadata).not.toBeNull()
-      if (metadata) {
-        expect(metadata.id).toBe(id)
-        expect(metadata.title).toBe(title)
-        expect(metadata.updatedAt).toBe(updatedAt)
-        expect(metadata.schemaVersion).toBe(CHAT_SCHEMA_VERSION)
-      }
-    })
   })
 
   describe('listChats reconciliation', () => {

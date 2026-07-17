@@ -14,22 +14,16 @@ import { CHAT_VIEW_TYPE } from './constants'
 import { AppProvider } from './contexts/app-context'
 import { ChatViewProvider } from './contexts/chat-view-context'
 import { DarkModeProvider } from './contexts/dark-mode-context'
-import { DatabaseProvider } from './contexts/database-context'
 import { DialogContainerProvider } from './contexts/dialog-container-context'
 import { LanguageProvider } from './contexts/language-context'
 import { McpProvider } from './contexts/mcp-context'
 import { PluginProvider } from './contexts/plugin-context'
-import { RAGProvider } from './contexts/rag-context'
 import { SettingsProvider } from './contexts/settings-context'
 import type { PendingChatOpenPayload } from './features/chat/chatLeafSessionManager'
 import { getConversationDisplayTitle } from './hooks/useChatHistory'
 import YoloPlugin from './main'
 import { ConversationOverrideSettings } from './types/conversation-settings.types'
-import {
-  MentionableBlockData,
-  MentionableImage,
-  MentionableWebSelection,
-} from './types/mentionable'
+import { MentionableImage } from './types/mentionable'
 import { YOLO_ICON_ID } from './yoloIcon'
 
 export class ChatView extends ItemView {
@@ -166,8 +160,6 @@ export class ChatView extends ItemView {
       this.scheduleRebuildCheck()
     })
     this.hostObserver.observe(this.containerEl, { childList: true })
-
-    this.plugin.refreshInstallationIncompleteBanner()
   }
 
   onClose(): Promise<void> {
@@ -267,51 +259,43 @@ export class ChatView extends ItemView {
                 }
               >
                 <DarkModeProvider>
-                  <DatabaseProvider
-                    getDatabaseManager={() => this.plugin.getDbManager()}
+                  <McpProvider
+                    getMcpManager={() => this.plugin.getMcpManager()}
                   >
-                    <RAGProvider
-                      getRAGEngine={() => this.plugin.getRAGEngine()}
-                    >
-                      <McpProvider
-                        getMcpManager={() => this.plugin.getMcpManager()}
-                      >
-                        <QueryClientProvider client={queryClient}>
-                          <React.StrictMode>
-                            <DialogContainerProvider
-                              container={
-                                this.containerEl.children[1] as HTMLElement
-                              }
-                            >
-                              <ChatSidebarTabs
-                                chatRef={this.chatRef}
-                                placement={placement}
-                                initialChatProps={{
-                                  ...(this.initialChatProps ?? {}),
-                                  seededRuntimeSnapshot,
-                                }}
-                                onConversationContextChange={(context) => {
-                                  const manager =
-                                    this.plugin.getChatLeafSessionManager()
-                                  manager.updateLeafSummary(this.leaf, context)
-                                  this.updateRestoredConversationFromContext(
-                                    context,
-                                  )
-                                  this.updateDisplayTitle(
-                                    context.currentConversationTitle,
-                                  )
-                                  void this.persistLeafViewState(context)
-                                }}
-                                onRuntimeSnapshotChange={(snapshot) => {
-                                  this.runtimeSnapshot = snapshot
-                                }}
-                              />
-                            </DialogContainerProvider>
-                          </React.StrictMode>
-                        </QueryClientProvider>
-                      </McpProvider>
-                    </RAGProvider>
-                  </DatabaseProvider>
+                    <QueryClientProvider client={queryClient}>
+                      <React.StrictMode>
+                        <DialogContainerProvider
+                          container={
+                            this.containerEl.children[1] as HTMLElement
+                          }
+                        >
+                          <ChatSidebarTabs
+                            chatRef={this.chatRef}
+                            placement={placement}
+                            initialChatProps={{
+                              ...(this.initialChatProps ?? {}),
+                              seededRuntimeSnapshot,
+                            }}
+                            onConversationContextChange={(context) => {
+                              const manager =
+                                this.plugin.getChatLeafSessionManager()
+                              manager.updateLeafSummary(this.leaf, context)
+                              this.updateRestoredConversationFromContext(
+                                context,
+                              )
+                              this.updateDisplayTitle(
+                                context.currentConversationTitle,
+                              )
+                              void this.persistLeafViewState(context)
+                            }}
+                            onRuntimeSnapshotChange={(snapshot) => {
+                              this.runtimeSnapshot = snapshot
+                            }}
+                          />
+                        </DialogContainerProvider>
+                      </React.StrictMode>
+                    </QueryClientProvider>
+                  </McpProvider>
                 </DarkModeProvider>
               </SettingsProvider>
             </AppProvider>
@@ -322,59 +306,14 @@ export class ChatView extends ItemView {
     return Promise.resolve()
   }
 
-  openNewChat(selectedBlock?: MentionableBlockData) {
+  openNewChat() {
     this.plugin.getChatLeafSessionManager().touchLeafInteracted(this.leaf)
-    this.chatRef.current?.openNewChat(selectedBlock)
+    this.chatRef.current?.openNewChat()
   }
 
   async loadConversation(conversationId: string) {
     this.plugin.getChatLeafSessionManager().touchLeafInteracted(this.leaf)
     await this.chatRef.current?.loadConversation(conversationId)
-  }
-
-  addSelectionToChat(selectedBlock: MentionableBlockData) {
-    this.plugin.getChatLeafSessionManager().touchLeafInteracted(this.leaf)
-    this.chatRef.current?.addSelectionToChat(selectedBlock)
-  }
-
-  addSelectionToInput(selectedBlock: MentionableBlockData) {
-    this.plugin.getChatLeafSessionManager().touchLeafInteracted(this.leaf)
-    this.chatRef.current?.addSelectionToInput(selectedBlock)
-  }
-
-  applySelectionToMainInput(
-    selectedBlock: MentionableBlockData,
-    text: string,
-    options?: {
-      submit?: boolean
-      assistantId?: string
-    },
-  ) {
-    this.plugin.getChatLeafSessionManager().touchLeafInteracted(this.leaf)
-    this.chatRef.current?.applySelectionToMainInput(
-      selectedBlock,
-      text,
-      options,
-    )
-  }
-
-  syncSelectionToChat(selectedBlock: MentionableBlockData) {
-    this.plugin.getChatLeafSessionManager().touchLeafInteracted(this.leaf)
-    this.chatRef.current?.syncSelectionToChat(selectedBlock)
-  }
-
-  syncSelectionToInput(selectedBlock: MentionableBlockData) {
-    this.plugin.getChatLeafSessionManager().touchLeafInteracted(this.leaf)
-    this.chatRef.current?.syncSelectionToInput(selectedBlock)
-  }
-
-  syncWebSelectionToInput(selection: MentionableWebSelection) {
-    this.plugin.getChatLeafSessionManager().touchLeafInteracted(this.leaf)
-    this.chatRef.current?.syncWebSelectionToInput(selection)
-  }
-
-  clearSelectionFromChat() {
-    this.chatRef.current?.clearSelectionFromChat()
   }
 
   addFileToChat(file: TFile) {
@@ -436,12 +375,11 @@ export class ChatView extends ItemView {
     const initialConversationId =
       payload?.initialConversationId ?? this.restoredConversationId
 
-    if (!payload?.selectedBlock && !initialConversationId) {
+    if (!initialConversationId) {
       return undefined
     }
 
     return {
-      selectedBlock: payload?.selectedBlock,
       initialConversationId,
     }
   }
@@ -606,18 +544,6 @@ export class ChatView extends ItemView {
 
     if (payload.imageToAdd) {
       chatRef.addImageToChat(payload.imageToAdd)
-    }
-
-    if (payload.prefillText !== undefined && payload.selectedBlock) {
-      chatRef.applySelectionToMainInput(
-        payload.selectedBlock,
-        payload.prefillText,
-        {
-          submit: payload.autoSend,
-          assistantId: payload.assistantId,
-        },
-      )
-      return
     }
 
     if (payload.prefillText !== undefined) {

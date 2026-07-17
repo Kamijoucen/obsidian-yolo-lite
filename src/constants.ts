@@ -1,5 +1,4 @@
 import { ChatModel } from './types/chat-model.types'
-import { EmbeddingModel } from './types/embedding-model.types'
 import {
   LLMProvider,
   LLMProviderApiType,
@@ -13,22 +12,14 @@ export const LEARNING_VIEW_TYPE = 'yolo-learning-view'
 
 // Empty-string sentinel; display layer localizes via getConversationDisplayTitle.
 export const DEFAULT_UNTITLED_CONVERSATION_TITLE = ''
-// Historical defaults persisted in user data — kept so auto-naming still overwrites them.
-export const LEGACY_UNTITLED_CONVERSATION_TITLES = ['新消息', '新对话'] as const
 
 // Default model ids (with provider prefix)
 export const DEFAULT_CHAT_MODEL_ID = 'openai/gpt-5'
 export const DEFAULT_CHAT_TITLE_MODEL_ID = 'openai/gpt-4.1-mini'
 
 // Recommended model ids (with provider prefix)
-export const RECOMMENDED_MODELS_FOR_CHAT = [
-  'anthropic/claude-sonnet-4.0',
-  'openai/gpt-4.1',
-]
+export const RECOMMENDED_MODELS_FOR_CHAT = ['openai/gpt-4.1']
 export const RECOMMENDED_MODELS_FOR_CHAT_TITLE = ['openai/gpt-4.1-mini']
-export const RECOMMENDED_MODELS_FOR_EMBEDDING = [
-  'openai/text-embedding-3-small',
-]
 
 export const DEFAULT_CHAT_TITLE_PROMPT = {
   en: 'You are a title generator. Generate a concise conversation title based on the first user message. Output the title only.',
@@ -64,22 +55,12 @@ export const RESPONSE_STREAMING_MODE_SETTING = {
     'Control whether this provider uses streaming or non-streaming responses.',
 }
 
-// Surfaced dynamically when a provider's apiType is 'anthropic'
-// (native Anthropic or Anthropic-compatible endpoints like Moonshot/Kimi).
-export const PROMPT_CACHING_SETTING = {
-  label: 'Prompt caching',
-  key: 'promptCaching',
-  type: 'toggle' as const,
-  required: false,
-}
-
 export const PROVIDER_PRESET_INFO = {
   openai: {
     label: 'OpenAI',
     defaultProviderId: 'openai',
     requireApiKey: true,
     requireBaseUrl: false,
-    supportEmbedding: true,
     additionalSettings: [
       REQUEST_TRANSPORT_MODE_SETTING,
       RESPONSE_STREAMING_MODE_SETTING,
@@ -90,93 +71,6 @@ export const PROVIDER_PRESET_INFO = {
     defaultProviderId: 'chatgpt-oauth',
     requireApiKey: false,
     requireBaseUrl: false,
-    supportEmbedding: false,
-    additionalSettings: [
-      REQUEST_TRANSPORT_MODE_SETTING,
-      RESPONSE_STREAMING_MODE_SETTING,
-    ],
-  },
-  'gemini-oauth': {
-    label: 'Gemini OAuth',
-    defaultProviderId: 'gemini-oauth',
-    requireApiKey: false,
-    requireBaseUrl: false,
-    supportEmbedding: false,
-    additionalSettings: [
-      {
-        label: 'Google Cloud Project ID',
-        key: 'projectId',
-        placeholder: 'my-gcp-project-id',
-        type: 'text',
-        required: false,
-        description:
-          'Optional. Some Gemini plans require a Google Cloud project ID to access paid quotas.',
-      },
-      REQUEST_TRANSPORT_MODE_SETTING,
-      RESPONSE_STREAMING_MODE_SETTING,
-    ],
-  },
-  anthropic: {
-    label: 'Anthropic',
-    defaultProviderId: 'anthropic',
-    requireApiKey: true,
-    requireBaseUrl: false,
-    supportEmbedding: false,
-    additionalSettings: [
-      REQUEST_TRANSPORT_MODE_SETTING,
-      RESPONSE_STREAMING_MODE_SETTING,
-    ],
-  },
-  gemini: {
-    label: 'Gemini',
-    defaultProviderId: 'gemini',
-    requireApiKey: true,
-    requireBaseUrl: false,
-    supportEmbedding: true,
-    additionalSettings: [
-      REQUEST_TRANSPORT_MODE_SETTING,
-      RESPONSE_STREAMING_MODE_SETTING,
-    ],
-  },
-  groq: {
-    label: 'Groq',
-    defaultProviderId: 'groq',
-    requireApiKey: true,
-    requireBaseUrl: false,
-    supportEmbedding: false,
-    additionalSettings: [
-      REQUEST_TRANSPORT_MODE_SETTING,
-      RESPONSE_STREAMING_MODE_SETTING,
-    ],
-  },
-  openrouter: {
-    label: 'OpenRouter',
-    defaultProviderId: 'openrouter',
-    requireApiKey: true,
-    requireBaseUrl: false,
-    supportEmbedding: true,
-    additionalSettings: [
-      REQUEST_TRANSPORT_MODE_SETTING,
-      RESPONSE_STREAMING_MODE_SETTING,
-    ],
-  },
-  ollama: {
-    label: 'Ollama',
-    defaultProviderId: 'ollama',
-    requireApiKey: false,
-    requireBaseUrl: false,
-    supportEmbedding: true,
-    additionalSettings: [
-      REQUEST_TRANSPORT_MODE_SETTING,
-      RESPONSE_STREAMING_MODE_SETTING,
-    ],
-  },
-  'lm-studio': {
-    label: 'LM Studio',
-    defaultProviderId: 'lm-studio',
-    requireApiKey: false,
-    requireBaseUrl: false,
-    supportEmbedding: true,
     additionalSettings: [
       REQUEST_TRANSPORT_MODE_SETTING,
       RESPONSE_STREAMING_MODE_SETTING,
@@ -187,7 +81,6 @@ export const PROVIDER_PRESET_INFO = {
     defaultProviderId: 'deepseek',
     requireApiKey: true,
     requireBaseUrl: false,
-    supportEmbedding: false,
     additionalSettings: [
       REQUEST_TRANSPORT_MODE_SETTING,
       RESPONSE_STREAMING_MODE_SETTING,
@@ -198,84 +91,7 @@ export const PROVIDER_PRESET_INFO = {
     defaultProviderId: null,
     requireApiKey: true,
     requireBaseUrl: false,
-    supportEmbedding: false,
     additionalSettings: [
-      REQUEST_TRANSPORT_MODE_SETTING,
-      RESPONSE_STREAMING_MODE_SETTING,
-    ],
-  },
-  perplexity: {
-    label: 'Perplexity',
-    defaultProviderId: 'perplexity',
-    requireApiKey: true,
-    requireBaseUrl: false,
-    supportEmbedding: false,
-    additionalSettings: [
-      REQUEST_TRANSPORT_MODE_SETTING,
-      RESPONSE_STREAMING_MODE_SETTING,
-    ],
-  },
-  mistral: {
-    label: 'Mistral',
-    defaultProviderId: 'mistral',
-    requireApiKey: true,
-    requireBaseUrl: false,
-    supportEmbedding: false,
-    additionalSettings: [
-      REQUEST_TRANSPORT_MODE_SETTING,
-      RESPONSE_STREAMING_MODE_SETTING,
-    ],
-  },
-  morph: {
-    label: 'Morph',
-    defaultProviderId: 'morph',
-    requireApiKey: true,
-    requireBaseUrl: false,
-    supportEmbedding: false,
-    additionalSettings: [
-      REQUEST_TRANSPORT_MODE_SETTING,
-      RESPONSE_STREAMING_MODE_SETTING,
-    ],
-  },
-  'azure-openai': {
-    label: 'Azure OpenAI',
-    defaultProviderId: null, // no default provider for this type
-    requireApiKey: true,
-    requireBaseUrl: true,
-    supportEmbedding: false,
-    additionalSettings: [
-      {
-        label: 'Deployment',
-        key: 'deployment',
-        placeholder: 'Enter your deployment name',
-        type: 'text',
-        required: true,
-      },
-      {
-        label: 'API Version',
-        key: 'apiVersion',
-        placeholder: 'Enter your API version',
-        type: 'text',
-        required: true,
-      },
-      REQUEST_TRANSPORT_MODE_SETTING,
-      RESPONSE_STREAMING_MODE_SETTING,
-    ],
-  },
-  'amazon-bedrock': {
-    label: 'Amazon Bedrock',
-    defaultProviderId: null, // no default provider for this type
-    requireApiKey: true,
-    requireBaseUrl: false,
-    supportEmbedding: true,
-    additionalSettings: [
-      {
-        label: 'AWS Region',
-        key: 'awsRegion',
-        placeholder: 'us-east-1',
-        type: 'text',
-        required: true,
-      },
       REQUEST_TRANSPORT_MODE_SETTING,
       RESPONSE_STREAMING_MODE_SETTING,
     ],
@@ -285,7 +101,6 @@ export const PROVIDER_PRESET_INFO = {
     defaultProviderId: null,
     requireApiKey: true,
     requireBaseUrl: false,
-    supportEmbedding: true,
     additionalSettings: [
       REQUEST_TRANSPORT_MODE_SETTING,
       RESPONSE_STREAMING_MODE_SETTING,
@@ -296,7 +111,6 @@ export const PROVIDER_PRESET_INFO = {
     defaultProviderId: null,
     requireApiKey: true,
     requireBaseUrl: false,
-    supportEmbedding: true,
     additionalSettings: [
       REQUEST_TRANSPORT_MODE_SETTING,
       RESPONSE_STREAMING_MODE_SETTING,
@@ -307,7 +121,6 @@ export const PROVIDER_PRESET_INFO = {
     defaultProviderId: null,
     requireApiKey: true,
     requireBaseUrl: false,
-    supportEmbedding: true,
     additionalSettings: [
       REQUEST_TRANSPORT_MODE_SETTING,
       RESPONSE_STREAMING_MODE_SETTING,
@@ -318,7 +131,6 @@ export const PROVIDER_PRESET_INFO = {
     defaultProviderId: null,
     requireApiKey: true,
     requireBaseUrl: false,
-    supportEmbedding: false,
     additionalSettings: [
       REQUEST_TRANSPORT_MODE_SETTING,
       RESPONSE_STREAMING_MODE_SETTING,
@@ -329,7 +141,6 @@ export const PROVIDER_PRESET_INFO = {
     defaultProviderId: null,
     requireApiKey: true,
     requireBaseUrl: false,
-    supportEmbedding: true,
     additionalSettings: [
       REQUEST_TRANSPORT_MODE_SETTING,
       RESPONSE_STREAMING_MODE_SETTING,
@@ -340,51 +151,6 @@ export const PROVIDER_PRESET_INFO = {
     defaultProviderId: null,
     requireApiKey: true,
     requireBaseUrl: false,
-    supportEmbedding: false,
-    additionalSettings: [
-      REQUEST_TRANSPORT_MODE_SETTING,
-      RESPONSE_STREAMING_MODE_SETTING,
-    ],
-  },
-  xai: {
-    label: 'xAI',
-    defaultProviderId: null,
-    requireApiKey: true,
-    requireBaseUrl: false,
-    supportEmbedding: false,
-    additionalSettings: [
-      REQUEST_TRANSPORT_MODE_SETTING,
-      RESPONSE_STREAMING_MODE_SETTING,
-    ],
-  },
-  'together-ai': {
-    label: 'Together AI',
-    defaultProviderId: null,
-    requireApiKey: true,
-    requireBaseUrl: false,
-    supportEmbedding: true,
-    additionalSettings: [
-      REQUEST_TRANSPORT_MODE_SETTING,
-      RESPONSE_STREAMING_MODE_SETTING,
-    ],
-  },
-  cerebras: {
-    label: 'Cerebras',
-    defaultProviderId: null,
-    requireApiKey: true,
-    requireBaseUrl: false,
-    supportEmbedding: false,
-    additionalSettings: [
-      REQUEST_TRANSPORT_MODE_SETTING,
-      RESPONSE_STREAMING_MODE_SETTING,
-    ],
-  },
-  sambanova: {
-    label: 'SambaNova',
-    defaultProviderId: null,
-    requireApiKey: true,
-    requireBaseUrl: false,
-    supportEmbedding: false,
     additionalSettings: [
       REQUEST_TRANSPORT_MODE_SETTING,
       RESPONSE_STREAMING_MODE_SETTING,
@@ -395,7 +161,6 @@ export const PROVIDER_PRESET_INFO = {
     defaultProviderId: 'xiaomimimo',
     requireApiKey: true,
     requireBaseUrl: false,
-    supportEmbedding: false,
     additionalSettings: [
       REQUEST_TRANSPORT_MODE_SETTING,
       RESPONSE_STREAMING_MODE_SETTING,
@@ -406,7 +171,6 @@ export const PROVIDER_PRESET_INFO = {
     defaultProviderId: null, // no default provider for this type
     requireApiKey: false,
     requireBaseUrl: true,
-    supportEmbedding: true,
     additionalSettings: [
       {
         label: 'No Stainless headers',
@@ -427,7 +191,6 @@ export const PROVIDER_PRESET_INFO = {
     defaultProviderId: string | null
     requireApiKey: boolean
     requireBaseUrl: boolean
-    supportEmbedding: boolean
     additionalSettings: {
       label: string
       key: string
@@ -452,15 +215,6 @@ export const PROVIDER_API_INFO: Record<
   'openai-responses': {
     label: 'OpenAI Responses',
   },
-  anthropic: {
-    label: 'Anthropic API',
-  },
-  gemini: {
-    label: 'Gemini API',
-  },
-  'amazon-bedrock': {
-    label: 'Amazon Bedrock Converse',
-  },
 }
 
 export const PROVIDER_TYPES_INFO = PROVIDER_PRESET_INFO
@@ -473,7 +227,7 @@ const getDefaultProviderAdditionalSettings = (
 
 /**
  * Important
- * 1. When adding new default provider, settings migration should be added
+ * 1. Update the settings schema when adding a default provider.
  * 2. If there's same provider id in user's settings, it's data should be overwritten by default provider
  */
 export const DEFAULT_PROVIDERS: readonly LLMProvider[] = [
@@ -489,30 +243,9 @@ export const DEFAULT_PROVIDERS: readonly LLMProvider[] = [
     additionalSettings: getDefaultProviderAdditionalSettings('chatgpt-oauth'),
   },
   {
-    presetType: 'gemini-oauth',
-    apiType: getDefaultApiTypeForPresetType('gemini-oauth'),
-    id: PROVIDER_PRESET_INFO['gemini-oauth'].defaultProviderId,
-    additionalSettings: getDefaultProviderAdditionalSettings('gemini-oauth'),
-  },
-  {
-    presetType: 'anthropic',
-    apiType: getDefaultApiTypeForPresetType('anthropic'),
-    id: PROVIDER_PRESET_INFO.anthropic.defaultProviderId,
-  },
-  {
-    presetType: 'gemini',
-    apiType: getDefaultApiTypeForPresetType('gemini'),
-    id: PROVIDER_PRESET_INFO.gemini.defaultProviderId,
-  },
-  {
     presetType: 'deepseek',
     apiType: getDefaultApiTypeForPresetType('deepseek'),
     id: PROVIDER_PRESET_INFO.deepseek.defaultProviderId,
-  },
-  {
-    presetType: 'openrouter',
-    apiType: getDefaultApiTypeForPresetType('openrouter'),
-    id: PROVIDER_PRESET_INFO.openrouter.defaultProviderId,
   },
   {
     presetType: 'xiaomimimo',
@@ -523,43 +256,10 @@ export const DEFAULT_PROVIDERS: readonly LLMProvider[] = [
 
 /**
  * Important
- * 1. When adding new default model, settings migration should be added
+ * 1. Update the settings schema when adding a default model.
  * 2. If there's same model id in user's settings, it's data should be overwritten by default model
  */
 export const DEFAULT_CHAT_MODELS: readonly ChatModel[] = [
-  {
-    providerId: PROVIDER_PRESET_INFO.anthropic.defaultProviderId,
-    id: 'anthropic/claude-sonnet-4.0',
-    model: 'claude-sonnet-4-0',
-    enable: false,
-    reasoningType: 'anthropic',
-  },
-  {
-    providerId: PROVIDER_PRESET_INFO.anthropic.defaultProviderId,
-    id: 'anthropic/claude-opus-4.1',
-    model: 'claude-opus-4-1',
-    enable: false,
-    reasoningType: 'anthropic',
-  },
-  {
-    providerId: PROVIDER_PRESET_INFO.anthropic.defaultProviderId,
-    id: 'anthropic/claude-3.7-sonnet',
-    model: 'claude-3-7-sonnet-latest',
-    enable: false,
-    reasoningType: 'anthropic',
-  },
-  {
-    providerId: PROVIDER_PRESET_INFO.anthropic.defaultProviderId,
-    id: 'anthropic/claude-3.5-sonnet',
-    model: 'claude-3-5-sonnet-latest',
-    enable: false,
-  },
-  {
-    providerId: PROVIDER_PRESET_INFO.anthropic.defaultProviderId,
-    id: 'anthropic/claude-3.5-haiku',
-    model: 'claude-3-5-haiku-latest',
-    enable: false,
-  },
   {
     providerId: PROVIDER_PRESET_INFO.openai.defaultProviderId,
     id: 'openai/gpt-5',
@@ -581,30 +281,6 @@ export const DEFAULT_CHAT_MODELS: readonly ChatModel[] = [
     name: 'GPT-5.4',
     enable: false,
     reasoningType: 'openai',
-  },
-  {
-    providerId: PROVIDER_PRESET_INFO['gemini-oauth'].defaultProviderId,
-    id: 'gemini-oauth/gemini-2.5-pro',
-    model: 'gemini-2.5-pro',
-    enable: false,
-    reasoningType: 'gemini',
-    builtinToolProvider: 'gemini',
-  },
-  {
-    providerId: PROVIDER_PRESET_INFO['gemini-oauth'].defaultProviderId,
-    id: 'gemini-oauth/gemini-2.5-flash',
-    model: 'gemini-2.5-flash',
-    enable: false,
-    reasoningType: 'gemini',
-    builtinToolProvider: 'gemini',
-  },
-  {
-    providerId: PROVIDER_PRESET_INFO['gemini-oauth'].defaultProviderId,
-    id: 'gemini-oauth/gemini-2.5-flash-lite',
-    model: 'gemini-2.5-flash-lite',
-    enable: false,
-    reasoningType: 'gemini',
-    builtinToolProvider: 'gemini',
   },
   {
     providerId: PROVIDER_PRESET_INFO.openai.defaultProviderId,
@@ -663,41 +339,6 @@ export const DEFAULT_CHAT_MODELS: readonly ChatModel[] = [
     reasoningType: 'openai',
   },
   {
-    providerId: PROVIDER_PRESET_INFO.gemini.defaultProviderId,
-    id: 'gemini/gemini-2.5-pro',
-    model: 'gemini-2.5-pro',
-    enable: false,
-    reasoningType: 'gemini',
-  },
-  {
-    providerId: PROVIDER_PRESET_INFO.gemini.defaultProviderId,
-    id: 'gemini/gemini-2.5-flash',
-    model: 'gemini-2.5-flash',
-    enable: false,
-    reasoningType: 'gemini',
-  },
-  {
-    providerId: PROVIDER_PRESET_INFO.gemini.defaultProviderId,
-    id: 'gemini/gemini-2.5-flash-lite',
-    model: 'gemini-2.5-flash-lite',
-    enable: false,
-    reasoningType: 'gemini',
-  },
-  {
-    providerId: PROVIDER_PRESET_INFO.gemini.defaultProviderId,
-    id: 'gemini/gemini-2.0-flash',
-    model: 'gemini-2.0-flash',
-    enable: false,
-    reasoningType: 'gemini',
-  },
-  {
-    providerId: PROVIDER_PRESET_INFO.gemini.defaultProviderId,
-    id: 'gemini/gemini-2.0-flash-lite',
-    model: 'gemini-2.0-flash-lite',
-    enable: false,
-    reasoningType: 'gemini',
-  },
-  {
     providerId: PROVIDER_PRESET_INFO.deepseek.defaultProviderId,
     id: 'deepseek/deepseek-v4-flash',
     model: 'deepseek-v4-flash',
@@ -748,32 +389,6 @@ export const DEFAULT_CHAT_MODELS: readonly ChatModel[] = [
   },
 ]
 
-/**
- * Important
- * 1. When adding new default embedding model, settings migration should be added
- * 2. If there's same embedding model id in user's settings, it's data should be overwritten by default embedding model
- */
-export const DEFAULT_EMBEDDING_MODELS: readonly EmbeddingModel[] = [
-  {
-    providerId: PROVIDER_PRESET_INFO.openai.defaultProviderId,
-    id: 'openai/text-embedding-3-small',
-    model: 'text-embedding-3-small',
-    dimension: 1536,
-  },
-  {
-    providerId: PROVIDER_PRESET_INFO.openai.defaultProviderId,
-    id: 'openai/text-embedding-3-large',
-    model: 'text-embedding-3-large',
-    dimension: 3072,
-  },
-  {
-    providerId: PROVIDER_PRESET_INFO.gemini.defaultProviderId,
-    id: 'gemini/text-embedding-004',
-    model: 'text-embedding-004',
-    dimension: 768,
-  },
-]
-
 // Pricing in dollars per million tokens
 type ModelPricing = {
   input: number
@@ -795,15 +410,3 @@ export const OPENAI_PRICES: Record<string, ModelPricing> = {
   'o3-mini': { input: 1.1, output: 4.4 },
   'o1-mini': { input: 1.1, output: 4.4 },
 }
-
-export const ANTHROPIC_PRICES: Record<string, ModelPricing> = {
-  'claude-opus-4-1': { input: 15, output: 75 },
-  'claude-opus-4-0': { input: 15, output: 75 },
-  'claude-sonnet-4-0': { input: 3, output: 15 },
-  'claude-3-5-sonnet-latest': { input: 3, output: 15 },
-  'claude-3-7-sonnet-latest': { input: 3, output: 15 },
-  'claude-3-5-haiku-latest': { input: 1, output: 5 },
-}
-
-// Gemini is currently free for low rate limits
-export const GEMINI_PRICES: Record<string, ModelPricing> = {}

@@ -28,7 +28,6 @@ import {
 
 import { useApp } from '../../../contexts/app-context'
 import { useLanguage } from '../../../contexts/language-context'
-import { useSettings } from '../../../contexts/settings-context'
 import { LiteSkillEntry } from '../../../core/skills/liteSkills'
 import { SnippetEntry } from '../../../core/snippets/snippetsManager'
 import { Assistant } from '../../../types/assistant.types'
@@ -38,7 +37,6 @@ import {
   Mentionable,
   MentionableImage,
   MentionableOffice,
-  MentionablePDF,
   MentionableTextAttachment,
   SerializedMentionable,
 } from '../../../types/mentionable'
@@ -51,7 +49,6 @@ import {
 import { fileToMentionableImage } from '../../../utils/llm/image'
 import { chatModelSupportsVision } from '../../../utils/llm/model-modalities'
 import { fileToMentionableOffice } from '../../../utils/llm/office'
-import { fileToMentionablePDF } from '../../../utils/llm/pdf'
 import { fileToMentionableTextAttachment } from '../../../utils/llm/text-attachment'
 
 import { ChatMode } from './ChatModeSelect'
@@ -132,7 +129,6 @@ const INLINE_MENTIONABLE_TYPES = [
   'folder',
   'block',
   'assistant-quote',
-  'web-selection',
   'model',
   'image',
 ]
@@ -186,7 +182,6 @@ const MessageInputCore = forwardRef<MessageInputCoreRef, MessageInputCoreProps>(
   ) => {
     const app = useApp()
     const { t } = useLanguage()
-    const { settings } = useSettings()
     const mentionableUnitLabels = useMemo(
       () => ({
         characters: t('common.characters', 'chars'),
@@ -324,56 +319,6 @@ const MessageInputCore = forwardRef<MessageInputCoreRef, MessageInputCoreProps>(
       [currentModel, mentionableUnitLabels, mentionables, setMentionables, t],
     )
 
-    const handleCreatePdfMentionables = useCallback(
-      (mentionablePdfs: MentionablePDF[]) => {
-        const newMentionablePdfs = mentionablePdfs.filter(
-          (m) =>
-            !mentionables.some(
-              (mentionable) =>
-                getMentionableKey(serializeMentionable(mentionable)) ===
-                getMentionableKey(serializeMentionable(m)),
-            ),
-        )
-        if (newMentionablePdfs.length === 0) return
-        const editor = editorRef.current
-        if (editor) {
-          editor.update(() => {
-            const nodesToInsert: LexicalNode[] = []
-            newMentionablePdfs.forEach((mentionable) => {
-              nodesToInsert.push(
-                $createMentionNode(
-                  getMentionableName(mentionable, {
-                    unitLabels: mentionableUnitLabels,
-                  }),
-                  serializeMentionable(mentionable),
-                ),
-              )
-              nodesToInsert.push($createTextNode(' '))
-            })
-            const selection = $getSelection()
-            if (selection && $isRangeSelection(selection)) {
-              selection.insertNodes(nodesToInsert)
-              return
-            }
-
-            const root = $getRoot()
-            let paragraphNode = root.getFirstChild()
-            if (!paragraphNode || !$isParagraphNode(paragraphNode)) {
-              const created = $createParagraphNode()
-              root.append(created)
-              paragraphNode = created
-            }
-            const paragraph = paragraphNode as ParagraphNode
-            nodesToInsert.forEach((node) => {
-              paragraph.append(node)
-            })
-          })
-        }
-        setMentionables([...mentionables, ...newMentionablePdfs])
-      },
-      [mentionableUnitLabels, mentionables, setMentionables],
-    )
-
     const handleCreateOfficeMentionables = useCallback(
       (mentionableOffices: MentionableOffice[]) => {
         const newMentionableOffices = mentionableOffices.filter(
@@ -480,7 +425,6 @@ const MessageInputCore = forwardRef<MessageInputCoreRef, MessageInputCoreProps>(
 
         const {
           imageFiles,
-          pdfFiles,
           officeFiles,
           textAttachmentFiles,
           unsupportedFiles,
@@ -513,39 +457,7 @@ const MessageInputCore = forwardRef<MessageInputCoreRef, MessageInputCoreProps>(
               )
             })
         }
-        if (pdfFiles.length > 0) {
-          void Promise.allSettled(
-            pdfFiles.map((file) =>
-              fileToMentionablePDF(app, file, { settings }),
-            ),
-          ).then((results) => {
-            const successes: MentionablePDF[] = []
-            results.forEach((result, idx) => {
-              if (result.status === 'fulfilled') {
-                successes.push(result.value)
-              } else {
-                const name = pdfFiles[idx]?.name ?? 'PDF'
-                console.error(`Failed to extract PDF ${name}`, result.reason)
-                new Notice(
-                  t(
-                    'chat.readPdfFailed',
-                    'Failed to read PDF "{name}": {error}',
-                  )
-                    .replace('{name}', name)
-                    .replace(
-                      '{error}',
-                      result.reason instanceof Error
-                        ? result.reason.message
-                        : 'unknown error',
-                    ),
-                )
-              }
-            })
-            if (successes.length > 0) {
-              handleCreatePdfMentionables(successes)
-            }
-          })
-        }
+
         if (officeFiles.length > 0) {
           void Promise.allSettled(
             officeFiles.map((file) => fileToMentionableOffice(file)),
@@ -618,13 +530,10 @@ const MessageInputCore = forwardRef<MessageInputCoreRef, MessageInputCoreProps>(
         }
       },
       [
-        app,
         enableAttachments,
         handleCreateImageMentionables,
         handleCreateOfficeMentionables,
-        handleCreatePdfMentionables,
         handleCreateTextAttachmentMentionables,
-        settings,
         t,
       ],
     )

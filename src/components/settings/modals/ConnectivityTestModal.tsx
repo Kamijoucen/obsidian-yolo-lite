@@ -10,15 +10,13 @@ import {
   X,
 } from 'lucide-react'
 import { App, Notice } from 'obsidian'
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo } from 'react'
 
 import { useLanguage } from '../../../contexts/language-context'
-import { usePlugin } from '../../../contexts/plugin-context'
 import {
   SettingsProvider,
   useSettings,
 } from '../../../contexts/settings-context'
-import { getEmbeddingModelClient } from '../../../core/rag/embedding'
 import {
   CellState,
   ConnectivityCounts,
@@ -26,7 +24,6 @@ import {
 } from '../../../hooks/useConnectivityTest'
 import YoloPlugin from '../../../main'
 import { ChatModel } from '../../../types/chat-model.types'
-import { EmbeddingModel } from '../../../types/embedding-model.types'
 import { LLMProvider } from '../../../types/provider.types'
 import { resolveProviderDisplayBaseUrl } from '../../../utils/llm/provider-base-url'
 import { ReactModal } from '../../common/ReactModal'
@@ -129,13 +126,7 @@ function MetricDetailTooltip({
   )
 }
 
-function MetricInline({
-  cell,
-  kind,
-}: {
-  cell: CellState
-  kind: 'chat' | 'embedding'
-}) {
+function MetricInline({ cell }: { cell: CellState }) {
   const { t } = useLanguage()
   // While testing, the status chip ("检测中") + button spinner already convey
   // progress, so the metric column stays empty to avoid a redundant label.
@@ -163,14 +154,6 @@ function MetricInline({
     )
   }
   // status === 'ok'
-  if (kind === 'embedding' && cell.dimension != null) {
-    return (
-      <span className="yolo-health-metric">
-        <b>{Math.round(cell.latencyMs ?? cell.totalMs)}ms</b> · {cell.dimension}{' '}
-        {t('settings.models.connectivityTest.dims', '维')}
-      </span>
-    )
-  }
   if (cell.firstTokenMs != null) {
     return (
       <span className="yolo-health-metric">
@@ -221,7 +204,6 @@ function SegBar({
 
 function ModelRow({
   model,
-  kind,
   cell,
   disabled,
   onTest,
@@ -229,8 +211,7 @@ function ModelRow({
   deleteDisabled,
   deleteDisabledReason,
 }: {
-  model: ChatModel | EmbeddingModel
-  kind: 'chat' | 'embedding'
+  model: ChatModel
   cell: CellState
   disabled: boolean
   onTest: (id: string) => void
@@ -255,7 +236,7 @@ function ModelRow({
         <div className="yolo-health-row-id">{model.model}</div>
       </div>
       <div className="yolo-health-row-metric">
-        <MetricInline cell={cell} kind={kind} />
+        <MetricInline cell={cell} />
       </div>
       <StatusChip status={status} />
       <div className="yolo-health-row-actions">
@@ -292,12 +273,8 @@ function ConnectivityTestPanel({
   provider,
 }: ConnectivityTestModalProps & { onClose: () => void }) {
   const { t } = useLanguage()
-  const plugin = usePlugin()
   const { settings, setSettings } = useSettings()
-  const { chatModelId, chatTitleModelId, embeddingModelId } = settings
-  const [deletingEmbeddingModelIds, setDeletingEmbeddingModelIds] = useState(
-    () => new Set<string>(),
-  )
+  const { chatModelId, chatTitleModelId } = settings
 
   const handleDeleteChatModel = useCallback(
     (modelId: string) => {
@@ -326,55 +303,6 @@ function ConnectivityTestPanel({
     [settings, setSettings],
   )
 
-  const handleDeleteEmbeddingModel = useCallback(
-    (modelId: string) => {
-      if (modelId === settings.embeddingModelId) {
-        new Notice(
-          'Cannot remove model that is currently selected as embedding model',
-        )
-        return
-      }
-
-      if (deletingEmbeddingModelIds.has(modelId)) {
-        return
-      }
-
-      void (async () => {
-        setDeletingEmbeddingModelIds((prev) => new Set(prev).add(modelId))
-        try {
-          const vectorManager = await plugin.tryGetVectorManager()
-          if (vectorManager) {
-            const embeddingModelClient = getEmbeddingModelClient({
-              settings,
-              embeddingModelId: modelId,
-            })
-            await vectorManager.clearAllVectors(embeddingModelClient)
-          } else {
-            console.warn(
-              '[YOLO] Skip clearing embeddings because vector manager is unavailable.',
-            )
-          }
-          await setSettings({
-            ...settings,
-            embeddingModels: settings.embeddingModels.filter(
-              (v) => v.id !== modelId,
-            ),
-          })
-        } catch (error) {
-          console.error('[YOLO] Failed to delete embedding model:', error)
-          new Notice('Failed to delete embedding model.')
-        } finally {
-          setDeletingEmbeddingModelIds((prev) => {
-            const next = new Set(prev)
-            next.delete(modelId)
-            return next
-          })
-        }
-      })()
-    },
-    [deletingEmbeddingModelIds, plugin, settings, setSettings],
-  )
-
   const getChatDeleteState = (modelId: string) => {
     if (modelId === chatModelId || modelId === chatTitleModelId) {
       return {
@@ -388,39 +316,12 @@ function ConnectivityTestPanel({
     return { disabled: false }
   }
 
-  const getEmbeddingDeleteState = (modelId: string) => {
-    if (modelId === embeddingModelId) {
-      return {
-        disabled: true,
-        reason: t(
-          'settings.models.connectivityTest.deleteEmbeddingModelBlocked',
-          '无法删除当前选中的嵌入模型',
-        ),
-      }
-    }
-    if (deletingEmbeddingModelIds.has(modelId)) {
-      return {
-        disabled: true,
-        reason: t(
-          'settings.models.connectivityTest.deleteEmbeddingModelInProgress',
-          '正在删除嵌入模型…',
-        ),
-      }
-    }
-    return { disabled: false }
-  }
-
   const chatModels = useMemo(
     () => settings.chatModels.filter((m) => m.providerId === provider.id),
     [settings.chatModels, provider.id],
   )
-  const embeddingModels = useMemo(
-    () => settings.embeddingModels.filter((m) => m.providerId === provider.id),
-    [settings.embeddingModels, provider.id],
-  )
-
   const { results, testOne, testAll, stop, counts, done, total, phase } =
-    useConnectivityTest({ chatModels, embeddingModels })
+    useConnectivityTest({ chatModels })
 
   const baseUrl = resolveProviderDisplayBaseUrl(provider)
   const running = phase === 'running'
@@ -528,38 +429,10 @@ function ConnectivityTestPanel({
                   <ModelRow
                     key={model.id}
                     model={model}
-                    kind="chat"
                     cell={results[model.id] ?? { status: 'idle' }}
                     disabled={running}
                     onTest={testOne}
                     onDelete={handleDeleteChatModel}
-                    deleteDisabled={deleteState.disabled}
-                    deleteDisabledReason={deleteState.reason}
-                  />
-                )
-              })}
-            </>
-          ) : null}
-
-          {embeddingModels.length > 0 ? (
-            <>
-              <div className="yolo-health-grouplabel">
-                {t('settings.models.embeddingModels', '嵌入模型')}
-                <span className="yolo-health-grouplabel-ct">
-                  {embeddingModels.length}
-                </span>
-              </div>
-              {embeddingModels.map((model) => {
-                const deleteState = getEmbeddingDeleteState(model.id)
-                return (
-                  <ModelRow
-                    key={model.id}
-                    model={model}
-                    kind="embedding"
-                    cell={results[model.id] ?? { status: 'idle' }}
-                    disabled={running}
-                    onTest={testOne}
-                    onDelete={handleDeleteEmbeddingModel}
                     deleteDisabled={deleteState.disabled}
                     deleteDisabledReason={deleteState.reason}
                   />

@@ -137,7 +137,6 @@ export default tseslint.config(
       'coverage',
       'Design',
       'esbuild.config.mjs',
-      'import-meta-url-shim.js',
       'jest.config.js',
       'lerna-debug.log*',
       'logs',

@@ -14,12 +14,9 @@ import { ConfigKeyMeta } from './types'
 export const EXPORTABLE_CONFIG_KEYS: ConfigKeyMeta[] = [
   { key: 'providers', fallbackLabel: 'AI 服务商' },
   { key: 'chatModels', fallbackLabel: '对话模型' },
-  { key: 'embeddingModels', fallbackLabel: '嵌入模型' },
   { key: 'chatModelId', fallbackLabel: '默认对话模型' },
   { key: 'chatTitleModelId', fallbackLabel: '标题生成模型' },
-  { key: 'embeddingModelId', fallbackLabel: '默认嵌入模型' },
   { key: 'systemPrompt', fallbackLabel: '系统提示词' },
-  { key: 'ragOptions', fallbackLabel: '知识库设置' },
   { key: 'mcp', fallbackLabel: 'MCP 工具' },
   { key: 'webSearch', fallbackLabel: '联网搜索' },
   { key: 'skills', fallbackLabel: '技能设置' },
@@ -27,10 +24,9 @@ export const EXPORTABLE_CONFIG_KEYS: ConfigKeyMeta[] = [
   { key: 'debug', fallbackLabel: '调试设置' },
   { key: 'chatOptions', fallbackLabel: '对话偏好' },
   { key: 'notificationOptions', fallbackLabel: '通知设置' },
-  { key: 'continuationOptions', fallbackLabel: '续写与补全' },
+  { key: 'requestPolicy', fallbackLabel: '模型请求策略' },
   { key: 'assistants', fallbackLabel: 'Agent 配置' },
   { key: 'currentAssistantId', fallbackLabel: '当前 Agent' },
-  { key: 'quickAskAssistantId', fallbackLabel: 'Quick Ask Agent' },
 ]
 
 /**

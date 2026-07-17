@@ -37,31 +37,28 @@ const item = (content: string): TodoItem => ({
   status: 'pending',
 })
 
-const baseEditorSnapshot = {
-  type: 'editor-snapshot' as const,
-  filePath: '/a.md',
-  fileTitle: 'A',
-  contextText: '',
-  cursorMarker: '|',
+const baseInjection = {
+  type: 'todo-list' as const,
+  todos: [],
 }
 
 describe('composeAgentInjections', () => {
   it('returns only base injections when no todo_write tool call exists', () => {
     const result = composeAgentInjections({
-      baseInjections: [baseEditorSnapshot],
+      baseInjections: [baseInjection],
       messages: [],
     })
-    expect(result).toEqual([baseEditorSnapshot])
+    expect(result).toEqual([baseInjection])
   })
 
   it('appends todo-list injection after base injections when todos exist', () => {
     const messages: ChatMessage[] = [todoWriteToolMessage([item('Task A')])]
     const result = composeAgentInjections({
-      baseInjections: [baseEditorSnapshot],
+      baseInjections: [baseInjection],
       messages,
     })
     expect(result).toHaveLength(2)
-    expect(result[0]).toEqual(baseEditorSnapshot)
+    expect(result[0]).toEqual(baseInjection)
     expect(result[1]).toEqual({ type: 'todo-list', todos: [item('Task A')] })
   })
 

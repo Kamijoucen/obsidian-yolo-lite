@@ -5,10 +5,8 @@ import {
   HealthCheckAbortedError,
   HealthResult,
   testChatModelHealth,
-  testEmbeddingModelHealth,
 } from '../core/llm/health-check'
 import { ChatModel } from '../types/chat-model.types'
-import { EmbeddingModel } from '../types/embedding-model.types'
 
 const CONCURRENCY = 4
 
@@ -27,28 +25,18 @@ export type ConnectivityCounts = {
   idle: number
 }
 
-type TestItem =
-  | { kind: 'chat'; model: ChatModel }
-  | { kind: 'embedding'; model: EmbeddingModel }
+type TestItem = { model: ChatModel }
 
 export function useConnectivityTest({
   chatModels,
-  embeddingModels,
 }: {
   chatModels: ChatModel[]
-  embeddingModels: EmbeddingModel[]
 }) {
   const plugin = usePlugin()
 
   const items = useMemo<TestItem[]>(
-    () => [
-      ...chatModels.map((model) => ({ kind: 'chat' as const, model })),
-      ...embeddingModels.map((model) => ({
-        kind: 'embedding' as const,
-        model,
-      })),
-    ],
-    [chatModels, embeddingModels],
+    () => chatModels.map((model) => ({ model })),
+    [chatModels],
   )
   const total = items.length
 
@@ -83,14 +71,9 @@ export function useConnectivityTest({
 
       let result: HealthResult | null = null
       try {
-        result =
-          item.kind === 'chat'
-            ? await testChatModelHealth(plugin.settings, item.model, {
-                signal: controller.signal,
-              })
-            : await testEmbeddingModelHealth(plugin.settings, item.model, {
-                signal: controller.signal,
-              })
+        result = await testChatModelHealth(plugin.settings, item.model, {
+          signal: controller.signal,
+        })
       } catch (error) {
         if (!(error instanceof HealthCheckAbortedError)) {
           result = {

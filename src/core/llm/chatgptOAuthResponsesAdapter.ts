@@ -111,13 +111,8 @@ const toInputContent = (
       }
     }
 
-    // Document parts are gated by `prepareDocumentsForModel` upstream and
-    // converted to text for adapters that don't natively support PDFs. The
-    // ChatGPT-OAuth Responses surface doesn't currently implement the file
-    // input path, so any leakage here is a config mistake on the model.
-    throw new Error(
-      "ChatGPT OAuth adapter received a native PDF document part — disable the 'pdf' input modality on this model.",
-    )
+    const exhaustive: never = part
+    return exhaustive
   })
 }
 

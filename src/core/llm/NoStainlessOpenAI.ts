@@ -35,39 +35,6 @@ export class NoStainlessOpenAI extends OpenAI {
     const req = super.buildRequest(options, { retryCount })
     req.req.headers = stripStainlessHeaders(req.req.headers)
 
-    // Handle Gemini native tools by bypassing OpenAI SDK validation
-    if (req.req.body && typeof req.req.body === 'string') {
-      try {
-        const parsed = JSON.parse(req.req.body)
-        // If tools contain Gemini native format (e.g., {googleSearch: {}}),
-        // the OpenAI SDK validation will fail. We need to bypass this.
-        if (
-          parsed &&
-          typeof parsed === 'object' &&
-          'tools' in parsed &&
-          Array.isArray((parsed as { tools?: unknown[] }).tools)
-        ) {
-          const body = parsed as { tools?: unknown[] }
-          const hasGeminiTools = (body.tools ?? []).some(
-            (tool): boolean =>
-              typeof tool === 'object' &&
-              tool !== null &&
-              ('googleSearch' in tool || 'urlContext' in tool),
-          )
-          if (hasGeminiTools) {
-            // For Gemini tools, we bypass SDK validation by reconstructing the request
-            req.req.body = JSON.stringify(body)
-          }
-        }
-      } catch (parseError) {
-        console.debug(
-          '[YOLO] Failed to inspect request body while stripping Stainless headers.',
-          parseError,
-        )
-        // If JSON parsing fails, continue with original body unchanged
-      }
-    }
-
     return req
   }
 }

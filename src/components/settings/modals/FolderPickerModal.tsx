@@ -6,10 +6,9 @@ import {
   FolderClosed,
   FolderOpen,
 } from 'lucide-react'
-import { App, TFile, Vault } from 'obsidian'
+import { App, TFile, TFolder, Vault } from 'obsidian'
 import React, { useMemo, useState } from 'react'
 
-import { listAllFolderPaths } from '../../../utils/rag-utils'
 import { ReactModal } from '../../common/ReactModal'
 
 type FolderPickerModalProps = {
@@ -45,7 +44,13 @@ function FolderPickerModalComponent({
 }: FolderPickerModalProps & { onClose: () => void }) {
   const [q, setQ] = useState('')
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set(['']))
-  const allFolders = useMemo(() => listAllFolderPaths(vault), [vault])
+  const allFolders = useMemo(() => {
+    const paths = vault
+      .getAllLoadedFiles()
+      .filter((file): file is TFolder => file instanceof TFolder)
+      .map((folder) => folder.path.replace(/^\/+/, '').replace(/\/+$/, ''))
+    return Array.from(new Set(['', ...paths]))
+  }, [vault])
   const allFiles = useMemo<TFile[]>(() => {
     if (!allowFiles) return []
     try {

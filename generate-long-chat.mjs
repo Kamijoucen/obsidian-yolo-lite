@@ -187,7 +187,7 @@ const AREAS = [
   '代码块和 Markdown 渲染',
   '上下文压缩后的历史回放',
   '分支消息和外部任务结果',
-  'Quick Ask 与 Sidebar Chat 一致性',
+  '侧边栏多窗口会话一致性',
 ]
 
 const FILES = [

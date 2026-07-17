@@ -14,28 +14,6 @@ export type CurrentFilePointerInjection = {
   viewState?: CurrentFileViewState
 }
 
-export type EditorSnapshotSelection = {
-  content: string
-  filePath: string
-}
-
-/**
- * Content-style injection used by Quick Ask.
- * Captures the editor's current scene (file path/title, surrounding cursor
- * context, optional selection) and feeds it directly to the model — Quick Ask
- * is invoked with the assumption the model must operate on what the user is
- * looking at right now.
- */
-export type EditorSnapshotInjection = {
-  type: 'editor-snapshot'
-  filePath: string
-  fileTitle: string
-  /** Text around cursor; may contain `cursorMarker` at the cursor position. */
-  contextText: string
-  cursorMarker: string
-  selection?: EditorSnapshotSelection
-}
-
 export type TodoListInjection = {
   type: 'todo-list'
   todos: ReadonlyArray<TodoItem>
@@ -58,6 +36,5 @@ export type BrowserContextInjection = {
 
 export type ContextualInjection =
   | CurrentFilePointerInjection
-  | EditorSnapshotInjection
   | TodoListInjection
   | BrowserContextInjection

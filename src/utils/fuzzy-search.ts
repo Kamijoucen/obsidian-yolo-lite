@@ -18,7 +18,6 @@ const TEXT_MENTION_SEARCHABLE_EXTENSIONS = [
 /** Extensions included in @ mention fuzzy search (vault files). */
 export const MENTION_SEARCHABLE_EXTENSIONS = new Set([
   'md',
-  'pdf',
   ...TEXT_MENTION_SEARCHABLE_EXTENSIONS,
   ...IMAGE_FILE_EXTENSIONS,
 ])

@@ -15,7 +15,6 @@ import type {
   ChatTimelineRenderVersion,
   UserMessageViewportState,
 } from './ChatTimelineList'
-import { InstallationIncompleteBanner } from './InstallationIncompleteBanner'
 import { SharedConversationSurface } from './SharedConversationSurface'
 
 type ChatConversationPaneProps = {
@@ -115,7 +114,6 @@ export function ChatConversationPane({
 
   return (
     <>
-      <InstallationIncompleteBanner />
       <SharedConversationSurface
         key={`${currentConversationId}:${groupedChatMessagesLength > 0 ? 'ready' : 'empty'}`}
         items={chatTimelineItems}
@@ -150,7 +148,7 @@ export function ChatConversationPane({
                       <div
                         key={`${chatMode}-${isYoloAgent ? 'yolo' : 'std'}`}
                         className="yolo-chat-empty-state-icon"
-                        data-mode={isYoloAgent ? 'agent-full' : chatMode}
+                        data-mode={isYoloAgent ? 'agent-yolo' : chatMode}
                       >
                         {isYoloAgent ? (
                           <InfinityIcon size={18} strokeWidth={2} />

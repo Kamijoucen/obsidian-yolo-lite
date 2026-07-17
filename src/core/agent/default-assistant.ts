@@ -2,7 +2,6 @@ import { YoloSettings } from '../../settings/schema/setting.types'
 import { Assistant } from '../../types/assistant.types'
 
 import {
-  buildAssistantToolPreferencesFromEnabledToolNames,
   buildDefaultBuiltinToolPreferences,
   getAssistantToolPreferences,
 } from './tool-preferences'
@@ -25,10 +24,8 @@ export const createDefaultAssistant = (fallbackModelId: string): Assistant => ({
   persona: 'balanced',
   enableTools: true,
   includeBuiltinTools: true,
-  enabledToolNames: [],
   toolPreferences: buildDefaultBuiltinToolPreferences(),
   toolServerPreferences: {},
-  enabledSkills: [],
   skillPreferences: {},
   includeCurrentFileContent: true,
   timeContextEnabled: true,
@@ -49,14 +46,10 @@ const hasDefaultAssistantChanged = (
     current.persona !== normalized.persona ||
     current.enableTools !== normalized.enableTools ||
     current.includeBuiltinTools !== normalized.includeBuiltinTools ||
-    JSON.stringify(current.enabledToolNames ?? []) !==
-      JSON.stringify(normalized.enabledToolNames ?? []) ||
     JSON.stringify(current.toolPreferences ?? {}) !==
       JSON.stringify(normalized.toolPreferences ?? {}) ||
     JSON.stringify(current.toolServerPreferences ?? {}) !==
       JSON.stringify(normalized.toolServerPreferences ?? {}) ||
-    JSON.stringify(current.enabledSkills ?? []) !==
-      JSON.stringify(normalized.enabledSkills ?? []) ||
     JSON.stringify(current.skillPreferences ?? {}) !==
       JSON.stringify(normalized.skillPreferences ?? {}) ||
     (current.includeCurrentFileContent ?? true) !==
@@ -83,15 +76,11 @@ const normalizeDefaultAssistant = (
     modelId: assistant.modelId || fallbackModelId,
     enableTools: assistant.enableTools ?? true,
     includeBuiltinTools: assistant.includeBuiltinTools ?? true,
-    enabledToolNames: assistant.enabledToolNames ?? [],
     toolPreferences:
       Object.keys(toolPreferences).length > 0
         ? toolPreferences
-        : buildAssistantToolPreferencesFromEnabledToolNames(
-            assistant.enabledToolNames,
-          ),
+        : buildDefaultBuiltinToolPreferences(),
     toolServerPreferences: assistant.toolServerPreferences ?? {},
-    enabledSkills: assistant.enabledSkills ?? [],
     skillPreferences: assistant.skillPreferences ?? {},
     includeCurrentFileContent: assistant.includeCurrentFileContent ?? true,
     timeContextEnabled: assistant.timeContextEnabled ?? true,

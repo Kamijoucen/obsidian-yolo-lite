@@ -2,7 +2,6 @@ import type { TranslationKeys } from '../types'
 
 export const it: TranslationKeys = {
   commands: {
-    openChat: 'Apri chat',
     openChatSidebar: 'Apri chat (barra laterale)',
     openLearningMode: 'Apri modalità di apprendimento',
     learningModeLabel: 'YOLO: Modalità di apprendimento',
@@ -11,20 +10,8 @@ export const it: TranslationKeys = {
     openNewChatTab: 'Apri nuova chat (nuova scheda)',
     openNewChatSplit: 'Apri nuova chat (divisione destra)',
     openNewChatWindow: 'Apri nuova chat (nuova finestra)',
-    addSelectionToChat: 'Aggiungi selezione alla chat',
     addFileToChat: 'Aggiungi file alla chat',
     addFolderToChat: 'Aggiungi cartella alla chat',
-    rebuildVaultIndex: 'Ricostruisci indice completo del vault',
-    updateVaultIndex: 'Aggiorna indice per file modificati',
-    continueWriting: 'AI continua scrittura',
-    continueWritingSelected: 'AI continua scrittura (selezione)',
-    customContinueWriting: 'AI continua personalizzato',
-    customRewrite: 'AI riscrivi personalizzato',
-    triggerSmartSpace: 'Attiva smart space',
-    triggerQuickAsk: 'Attiva quick ask',
-    triggerTabCompletion: 'Attiva completamento tab',
-    acceptInlineSuggestion: 'Accetta completamento',
-    capturePdfRegion: 'Cattura regione PDF nella chat',
   },
 
   common: {
@@ -34,7 +21,6 @@ export const it: TranslationKeys = {
     edit: 'Modifica',
     add: 'Aggiungi',
     adding: 'Aggiunta in corso...',
-    probingDimension: 'Rilevamento dimensioni...',
     clear: 'Cancella',
     remove: 'Rimuovi',
     confirm: 'Conferma',
@@ -62,7 +48,6 @@ export const it: TranslationKeys = {
     tabs: {
       chat: 'Chat',
       agent: 'Agent',
-      composer: 'Sparkle',
     },
     chatList: {
       searchPlaceholder: 'Cerca conversazioni',
@@ -87,53 +72,6 @@ export const it: TranslationKeys = {
       exportSuccess: 'Chat esportata in {path}',
       exportError: 'Impossibile esportare la conversazione',
     },
-    composer: {
-      title: 'Sparkle',
-      subtitle:
-        'Configura i parametri di continuazione e il contesto prima di generare.',
-      backToChat: 'Torna alla chat',
-      modelSectionTitle: 'Modello',
-      continuationModel: 'Modello di continuazione',
-      continuationModelDesc:
-        'Quando la super continuazione è abilitata, questa vista usa questo modello per le attività di continuazione.',
-      contextSectionTitle: 'Fonti di contesto',
-      ragToggle: 'Abilita recupero con embeddings',
-      ragToggleDesc:
-        'Recupera note simili tramite embeddings prima di generare nuovo testo.',
-      sections: {
-        modelWithPrompt: {
-          title: 'Modello e prompt',
-        },
-        model: {
-          title: 'Selezione modello',
-          desc: 'Scegli quale modello alimenta queste attività.',
-        },
-        parameters: {
-          title: 'Parametri',
-          desc: 'Regola i parametri per il modello usato in questa vista.',
-        },
-        context: {
-          title: 'Gestione contesto',
-          desc: 'Dai priorità alle fonti di contenuto referenziate quando questa vista viene eseguita.',
-        },
-      },
-      continuationPrompt: 'Prompt di sistema per continuazione',
-      maxContinuationChars: 'Caratteri massimi di continuazione',
-      referenceRulesTitle: 'Regole di riferimento',
-      referenceRulesPlaceholder:
-        'Seleziona le cartelle il cui contenuto deve essere completamente iniettato.',
-      knowledgeBaseTitle: 'Base di conoscenza',
-      knowledgeBasePlaceholder:
-        'Seleziona cartelle o file usati come ambito di recupero (lascia vuoto per tutti).',
-      knowledgeBaseHint:
-        "Abilita la ricerca embeddings per limitare l'ambito di recupero.",
-    },
-  },
-
-  smartSpace: {
-    webSearch: 'Web',
-    urlContext: 'URL',
-    mentionContextLabel: 'File menzionati',
   },
 
   learning: {
@@ -296,7 +234,7 @@ export const it: TranslationKeys = {
       referencesHint: 'YOLO personalizzerà lo schema in base ai file caricati',
       optional: '(Opzionale)',
       uploadTitle: 'Trascina i file qui o clicca per caricare',
-      uploadHint: 'Supporta PDF, Word e Markdown. Max 20 MB per file.',
+      uploadHint: 'Supporta file Markdown. Max 20 MB per file.',
       levels: {
         beginner: 'Principiante',
         familiar: 'Conosco i concetti',
@@ -466,26 +404,10 @@ export const it: TranslationKeys = {
     },
   },
 
-  selection: {
-    actions: {
-      addToChat: 'Aggiungi alla chat',
-      addToSidebar: 'Aggiungi alla barra laterale',
-      customRewrite: 'Riscrittura personalizzata',
-      customAsk: 'Domanda personalizzata',
-      rewrite: 'AI riscrivi',
-      explain: 'Spiega in dettaglio',
-      suggest: 'Fornisci suggerimenti',
-      translateToChinese: 'Traduci in cinese',
-    },
-  },
-
   settings: {
     title: 'Impostazioni Yolo',
     tabs: {
       models: 'Modelli',
-      editor: 'Editor',
-      knowledge: 'Conoscenza',
-      tools: 'Strumenti',
       agent: 'Agent',
       learning: 'Modalità studio',
       others: 'Altro',
@@ -514,111 +436,15 @@ export const it: TranslationKeys = {
       globalSystemPrompt: 'Prompt di sistema globale',
       globalSystemPromptDesc:
         "Questo prompt viene aggiunto all'inizio di ogni conversazione chat.",
-      continuationSystemPrompt:
-        'Prompt di sistema di continuazione predefinito',
-      continuationSystemPromptDesc:
-        'Usato come messaggio di sistema quando si genera testo di continuazione; lascia vuoto per usare quello predefinito incorporato.',
       chatTitlePrompt: 'Prompt titolo chat',
       chatTitlePromptDesc:
         'Prompt usato quando si generano automaticamente i titoli delle conversazioni dal primo messaggio utente.',
-      tabCompletionSystemPrompt: 'Prompt di sistema completamento tab',
-      tabCompletionSystemPromptDesc:
-        'Messaggio di sistema applicato quando si generano suggerimenti di completamento tab; lascia vuoto per usare quello predefinito incorporato.',
     },
     learning: {
       generationTitle: 'Generazione',
       generationModel: 'Modello di generazione per lo studio',
       generationModelDesc:
         "Usato per generare scalette, punti di conoscenza e schede. Questa scelta e indipendente dall'assistente corrente.",
-    },
-    smartSpace: {
-      quickActionsTitle: 'Azioni rapide smart space',
-      quickActionsDesc:
-        'Personalizza le azioni rapide e i prompt visualizzati nello smart space',
-      configureActions: 'Configura azioni rapide',
-      actionsCount: 'Azioni rapide configurate: {count}',
-      addAction: 'Aggiungi azione',
-      resetToDefault: 'Ripristina predefiniti',
-      confirmReset:
-        'Sei sicuro di voler ripristinare le azioni rapide predefinite ed eliminare tutte le impostazioni personalizzate?',
-      resetConfirmTitle: 'Ripristina azioni rapide smart space',
-      actionLabel: 'Etichetta azione',
-      actionLabelDesc: "Testo visualizzato nell'azione rapida",
-      actionLabelPlaceholder: 'Ad esempio, continua a scrivere',
-      actionInstruction: 'Prompt',
-      actionInstructionDesc: "Istruzione inviata all'AI",
-      actionInstructionPlaceholder:
-        'Ad esempio, continua il testo corrente nello stesso stile e tono',
-      actionCategory: 'Categoria',
-      actionCategoryDesc: 'Gruppo in cui viene visualizzata questa azione',
-      actionIcon: 'Icona',
-      actionIconDesc: 'Icona visiva per questa azione',
-      actionEnabled: 'Abilitata',
-      actionEnabledDesc: 'Mostra questa azione nello smart space',
-      moveUp: 'Sposta su',
-      moveDown: 'Sposta giù',
-      duplicate: 'Duplica',
-      disabled: 'Disabilitata',
-      categories: {
-        suggestions: 'Suggerimenti',
-        writing: 'Scrittura',
-        thinking: 'Pensiero',
-        custom: 'Personalizzato',
-      },
-      iconLabels: {
-        sparkles: 'Scintille',
-        file: 'File',
-        todo: 'Da fare',
-        workflow: 'Flusso di lavoro',
-        table: 'Tabella',
-        pen: 'Penna',
-        lightbulb: 'Lampadina',
-        brain: 'Cervello',
-        message: 'Messaggio',
-        settings: 'Impostazioni',
-      },
-      copySuffix: '(copia)',
-      dragHandleAria: 'Trascina per riordinare',
-    },
-    selectionChat: {
-      quickActionsTitle: 'Azioni rapide Cursor Chat',
-      quickActionsDesc:
-        'Personalizza le azioni rapide e i prompt visualizzati dopo la selezione del testo',
-      configureActions: 'Configura azioni rapide',
-      actionsCount: 'Azioni rapide configurate: {count}',
-      addAction: 'Aggiungi azione rapida',
-      resetToDefault: 'Ripristina predefiniti',
-      confirmReset:
-        'Sei sicuro di voler ripristinare le azioni rapide predefinite ed eliminare tutte le impostazioni personalizzate?',
-      resetConfirmTitle: 'Ripristina azioni rapide Cursor Chat',
-      actionLabel: 'Etichetta azione',
-      actionLabelDesc: "Testo visualizzato nell'azione rapida",
-      actionLabelPlaceholder: 'Ad esempio, spiega',
-      actionMode: 'Modalita',
-      actionModeDesc:
-        'Le prime due usano Quick Ask: Ask invia automaticamente e Rewrite entra nella modalita anteprima. Le ultime due usano la Chat: puoi solo precompilare la casella di input oppure inviare subito.',
-      actionModeAsk: 'Quick Ask ask',
-      actionModeChatInput: 'Aggiungi alla casella chat',
-      actionModeChatSend: 'Aggiungi alla casella chat e invia',
-      actionModeRewrite: 'Quick Ask rewrite',
-      actionRewriteType: 'Tipo di riscrittura',
-      actionRewriteTypeDesc: 'Scegli se la riscrittura richiede un prompt',
-      actionRewriteTypeCustom: 'Prompt personalizzato (chiedi ogni volta)',
-      actionRewriteTypePreset: 'Prompt predefinito (esegui subito)',
-      actionInstruction: 'Prompt',
-      actionInstructionDesc: "Istruzione inviata all'AI",
-      actionInstructionPlaceholder:
-        'Ad esempio, spiega il contenuto selezionato.',
-      actionInstructionRewriteDesc:
-        'Istruzione di riscrittura (richiesta per il prompt predefinito).',
-      actionInstructionRewritePlaceholder:
-        'Ad esempio: rendilo conciso e mantieni la struttura Markdown.',
-      duplicate: 'Duplica',
-      copySuffix: '(copia)',
-      dragHandleAria: 'Trascina per riordinare',
-      fixedActionHint: 'Azione predefinita',
-      hideFixedAction: 'Nascondi in Cursor Chat',
-      showFixedAction: 'Mostra in Cursor Chat',
     },
     chatPreferences: {
       title: 'Preferenze chat',
@@ -900,7 +726,7 @@ export const it: TranslationKeys = {
       agentCapabilitiesBlockTitle: 'Capacità Agent',
       focusSyncTitle: 'Sincronizzazione del focus',
       focusSyncDesc:
-        "Se abilitato, l'AI percepisce dove ti trovi nella nota, nel PDF o nella pagina web che stai visualizzando. Il contenuto completo della pagina web si legge con fs_read tramite un percorso browser://.",
+        "Se abilitato, l'AI percepisce dove ti trovi nella nota o nella pagina web che stai visualizzando. Il contenuto completo della pagina web si legge con fs_read tramite un percorso browser://.",
       timeContextTitle: 'Consapevolezza dell ora corrente',
       timeContextDesc:
         'Indica al modello l ora corrente all invio di ogni messaggio.',
@@ -992,8 +818,6 @@ export const it: TranslationKeys = {
         jina: 'Jina',
         searxng: 'SearXNG',
         bing: 'Bing (senza chiave)',
-        'gemini-grounding': 'Gemini (Grounding)',
-        grok: 'Grok',
         zhipu: 'Zhipu Web Search',
       },
       fieldName: 'Nome visualizzato',
@@ -1009,9 +833,6 @@ export const it: TranslationKeys = {
       fieldEngines: 'Motori (separati da virgola)',
       fieldUsername: 'Username Basic Auth',
       fieldPassword: 'Password Basic Auth',
-      fieldModel: 'Modello',
-      fieldSystemPrompt: 'System prompt',
-      fieldEnableX: 'Cerca anche su X',
       fieldZhipuEngine: 'Motore di ricerca',
       fieldZhipuContentSize: 'Dimensione contenuto',
       fieldZhipuRecency: 'Filtro temporale',
@@ -1032,11 +853,7 @@ export const it: TranslationKeys = {
       categoryAll: 'Tutti',
       categoryMain: 'Internazionale',
       categoryCn: 'Cina',
-      categoryGateway: 'Aggregatori',
-      categoryCloud: 'Cloud',
-      categoryLocal: 'Locali',
       badgeOpenAiCompatible: 'Compatibile OpenAI',
-      badgeNative: 'Protocollo nativo',
       badgeOAuth: 'OAuth',
       badgeAdded: 'Aggiunto',
       providersCount: '{count} provider aggiunti',
@@ -1049,15 +866,12 @@ export const it: TranslationKeys = {
       requestDelete: 'Elimina provider',
       deleteConfirmTitle: 'Eliminare il provider "{provider}"?',
       deleteConfirmImpact:
-        'Questa azione rimuove anche {chatCount} modelli chat, {embeddingCount} modelli embedding e i relativi dati vettoriali.',
+        'Questa azione rimuove anche {chatCount} modelli chat.',
       confirmDeleteAction: 'Conferma eliminazione',
       chatModels: 'chat',
-      embeddingModels: 'embedding',
-      embeddingsWillBeDeleted:
-        'Tutti gli embeddings esistenti saranno eliminati quando cambi il modello embedding.',
       providerId: 'ID provider',
       providerIdDesc:
-        'Identificatore univoco per questo provider (ad es., openai, anthropic).',
+        'Identificatore univoco per questo provider (ad es., openai, deepseek).',
       providerIdPlaceholder: 'Ad esempio, openai',
       apiKey: 'Chiave API',
       apiKeyDesc: 'La tua chiave API per questo provider.',
@@ -1069,9 +883,6 @@ export const it: TranslationKeys = {
       noStainlessHeaders: 'Nessun header stainless',
       noStainlessHeadersDesc:
         'Disabilita gli header SDK stainless (richiesto per alcuni provider compatibili).',
-      useObsidianRequestUrl: 'Usa requestUrl di Obsidian',
-      useObsidianRequestUrlDesc:
-        'Usa requestUrl di Obsidian per aggirare le restrizioni CORS. Le risposte in streaming verranno bufferizzate.',
       requestTransportMode: 'Metodo richiesta di rete',
       requestTransportModeDesc:
         'Scegli come questo provider invia le richieste di rete su questo dispositivo. La connessione diretta desktop e consigliata su desktop. Su mobile, passa alla richiesta integrata di Obsidian se le richieste browser hanno problemi di streaming o rete.',
@@ -1085,9 +896,6 @@ export const it: TranslationKeys = {
       responseStreamingModeAuto: 'Auto (predefinito)',
       responseStreamingModeStreaming: 'Streaming',
       responseStreamingModeNonStreaming: 'Non streaming',
-      promptCaching: 'Cache del prompt',
-      promptCachingDesc:
-        "Abilita la cache effimera dei prompt Anthropic. Riutilizza prompt di sistema, strumenti e cronologia tra i turni per ridurre i token di input. Le scritture in cache hanno un sovrapprezzo del 25%; le letture costano circa il 10% del normale. Disponibile quando il tipo API del provider è Anthropic; l'upstream deve supportare il campo cache_control.",
       customHeaders: 'Header personalizzati',
       customHeadersDesc:
         'Aggiungi header HTTP extra a tutte le richieste inviate tramite questo provider.',
@@ -1108,34 +916,17 @@ export const it: TranslationKeys = {
       chatgptOAuthPendingCode: 'Codice dispositivo corrente:',
       oauthDesktopOnly:
         'Il login OAuth è disponibile solo su desktop. Collegati prima da desktop.',
-      geminiOAuthTitle: 'Gemini OAuth',
-      geminiOAuthConnect: 'Connetti',
-      geminiOAuthDisconnect: 'Disconnetti',
-      geminiOAuthConnecting: 'Connessione in corso...',
-      geminiOAuthLoadingStatus: 'Caricamento stato Gemini OAuth...',
-      geminiOAuthConnected: 'Connesso',
-      geminiOAuthExpires: 'scade',
-      geminiOAuthDisconnectedHelp:
-        'Non connesso. Connettiti per usare la quota Gemini del tuo account Google.',
-      geminiOAuthProject: 'progetto',
-      geminiOAuthStreamingNotice:
-        'Gemini OAuth supporta lo streaming. Con Obsidian requestUrl la risposta viene bufferizzata, mentre il fetch Node desktop puo trasmetterla in tempo reale.',
     },
     models: {
       title: 'Modelli',
       chatModels: 'Modelli chat',
-      embeddingModels: 'Modelli embedding',
       addChatModel: 'Aggiungi modello chat',
-      addEmbeddingModel: 'Aggiungi modello embedding',
       addCustomChatModel: 'Aggiungi modello chat personalizzato',
-      addCustomEmbeddingModel: 'Aggiungi modello embedding personalizzato',
       editChatModel: 'Modifica modello chat',
-      editEmbeddingModel: 'Modifica modello embedding',
       editCustomChatModel: 'Modifica modello chat personalizzato',
-      editCustomEmbeddingModel: 'Modifica modello embedding personalizzato',
       modelId: 'ID modello',
       modelIdDesc:
-        'Identificatore del modello usato dal provider (ad es., gpt-4, claude-3-opus).',
+        'Identificatore del modello usato dal provider (ad es., gpt-4o-mini, deepseek-chat).',
       modelIdPlaceholder: 'Ad esempio, gpt-4',
       modelName: 'Nome modello',
       modelNamePlaceholder: 'Ad esempio, GPT-4',
@@ -1157,14 +948,10 @@ export const it: TranslationKeys = {
         notTested: 'Non ancora testato',
         noResponse: 'Nessuna risposta',
         firstToken: 'Primo token',
-        dims: 'dim',
         noModels: 'Nessun modello configurato per questo provider',
         deleteModel: 'Elimina modello',
         deleteChatModelBlocked:
           'Impossibile eliminare il modello selezionato come chat o titolo',
-        deleteEmbeddingModelBlocked:
-          'Impossibile eliminare il modello embedding selezionato',
-        deleteEmbeddingModelInProgress: 'Eliminazione modello embedding…',
       },
       availableModelsAuto: 'Modelli disponibili (recuperati automaticamente)',
       searchModels: 'Cerca modelli...',
@@ -1177,21 +964,14 @@ export const it: TranslationKeys = {
       batchHint:
         'I modelli aggiunti in blocco usano le impostazioni predefinite; regolali singolarmente in seguito.',
       fetchModelsFailed: 'Impossibile recuperare i modelli',
-      embeddingModelsFirst: 'Modelli embedding (prima)',
       reasoningType: 'Tipo di ragionamento',
       reasoningTypeDesc: 'Nel dubbio, scegli OpenAI reasoning.',
       reasoningTypeNone: 'Modello non ragionante / predefinito',
       reasoningTypeOpenAI: 'Stile reasoning_effort OpenAI',
-      reasoningTypeGemini: 'Stile thinking_budget Gemini',
-      reasoningTypeAnthropic: 'Anthropic extended thinking (adaptive + effort)',
       reasoningTypeGeneric: 'Modello di ragionamento generico',
       openaiReasoningEffort: 'Sforzo di ragionamento OpenAI',
       openaiReasoningEffortDesc:
         'Controlla quanto tempo il modello dedica al ragionamento (basso/medio/alto).',
-      geminiThinkingBudget: 'Budget di pensiero Gemini',
-      geminiThinkingBudgetDesc:
-        'Unità: token di thinking. 0 = off; -1 = dinamico (solo Gemini).',
-      geminiThinkingBudgetPlaceholder: 'Ad esempio, 10000',
       inputModality: 'Modalità di input',
       inputModalityDesc:
         'Tipi di input effettivamente supportati dal modello. Una scelta errata può causare errori di richiesta.',
@@ -1199,39 +979,15 @@ export const it: TranslationKeys = {
       inputModalityVision: 'Immagini',
       inputModalityVisionTooltip:
         'Richiede un modello con capacità di visione native.',
-      inputModalityPdf: 'PDF (nativo)',
-      inputModalityPdfTooltip:
-        'Richiede un modello con supporto PDF nativo (Gemini / Anthropic).',
       builtinToolProvider: 'Strumenti integrati del provider',
       builtinToolProviderDesc:
         'Strumenti nativi forniti dal provider del modello. Indipendenti dagli strumenti integrati di YOLO. L’effetto reale dipende dal supporto del gateway su cui passa la richiesta.',
       builtinToolProviderNone: 'Disabilitato',
-      builtinToolProviderGemini: 'Gemini',
       builtinToolProviderGpt: 'OpenAI',
-      builtinToolProviderOpenRouter: 'OpenRouter',
-      builtinToolProviderGrok: 'Grok',
       builtinToolsGpt: 'Strumenti integrati OpenAI',
-      builtinToolsOpenRouter: 'Strumenti integrati OpenRouter',
-      builtinToolsGrok: 'Strumenti integrati Grok',
-      builtinToolsGemini: 'Strumenti integrati Gemini',
       builtinToolWebSearch: 'Web Search',
       builtinToolWebSearchDesc:
         'Consenti al modello di cercare sul web e restituire fonti citate.',
-      builtinToolUrlContext: 'URL Context',
-      builtinToolUrlContextDesc:
-        'Consenti al modello di leggere i link citati nella conversazione come contesto.',
-      openRouterWebSearchEngine: 'Motore di ricerca',
-      openRouterWebSearchEngineDesc:
-        'Auto lascia decidere a OpenRouter (predefinito). Native usa la ricerca nativa del provider. Exa / Firecrawl / Parallel forzano il motore corrispondente. Firecrawl richiede la tua API key configurata nel pannello OpenRouter.',
-      openRouterWebSearchEngineAuto: 'Auto (predefinito)',
-      openRouterWebSearchEngineNative: 'Native',
-      openRouterWebSearchEngineExa: 'Exa',
-      openRouterWebSearchEngineFirecrawl: 'Firecrawl (BYOK)',
-      openRouterWebSearchEngineParallel: 'Parallel',
-      openRouterWebSearchMaxResults: 'Risultati max',
-      openRouterWebSearchMaxResultsDesc:
-        'Opzionale, 1–25. Lascia vuoto per usare il valore predefinito di OpenRouter.',
-      openRouterWebSearchMaxResultsPlaceholder: 'predefinito',
       sampling: 'Parametri personalizzati',
       restoreDefaults: 'Ripristina predefiniti',
       maxContextTokens: 'Token finestra di contesto',
@@ -1244,165 +1000,7 @@ export const it: TranslationKeys = {
       customParametersAdd: 'Aggiungi parametro',
       customParametersKeyPlaceholder: 'Chiave',
       customParametersValuePlaceholder: 'Valore',
-      dimension: 'Dimensione',
-      dimensionDesc: 'Dimensione del vettore embedding.',
-      dimensionPlaceholder: 'Ad esempio, 1536',
       noChatModelsConfigured: 'Nessun modello chat configurato',
-      noEmbeddingModelsConfigured: 'Nessun modello embedding configurato',
-    },
-    rag: {
-      title: 'RAG (Retrieval Augmented Generation)',
-      desc: "Gestisci gli indici della knowledge base. Il RAG viene attivato automaticamente quando l'Agent usa lo strumento Ricerca in modalità Ibrida o RAG.",
-      enableRag: 'Abilita RAG',
-      enableRagDesc:
-        "Crea l'indice per i documenti inclusi nell'ambito selezionato.",
-      partialFailureSummary: 'Completato · {{count}} file non indicizzabili',
-      embeddingModel: 'Modello embedding',
-      embeddingModelDesc:
-        'Modello usato per generare embeddings per la ricerca semantica.',
-      chunkSize: 'Dimensione chunk',
-      chunkSizeDesc: 'Numero di caratteri per chunk di testo.',
-      minSimilarity: 'Similarità minima',
-      minSimilarityDesc:
-        'Punteggio di similarità minimo (0-1) per includere un chunk nei risultati.',
-      limit: 'Limite',
-      limitDesc: 'Numero massimo di chunk da recuperare.',
-      embeddingConcurrency: 'Concorrenza embedding',
-      embeddingConcurrencyDesc:
-        "Numero massimo di richieste di embedding in parallelo durante l'indicizzazione (1–24, predefinito 10). Riducilo se il provider restituisce errori 429 / limite di frequenza.",
-      includePatterns: 'Pattern di inclusione',
-      includePatternsDesc:
-        "Pattern glob per i file da includere nell'indice (uno per riga).",
-      excludePatterns: 'Pattern di esclusione',
-      excludePatternsDesc:
-        "Pattern glob per i file da escludere dall'indice (uno per riga).",
-      testPatterns: 'Testa pattern',
-      manageEmbeddingDatabase: 'Gestisci database embedding',
-      manage: 'Gestisci',
-      rebuildIndex: 'Ricostruisci indice',
-      rebuildFromScratch: 'Ricostruisci da zero',
-      rebuildFromScratchConfirm:
-        "Verranno eliminati tutti i vettori esistenti del modello di embedding corrente e l'intero vault verrà reindicizzato, con possibili numerose chiamate API. Continuare?",
-      continueIndex: 'Continua indicizzazione',
-      continueIndexNow: 'Continua ora',
-      selectedFolders: 'Cartelle selezionate',
-      excludedFolders: 'Cartelle escluse',
-      selectFoldersPlaceholder: 'Seleziona cartelle...',
-      selectFilesOrFoldersPlaceholder: 'Seleziona file o cartelle...',
-      selectExcludeFoldersPlaceholder: 'Seleziona cartelle da escludere...',
-      conflictNoteDefaultInclude: 'Nota: per default tutti i file sono inclusi',
-      conflictExact:
-        'Conflitto: questo percorso è sia incluso che escluso esplicitamente',
-      conflictParentExclude:
-        'Conflitto: una cartella genitore è esclusa, quindi questa inclusione è inefficace',
-      conflictChildExclude:
-        'Conflitto: cartelle figlio sono incluse, quindi questa esclusione è parzialmente inefficace',
-      conflictRule: 'Regola di conflitto',
-      autoUpdate: 'Aggiornamento automatico',
-      autoUpdateDesc:
-        "Quando è attivo, aggiorna incrementalmente l'indice in background dopo le modifiche ai documenti.",
-      indexPdf: 'Indicizza file PDF',
-      indexPdfDesc:
-        'Estrae e indicizza il testo dei PDF per la knowledge base. La prima ricostruzione completa può richiedere più tempo; disattiva per vault molto grandi se non ti serve il recupero sui PDF.',
-      autoUpdateInterval: 'Intervallo aggiornamento automatico',
-      autoUpdateIntervalDesc:
-        "Tempo di attesa (in millisecondi) dopo che un file viene modificato prima di aggiornare l'indice.",
-      manualUpdateNow: 'Aggiorna ora',
-      manualUpdateNowDesc:
-        "Aggiorna manualmente l'indice per i file modificati dall'ultimo aggiornamento.",
-      advanced: 'Impostazioni avanzate',
-      basicCardTitle: 'Knowledge base',
-      basicCardDesc:
-        "Controlla l'indicizzazione della knowledge base, il modello di embedding e le relative azioni di manutenzione.",
-      resourceCardTitle: 'Risorse PGlite',
-      resourceCardDesc:
-        'Gestisce le risorse runtime del database necessarie alla base di conoscenza.',
-      scopeCardTitle: 'Ambito di ricerca',
-      scopeCardDesc:
-        "Specifica quali cartelle includere o escludere dall'indicizzazione.",
-      maintenanceCardTitle: 'Stato e manutenzione',
-      maintenanceCardDesc:
-        'Mostra lo stato corrente della knowledge base e consente le operazioni di manutenzione necessarie.',
-      maintenanceUnavailableHint:
-        "Prepara prima le risorse PGlite qui sopra per usare la manutenzione dell'indice o il database embedding.",
-      currentStatus: 'Stato corrente',
-      currentStatusDesc:
-        "Quando la knowledge base è attiva, l'indice viene mantenuto in background in base all'impostazione di aggiornamento automatico.",
-      lastIndexedAt: 'Ultima sincronizzazione',
-      lastIndexedAtDesc:
-        "L'ultima volta in cui l'indicizzazione o una sincronizzazione in background è terminata con successo.",
-      maintenanceActions: 'Azioni di manutenzione',
-      deleteIndex: 'Elimina indice corrente',
-      deleteIndexConfirm:
-        "Vuoi eliminare tutti i dati d'indice per il modello di embedding attualmente selezionato?",
-      deleteIndexSuccess: "L'indice corrente è stato eliminato.",
-      deleteIndexFailed: "Impossibile eliminare l'indice corrente.",
-      statusDisabled: 'Disattivato',
-      statusSyncing: 'Sincronizzazione in background',
-      statusRuntimeRequired: 'In attesa delle risorse database',
-      statusReady: 'Attivo',
-      statusEmpty: 'Nessun indice disponibile',
-      selectEmbeddingModelFirst:
-        "Seleziona prima un modello di embedding, poi attiva l'indicizzazione della knowledge base.",
-      openKnowledgeSettings: 'Apri impostazioni knowledge base',
-      openKnowledgeSettingsDesc:
-        'Vai alle impostazioni per gestire indice, ambito, stato e opzioni avanzate.',
-      composerEntryDesc:
-        'L’indicizzazione della knowledge base ora è gestita nella pagina impostazioni; qui resta solo un accesso rapido.',
-      pgliteStatusCurrent: 'Stato attuale',
-      pgliteStatusSource: 'Origine risorsa',
-      pgliteStatusPath: 'Percorso risorsa',
-      pgliteStatusCheckedAt: 'Ultimo controllo',
-      pgliteStatusVersion: 'Versione runtime',
-      pgliteStatusReadyAt: 'Ultima preparazione',
-      pgliteStatusReason: 'Dettagli',
-      pgliteStateUnchecked: 'Non registrato',
-      pgliteStateChecking: 'Controllo in corso',
-      pgliteStateMissing: 'Non scaricato',
-      pgliteStateDownloading: 'Download in corso',
-      pgliteStateUnavailable: 'Non disponibile',
-      pgliteStateFailed: 'Preparazione fallita',
-      pgliteStateReady: 'Pronto',
-      pgliteSourceRemote: 'Cache remota',
-      pgliteSourceBundled: 'Incluso nel plugin',
-      pgliteSourceLocalCache: 'Cache locale',
-      pgliteDeliveryManual: 'Download manuale',
-      pgliteDownload: 'Scarica risorse',
-      pgliteRedownload: 'Scarica di nuovo',
-      pgliteRecheck: 'Controlla di nuovo',
-      pgliteDeleteLocal: 'Elimina risorse locali',
-      pgliteDownloadPlaceholder:
-        'Qui verrà collegato il punto di download manuale delle risorse PGlite remote.',
-      pgliteDeletePlaceholder:
-        'Qui verrà collegato il punto di eliminazione delle risorse locali di PGlite.',
-      pgliteDownloadingUnknownFile: 'file runtime',
-      pgliteInlineErrorTitle: 'Download non riuscito',
-      pgliteSummaryReadyRemote:
-        "Le risorse runtime di PGlite sono pronte e possono essere usate per l'indicizzazione e la gestione del database embedding.",
-      pgliteSummaryReadyBundled:
-        'Il plugin sta ancora usando risorse PGlite integrate. Dopo il passaggio alla distribuzione remota, questa scheda mostrerà lo stato della cache locale e ospiterà il download manuale.',
-      pgliteSummaryUnavailable:
-        'Le risorse runtime di PGlite non sono disponibili. La manutenzione dell’indice e la gestione del database embedding resteranno disabilitate finché le risorse non saranno pronte.',
-      pgliteSummaryReady:
-        "Le risorse runtime di PGlite sono pronte e possono essere usate per l'indicizzazione e la gestione del database embedding.",
-      pgliteSummaryDownloading:
-        'Le risorse runtime di PGlite sono in preparazione. Al termine del download, la manutenzione dell’indice e la gestione del database embedding torneranno disponibili automaticamente.',
-      pgliteSummaryFailed:
-        'La preparazione del runtime PGlite non è riuscita. Riprova il download oppure svuota la cache locale prima di usare di nuovo le funzioni knowledge base.',
-      pgliteSummaryMissing:
-        'Le risorse runtime di PGlite non sono ancora state preparate. Verranno scaricate automaticamente al primo uso della knowledge base, oppure puoi prepararle qui manualmente.',
-      pgliteDownloadingFile: 'Download',
-      indexProgressTitle: 'Progresso indicizzazione',
-      indexing: 'Indicizzazione in corso...',
-      notStarted: 'Non iniziato',
-      waitingRateLimit: 'In attesa del reset del limite di frequenza...',
-      preparingProgress: 'Preparazione indicizzazione...',
-      notIndexedYet: 'Non ancora indicizzato',
-      indexComplete: 'Indicizzazione completata',
-      indexIncomplete: 'Ultima indicizzazione non completata',
-      retryNow: 'Riprova ora',
-      waitingRetry: 'In attesa di un nuovo tentativo...',
-      cancelIndex: 'Annulla',
     },
     mcp: {
       title: 'Strumenti personalizzati (MCP)',
@@ -1461,21 +1059,6 @@ export const it: TranslationKeys = {
       failedToAddServer: 'Impossibile aggiungere il server',
       failedToDeleteServer: 'Impossibile eliminare il server',
     },
-    templates: {
-      title: 'Template',
-      desc: 'Salva e riutilizza prompt e configurazioni comuni.',
-      howToUse: 'Come usare',
-      savedTemplates: 'Template salvati',
-      addTemplate: 'Aggiungi template',
-      templateName: 'Nome template',
-      noTemplates: 'Nessun template salvato',
-      loading: 'Caricamento...',
-      deleteTemplate: 'Elimina template',
-      deleteTemplateConfirm: 'Sei sicuro di voler eliminare questo template?',
-      editTemplate: 'Modifica template',
-      name: 'Nome',
-      actions: 'Azioni',
-    },
     editor: {
       snippets: {
         sectionTitle: 'Snippet',
@@ -1503,133 +1086,8 @@ export const it: TranslationKeys = {
         openError: 'Apertura di snippets.md fallita: {error}',
       },
     },
-    continuation: {
-      title: 'Continuazione',
-      aiSubsectionTitle: 'Continuazione AI',
-      customSubsectionTitle: 'Continuazione personalizzata',
-      tabSubsectionTitle: 'Completamento Tab',
-      superContinuation: 'Super continuazione',
-      superContinuationDesc:
-        'Abilita la vista Sparkle nella barra laterale per la configurazione avanzata della continuazione.',
-      continuationModel: 'Modello di continuazione',
-      continuationModelDesc:
-        'Modello usato per generare testo di continuazione.',
-      smartSpaceDescription:
-        'Smart Space ti aiuta a continuare a scrivere con azioni rapide personalizzabili. Di default si apre con spazio su riga vuota o "/" + spazio; qui sotto puoi passare al doppio spazio o disattivare il trigger con spazio.',
-      smartSpaceToggle: 'Abilita smart space',
-      smartSpaceToggleDesc:
-        'Mostra il menu smart space quando il cursore è su una riga vuota.',
-      smartSpaceTriggerMode: 'Trigger spazio su riga vuota',
-      smartSpaceTriggerModeDesc:
-        'Cosa deve fare Smart Space quando premi spazio su una riga vuota.',
-      smartSpaceTriggerModeSingle:
-        'Spazio singolo per aprire (comportamento originale)',
-      smartSpaceTriggerModeDouble:
-        'Doppio spazio per aprire (~600ms; il primo spazio inserisce davvero uno spazio)',
-      smartSpaceTriggerModeOff:
-        'Disattiva trigger con spazio su riga vuota (solo "/" + spazio)',
-      selectionChatSubsectionTitle: 'Cursor chat',
-      selectionChatDescription:
-        'Offre azioni rapide sul testo selezionato, come chiedere, riscrivere o spiegare.',
-      selectionChatToggle: 'Abilita chat selezione',
-      selectionChatToggleDesc:
-        'Quando attivo, selezionando del testo compaiono azioni rapide per fare domande o usare comandi predefiniti.',
-      selectionChatAutoDock: 'Dock automatico in alto a destra',
-      selectionChatAutoDockDesc:
-        "Dopo l'invio, sposta in alto a destra (il trascinamento manuale disattiva il follow).",
-      keywordTrigger: 'Trigger parola chiave',
-      keywordTriggerDesc:
-        'Trigger automaticamente la continuazione quando digiti una parola chiave specifica.',
-      triggerKeyword: 'Parola chiave trigger',
-      triggerKeywordDesc:
-        'Parola chiave che trigger automaticamente la continuazione AI.',
-      quickAskSubsectionTitle: 'Quick Ask',
-      quickAskDescription:
-        "Quick Ask è un menu contestuale che ti permette di chiedere all'AI o modificare il testo selezionato.",
-      quickAskToggle: 'Abilita Quick Ask',
-      quickAskToggleDesc:
-        'Mostra il menu Quick Ask quando selezioni il testo e premi Cmd/Ctrl+Shift+K.',
-      quickAskTrigger: 'Scorciatoia Quick Ask',
-      quickAskTriggerDesc: 'Scorciatoia da tastiera per aprire Quick Ask.',
-      quickAskContextBeforeChars: 'Contesto prima del cursore (caratteri)',
-      quickAskContextBeforeCharsDesc:
-        'Numero massimo di caratteri prima del cursore da includere (predefinito: 5000).',
-      quickAskContextAfterChars: 'Contesto dopo il cursore (caratteri)',
-      quickAskContextAfterCharsDesc:
-        'Numero massimo di caratteri dopo il cursore da includere (predefinito: 2000).',
-      tabCompletionBasicTitle: 'Impostazioni di base',
-      tabCompletionBasicDesc:
-        'Abilita il completamento tab e imposta i parametri principali.',
-      tabCompletionTriggersSectionTitle: 'Impostazioni trigger',
-      tabCompletionTriggersSectionDesc:
-        'Configura quando deve attivarsi il completamento.',
-      tabCompletionAutoSectionTitle: 'Impostazioni completamento automatico',
-      tabCompletionAutoSectionDesc: 'Regola il completamento dopo pausa.',
-      tabCompletionAdvancedSectionDesc:
-        'Configura le opzioni avanzate del completamento tab.',
-      tabCompletion: 'Completamento tab',
-      tabCompletionDesc:
-        'Genera suggerimenti quando una regola trigger corrisponde.',
-      tabCompletionModel: 'Modello completamento tab',
-      tabCompletionModelDesc:
-        'Modello usato per generare suggerimenti di completamento tab.',
-      tabCompletionTriggerDelay: 'Ritardo trigger (ms)',
-      tabCompletionTriggerDelayDesc:
-        'Quanto tempo attendere dopo che smetti di digitare prima di generare un suggerimento.',
-      tabCompletionAutoTrigger: 'Completamento automatico dopo pausa',
-      tabCompletionAutoTriggerDesc:
-        'Attiva il completamento anche quando non ci sono trigger corrispondenti.',
-      tabCompletionAutoTriggerDelay: 'Ritardo completamento automatico (ms)',
-      tabCompletionAutoTriggerDelayDesc:
-        'Quanto tempo attendere dopo la pausa prima di avviare il completamento automatico.',
-      tabCompletionAutoTriggerCooldown:
-        'Cooldown completamento automatico (ms)',
-      tabCompletionAutoTriggerCooldownDesc:
-        'Periodo di raffreddamento dopo il completamento automatico per evitare richieste frequenti.',
-      tabCompletionMaxSuggestionLength: 'Lunghezza massima suggerimento',
-      tabCompletionMaxSuggestionLengthDesc:
-        'Numero massimo di caratteri da mostrare nel suggerimento.',
-      tabCompletionLengthPreset: 'Lunghezza completamento',
-      tabCompletionLengthPresetDesc:
-        'Suggerisce al modello di generare un completamento breve, medio o lungo.',
-      tabCompletionLengthPresetShort: 'Breve',
-      tabCompletionLengthPresetMedium: 'Medio',
-      tabCompletionLengthPresetLong: 'Lungo',
-      tabCompletionAdvanced: 'Impostazioni avanzate',
-      tabCompletionContextRange: 'Intervallo contesto',
-      tabCompletionContextRangeDesc:
-        'Caratteri totali di contesto inviati al modello (divisi 4:1 tra prima e dopo il cursore).',
-      tabCompletionMinContextLength: 'Lunghezza minima contesto',
-      tabCompletionMinContextLengthDesc:
-        'Numero minimo di caratteri richiesti prima del cursore per attivare i suggerimenti.',
-      tabCompletionTemperature: 'Temperatura',
-      tabCompletionTemperatureDesc:
-        'Controlla la casualità dei suggerimenti (0 = deterministico, 1 = creativo).',
-      tabCompletionRequestTimeout: 'Timeout richiesta (ms)',
-      tabCompletionRequestTimeoutDesc:
-        'Quanto tempo attendere una risposta dal modello prima del timeout.',
-      tabCompletionConstraints: 'Vincoli completamento tab',
-      tabCompletionConstraintsDesc:
-        'Regole opzionali inserite nel prompt di completamento tab (ad esempio "scrivi in italiano" o "segui uno stile specifico").',
-      tabCompletionTriggersTitle: 'Trigger',
-      tabCompletionTriggersDesc:
-        'Il completamento tab si attiva solo quando una regola abilitata corrisponde.',
-      tabCompletionTriggerAdd: 'Aggiungi trigger',
-      tabCompletionTriggerEnabled: 'Abilitato',
-      tabCompletionTriggerType: 'Tipo',
-      tabCompletionTriggerTypeString: 'Stringa',
-      tabCompletionTriggerTypeRegex: 'Regex',
-      tabCompletionTriggerPattern: 'Pattern',
-      tabCompletionTriggerDescription: 'Descrizione',
-      tabCompletionTriggerRemove: 'Rimuovi',
-    },
     etc: {
       title: 'Altro',
-      pluginAutoUpdate: 'Scarica aggiornamenti automaticamente',
-      pluginAutoUpdateDesc:
-        'Se attivo, le nuove versioni rilevate vengono scaricate automaticamente in background.',
-      pluginAutoUpdateDescUnavailable:
-        'L’installazione con un clic è disponibile solo su desktop con cartella plugin scrivibile. Su questo dispositivo aggiorna tramite Community plugins o GitHub.',
       resetSettings: 'Ripristina impostazioni',
       resetSettingsDesc:
         'Ripristina tutte le impostazioni ai valori predefiniti.',
@@ -1665,13 +1123,6 @@ export const it: TranslationKeys = {
       captureRawRequestDebug: 'Abilita debug richieste LLM',
       captureRawRequestDebugDesc:
         "Quando attivo, ogni risposta del modello mostra un pulsante Debug (nella barra info e nel menu Altre azioni) che consente di consultare o esportare le richieste e risposte raw di LLM, chiamate strumento e ricerche web di quel turno. I dati catturati restano in memoria solo per la sessione corrente di Obsidian e vengono cancellati al riavvio. Le chiavi API sono offuscate nell'export, ma il contenuto originale della conversazione è incluso.",
-      captureRawRequestDebugExcludeLogsTitle:
-        'Escludere i log di debug dalla knowledge base?',
-      captureRawRequestDebugExcludeLogsMessage:
-        'I log di debug possono contenere il contenuto raw della conversazione e degli strumenti. Aggiungere {{path}} alla lista di esclusione della knowledge base per evitare che vengano indicizzati dal RAG?',
-      captureRawRequestDebugExcludeLogsCta: 'Escludi log',
-      captureRawRequestDebugExcludeLogsSuccess:
-        '{{path}} è stato escluso dalla knowledge base.',
       yoloBaseDir: 'Cartella base YOLO',
       yoloBaseDirDesc:
         'Inserisci un percorso relativo al vault (senza / iniziale). Esempio: YOLO nella radice del vault, oppure setting/YOLO nella cartella setting. Directory skill attuale: {path}.',
@@ -1694,9 +1145,6 @@ export const it: TranslationKeys = {
         'Controlla come i file con @ vengono iniettati nel modello. In modalita leggera vengono iniettati solo i percorsi dei file citati, le proprieta della nota e la struttura Markdown, incoraggiando l agent a leggere solo il contenuto necessario.',
       mentionContextModeLight: 'Modalita leggera',
       mentionContextModeFull: 'Modalita completa',
-      persistSelectionHighlight: 'Mantieni evidenziazione blocco selezione',
-      persistSelectionHighlightDesc:
-        "Mantiene visibile l'evidenziazione a blocco del contenuto selezionato nell'editor durante l'interazione con la Chat laterale o Quick Ask.",
       chatExportSubsectionTitle: 'Esportazione chat',
       chatExportIncludeThinking: 'Esporta processo di ragionamento',
       chatExportIncludeThinkingDesc:
@@ -1739,6 +1187,10 @@ export const it: TranslationKeys = {
     placeholderPrefix: 'Scrivi un messaggio...',
     placeholderMention: 'aggiungere riferimenti o modelli',
     placeholderSkill: 'scegliere una skill o un comando',
+    editPartialSuccess:
+      'Applicate {appliedCount} di {totalEdits} modifiche. Controlla la console per i dettagli.',
+    statusRequesting: 'Richiesta in corso...',
+    statusThinking: 'Sto pensando...',
     contextUsage: 'Utilizzo finestra di contesto',
     contextUsageUnknownMaxSuffix:
       ' (limite finestra di contesto non impostato)',
@@ -1831,7 +1283,6 @@ export const it: TranslationKeys = {
       'Questo modello non dichiara il supporto alle immagini. Abilita la modalità di input "Vision" nelle impostazioni del modello per allegare immagini.',
     unsupportedFileType: 'Tipo di file non supportato: {names}',
     processImagesFailed: 'Impossibile elaborare le immagini caricate',
-    readPdfFailed: 'Impossibile leggere il PDF "{name}": {error}',
     readOfficeFailed: 'Failed to read Office document "{name}": {error}',
     readTextAttachmentFailed: 'Failed to read text file "{name}": {error}',
     addContext: 'Aggiungi contesto',
@@ -1843,9 +1294,6 @@ export const it: TranslationKeys = {
     noAssistantContent: 'Nessun contenuto assistente da inserire',
     regenerate: 'Rigenera',
     reasoning: 'Ragionamento',
-    annotations: 'Annotazioni',
-    vaultSources: 'Fonti dal vault ({count})',
-    pdfReferenceNoPreview: '(PDF: clicca il titolo per aprire la pagina)',
     assistantQuote: {
       add: 'Cita',
       badge: 'Citazione risposta',
@@ -2093,15 +1541,10 @@ export const it: TranslationKeys = {
         delete: 'Elimina',
         create_dir: 'Crea cartella',
         move: 'Sposta percorso',
-        // Chiavi legacy mantenute per le conversazioni storiche.
-        create_file: 'Crea file',
-        delete_file: 'Elimina file',
-        delete_dir: 'Elimina cartella',
       },
       readMode: {
         full: 'Intero testo',
         linesSuffix: ' righe',
-        pagesSuffix: ' pagine',
       },
       detail: {
         target: 'Destinazione',
@@ -2166,18 +1609,6 @@ export const it: TranslationKeys = {
         viewDetails: 'Vedi parametri',
       },
     },
-    conversationSettings: {
-      openAria: 'Impostazioni conversazione',
-      chatMemory: 'Memoria chat',
-      maxContext: 'Contesto massimo',
-      sampling: 'Parametri di campionamento',
-      temperature: 'Temperatura',
-      topP: 'Top p',
-      streaming: 'Streaming',
-      geminiTools: 'Strumenti Gemini',
-      webSearch: 'Ricerca web',
-      urlContext: 'Contesto URL',
-    },
     notification: {
       approvalTitle: 'YOLO richiede la tua conferma',
       approvalBody:
@@ -2191,41 +1622,8 @@ export const it: TranslationKeys = {
   },
 
   notices: {
-    rebuildingIndex: 'Ricostruzione indice vault in corso…',
-    rebuildComplete: 'Ricostruzione indice vault completata.',
-    rebuildFailed: 'Ricostruzione indice vault fallita.',
-    indexedWithSkipped: 'Indice completato · {{count}} file non indicizzabili.',
-    continueComplete: 'Indicizzazione ripresa completata.',
-    continueFailed: 'Indicizzazione ripresa fallita.',
     openYoloNewChatFailed:
       'Impossibile aprire la finestra chat YOLO; prova prima dal palette comandi.',
-    pgliteUnavailable:
-      'Runtime PGlite non disponibile; riprova a scaricare le risorse runtime.',
-    downloadingPglite:
-      'Download delle risorse runtime PGlite in corso; il primo utilizzo della knowledge base potrebbe richiedere un momento…',
-    updatingIndex: 'Aggiornamento indice vault in corso…',
-    indexUpdated: 'Indice vault aggiornato.',
-    indexUpdateFailed: 'Aggiornamento indice vault fallito.',
-    migrationComplete: 'Migrazione a storage JSON completata con successo.',
-    migrationFailed:
-      'Migrazione a storage JSON fallita; controlla la console per i dettagli.',
-    reloadingPlugin: 'Ricaricamento "next-composer" a causa della migrazione',
-    settingsInvalid: 'Impostazioni non valide',
-    transportModeAutoPromoted:
-      'Rilevato un problema di rete/CORS. Questo provider e stato impostato automaticamente su {mode}.',
-    capturePdfNoLeaf: 'Nessun file PDF aperto al momento.',
-    capturePdfFailed: 'Impossibile catturare la regione selezionata.',
-    capturePdfInjectFailed: 'Impossibile aggiungere lo screenshot alla chat.',
-  },
-
-  pdf: {
-    regionSelectorHint:
-      'Trascina per selezionare una regione. Premi ESC per annullare.',
-    toolbarButtonTooltip: 'Cattura regione PDF nella chat',
-  },
-
-  mentionable: {
-    pdfPage: 'Pagina {{page}}',
   },
 
   statusBar: {
@@ -2252,13 +1650,6 @@ export const it: TranslationKeys = {
     learningReviewLabel: 'YOLO Learning: oggi {count} carte da ripassare',
     learningReviewTitle: 'YOLO Learning',
     learningReviewDetail: '{count} carte da ripassare',
-    ragAutoUpdateRunning: 'La knowledge base si sta aggiornando in background',
-    ragAutoUpdateRunningDetail:
-      "Sincronizzazione incrementale dell'indice della knowledge base in corso.",
-    ragAutoUpdateFailed:
-      'Aggiornamento automatico della knowledge base non riuscito',
-    ragAutoUpdateFailedDetail:
-      "L'ultima sincronizzazione in background non e riuscita. Riprova piu tardi.",
   },
 
   errors: {
@@ -2266,7 +1657,6 @@ export const it: TranslationKeys = {
     modelNotFound: 'Modello non trovato',
     invalidApiKey: 'Chiave API non valida',
     networkError: 'Errore di rete',
-    databaseError: 'Errore database',
     mcpServerError: 'Errore server',
   },
 
@@ -2293,42 +1683,6 @@ export const it: TranslationKeys = {
     revertedChange: 'Modifica ripristinata',
     mergedBoth: 'Entrambe unite',
     undo: 'Annulla',
-  },
-
-  quickAsk: {
-    selectAssistant: 'Seleziona un assistente',
-    noAssistant: 'Nessun assistente',
-    noAssistantDescription: 'Usa prompt di sistema predefinito',
-    navigationHint: '↑↓ per navigare, Invio per selezionare, Esc per annullare',
-    inputPlaceholder: 'Fai una domanda...',
-    close: 'Chiudi',
-    copy: 'Copia',
-    insert: 'Inserisci',
-    openInSidebar: 'Apri nella barra laterale',
-    stop: 'Ferma',
-    send: 'Invia',
-    clear: 'Cancella conversazione',
-    clearConfirm: 'Sei sicuro di voler cancellare la conversazione corrente?',
-    cleared: 'Conversazione cancellata',
-    error: 'Impossibile generare la risposta',
-    copied: 'Copiato negli appunti',
-    inserted: 'Inserito al cursore',
-    modeAsk: 'Chiedi',
-    modeEdit: 'Modifica',
-    modeEditDirect: 'Modifica (Accesso completo)',
-    modeAskDesc: 'Fai domande e ottieni risposte',
-    modeEditDesc: 'Modifica il documento corrente',
-    modeEditDirectDesc: 'Modifica il documento direttamente senza conferma',
-    editNoFile: 'Apri prima un file',
-    editNoChanges: 'Nessuna modifica valida restituita dal modello',
-    editPartialSuccess:
-      'Applicate {appliedCount} di {totalEdits} modifiche. Controlla la console per i dettagli.',
-    editApplied:
-      'Applicate con successo {appliedCount} modifica/modifiche a {fileName}',
-    statusRequesting: 'Richiesta in corso...',
-    statusThinking: 'Sto pensando...',
-    statusGenerating: 'Sto generando...',
-    statusModifying: 'Sto modificando...',
   },
 
   chatMode: {
@@ -2382,45 +1736,5 @@ export const it: TranslationKeys = {
     highDesc: 'Ragionamento approfondito, per problemi complessi',
     xhighDesc: 'Ragionamento esteso per le attività più impegnative',
     maxDesc: 'Ragionamento massimo per le attività più impegnative',
-  },
-
-  update: {
-    newVersionAvailable: 'Nuova versione {version} disponibile',
-    toastTitle: 'YOLO · Nuova versione',
-    currentVersion: 'Attuale',
-    viewDetails: 'Controlla aggiornamenti',
-    goUpdate: 'Aggiorna',
-    dismiss: 'Chiudi',
-    languageEnglish: 'EN',
-    languageChinese: '中文',
-    viewHistory: 'Visualizza cronologia aggiornamenti',
-    skipVersion: 'Non ricordarmelo per questa versione',
-    historyTitle: 'Cronologia aggiornamenti',
-    historyLoading: 'Caricamento cronologia aggiornamenti...',
-    historyError:
-      'Impossibile caricare la cronologia aggiornamenti. Riprova più tardi.',
-    historyEmpty: 'Nessuna cronologia aggiornamenti trovata.',
-    historyPage: 'Pagina {{current}}',
-    historyPrev: 'Precedente',
-    historyNext: 'Successiva',
-    installationIncompleteTitle: 'Installazione del plugin incompleta',
-    installationIncompleteMeta:
-      'main.js {mainVersion} · manifest {manifestVersion} · styles {stylesVersion}',
-    installationIncompleteSuspects: 'File da riparare: {files}',
-    installationIncompleteNotes:
-      'I file del plugin potrebbero non essere stati scaricati completamente. La riparazione parte automaticamente; puoi anche riprovare qui sotto.',
-    tryRepair: 'Prova a riparare',
-    repairing: 'Riparazione {{progress}}%',
-    repairAndReload: 'Ripara e ricarica',
-    downloadUpdate: 'Scarica aggiornamento',
-    downloading: 'Download {{progress}}%',
-    installAndReload: 'Installa e ricarica',
-    applying: 'Installazione…',
-    downloadFailed: 'Download non riuscito',
-    installFailed: 'Installazione non riuscita',
-    viewOnGitHub: 'Vedi su GitHub',
-    updateInCommunityPlugins: 'Aggiorna dai plugin community',
-    manualInstallOnGitHub:
-      'Non riesci ad aggiornare? Installa manualmente da GitHub',
   },
 }

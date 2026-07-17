@@ -2,12 +2,9 @@
  * Shared helpers for honoring shell-supplied proxy env vars
  * (`HTTP_PROXY` / `HTTPS_PROXY` / `ALL_PROXY` / `NO_PROXY`, mixed case).
  *
- * Two callers historically maintained their own copies:
- * `core/llm/sdkFetch.ts` (LLM transport) and the legacy
- * `core/mcp/remoteTransport.ts`. The MCP path now consumes this util via
- * `core/mcp/desktopMcpFetch.ts`. The LLM copy is intentionally left in place
- * (per the issue #252 plan: do not touch the LLM fetch link); future
- * refactors may converge it onto this helper.
+ * MCP transports consume this helper through `core/mcp/desktopMcpFetch.ts`.
+ * The LLM transport keeps its own request setup because the two paths have
+ * different lifecycle requirements.
  */
 
 export const PROXY_ENV_KEYS = [

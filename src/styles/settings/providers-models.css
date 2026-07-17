@@ -624,9 +624,6 @@
   font-style: italic;
 }
 
-/* Embedding models table column sizing */
-/* Note: Embedding table uses <colgroup> with last two 60px columns to align with chat models */
-
 @media (max-width: 720px) {
   .yolo-models-block,
   .yolo-providers-models-block {

@@ -1,4 +1,4 @@
-import { SETTINGS_SCHEMA_VERSION } from '../../settings/schema/migrations'
+import { SETTINGS_SCHEMA_VERSION } from '../../settings/schema/version'
 
 import { EXCLUDED_KEYS } from './config-keys'
 import { redactSensitive } from './redact'

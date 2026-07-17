@@ -2,23 +2,14 @@ import { App, TFile, TFolder, WorkspaceLeaf, WorkspaceWindow } from 'obsidian'
 
 import { CHAT_VIEW_TYPE } from '../../constants'
 import type { ConversationOverrideSettings } from '../../types/conversation-settings.types'
-import type {
-  MentionableBlockData,
-  MentionableImage,
-} from '../../types/mentionable'
+import type { MentionableImage } from '../../types/mentionable'
 
 export type ChatLeafPlacement = 'sidebar' | 'split' | 'tab' | 'window'
 
 export type PendingChatOpenPayload = {
-  selectedBlock?: MentionableBlockData
   initialConversationId?: string
   prefillText?: string
   autoSend?: boolean
-  /**
-   * Override the conversation's assistant when consuming this payload. Used by
-   * Cursor Chat selection shortcuts that bind a specific assistant to the action.
-   */
-  assistantId?: string
   fileToAdd?: TFile
   folderToAdd?: TFolder
   imageToAdd?: MentionableImage

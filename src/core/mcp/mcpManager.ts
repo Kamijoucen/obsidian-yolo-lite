@@ -1,11 +1,10 @@
 import isEqual from 'lodash.isequal'
-import { App, FileSystemAdapter, Platform } from 'obsidian'
+import { App, Platform } from 'obsidian'
 
 import { YoloSettings } from '../../settings/schema/setting.types'
 import type { ApplyViewState } from '../../types/apply-view.types'
 import type { AssistantWorkspaceScope } from '../../types/assistant.types'
 import type { ChatMessage } from '../../types/chat'
-import type { ChatModelModality } from '../../types/chat-model.types'
 import {
   McpClient,
   McpServerConfig,
@@ -25,8 +24,6 @@ import {
 } from '../agent/builtinToolUiMeta'
 import type { PromptSourceWatcher } from '../agent/promptSourceWatcher'
 import type { SubagentParentContext } from '../agent/subagent/parent-context'
-import type { AgentRunContext } from '../agent/types'
-import type { RAGEngine } from '../rag/ragEngine'
 import {
   WEB_SCRAPE_TOOL_NAME,
   WEB_SEARCH_TOOL_NAME,
@@ -66,13 +63,6 @@ import {
 
 type RemoteTransportModule = typeof import('./remoteTransport')
 
-const getVaultBasePath = (app: App): string | undefined => {
-  const adapter = app.vault.adapter
-  return adapter instanceof FileSystemAdapter
-    ? adapter.getBasePath()
-    : undefined
-}
-
 export const INVALID_TOOL_ARGUMENTS_JSON_ERROR =
   'Tool arguments must be valid JSON. Please escape quotes/newlines inside string values and retry.'
 
@@ -87,7 +77,6 @@ export class McpManager {
 
   private readonly app: App
   private readonly openApplyReview: (state: ApplyViewState) => Promise<boolean>
-  private readonly getRagEngine?: () => Promise<RAGEngine>
   private readonly promptSourceWatcher?: PromptSourceWatcher
   private settings: YoloSettings
   private unsubscribeFromSettings: () => void
@@ -194,7 +183,6 @@ export class McpManager {
     settings,
     openApplyReview,
     registerSettingsListener,
-    getRagEngine,
     promptSourceWatcher,
   }: {
     app: App
@@ -203,12 +191,10 @@ export class McpManager {
     registerSettingsListener: (
       listener: (settings: YoloSettings) => void,
     ) => () => void
-    getRagEngine?: () => Promise<RAGEngine>
     promptSourceWatcher?: PromptSourceWatcher
   }) {
     this.app = app
     this.openApplyReview = openApplyReview
-    this.getRagEngine = getRagEngine
     this.promptSourceWatcher = promptSourceWatcher
     this.settings = settings
     this.unsubscribeFromSettings = registerSettingsListener((newSettings) => {
@@ -694,7 +680,7 @@ export class McpManager {
         })
       }
       case 'sse': {
-        // eslint-disable-next-line @typescript-eslint/no-deprecated -- SSEClientTransport is deprecated but still required for legacy SSE servers during MCP migration period
+        // eslint-disable-next-line @typescript-eslint/no-deprecated -- MCP servers can still expose the standardized SSE transport
         const { SSEClientTransport } = await import(
           '@modelcontextprotocol/sdk/client/sse.js'
         )
@@ -723,30 +709,16 @@ export class McpManager {
     }
   }
 
-  private getAvailableToolsCacheKey(
-    includeBuiltinTools: boolean,
-    chatModelModalities: ChatModelModality[] | undefined,
-  ): string {
-    // Modalities are part of the cache key because built-in tool schemas
-    // (notably fs_read) are tailored per-model. Sort to be stable across the
-    // few call sites that may pass them in different order.
-    const modalityFingerprint = chatModelModalities
-      ? [...chatModelModalities].sort().join(',')
-      : 'superset'
-    return `${includeBuiltinTools ? 'with_builtin' : 'mcp_only'}|${modalityFingerprint}`
+  private getAvailableToolsCacheKey(includeBuiltinTools: boolean): string {
+    return includeBuiltinTools ? 'with_builtin' : 'mcp_only'
   }
 
   public async listAvailableTools({
     includeBuiltinTools = false,
-    chatModelModalities,
   }: {
     includeBuiltinTools?: boolean
-    chatModelModalities?: ChatModelModality[]
   } = {}): Promise<McpTool[]> {
-    const cacheKey = this.getAvailableToolsCacheKey(
-      includeBuiltinTools,
-      chatModelModalities,
-    )
+    const cacheKey = this.getAvailableToolsCacheKey(includeBuiltinTools)
     const cached = this.availableToolsCache.get(cacheKey)
     if (cached) {
       return cached
@@ -783,10 +755,7 @@ export class McpManager {
     const nextTools = includeBuiltinTools
       ? [
           ...availableTools,
-          ...getLocalFileTools({
-            vaultBasePath: getVaultBasePath(this.app),
-            chatModelModalities,
-          })
+          ...getLocalFileTools()
             .filter((tool) => this.isLocalToolEnabled(tool.name))
             .map((tool) => ({
               ...tool,
@@ -886,7 +855,6 @@ export class McpManager {
     workspaceScope,
     allowedSkillPaths,
     subagentParentContext,
-    runContext,
   }: {
     name: string
     args?: Record<string, unknown> | undefined
@@ -899,7 +867,6 @@ export class McpManager {
     chatModelId?: string
     workspaceScope?: AssistantWorkspaceScope
     allowedSkillPaths?: readonly string[]
-    runContext?: AgentRunContext
     subagentParentContext?: SubagentParentContext
   }): Promise<ToolCallResponse> {
     const toolAbortController = new AbortController()
@@ -932,7 +899,6 @@ export class McpManager {
           app: this.app,
           settings: this.settings,
           openApplyReview: this.openApplyReview,
-          getRagEngine: this.getRagEngine,
           conversationId,
           conversationMessages,
           roundId,
@@ -944,7 +910,6 @@ export class McpManager {
           chatModelId,
           workspaceScope,
           allowedSkillPaths,
-          runContext,
           subagentParentContext,
           promptSourceWatcher: this.promptSourceWatcher,
         })

@@ -1,695 +1,156 @@
-import { App, Stat } from 'obsidian'
+import type { App } from 'obsidian'
 
 import {
   YOLO_DATA_META_KEY,
   ensureJsonDbRootDir,
   ensureLearningJsonDbRootDir,
-  ensureVectorDbPath,
   extractYoloDataMeta,
-  readVaultDataJson,
   relocateYoloManagedData,
   stampYoloDataMeta,
 } from './yoloManagedData'
 
-type Listing = {
-  files: string[]
-  folders: string[]
-}
-
 class MockAdapter {
-  private readonly files = new Map<string, string | ArrayBuffer>()
+  private readonly files = new Map<string, ArrayBuffer>()
   private readonly folders = new Set<string>()
-  private failWriteBinaryPaths = new Set<string>()
-  private failRemovePaths = new Set<string>()
 
   async exists(path: string): Promise<boolean> {
     return this.files.has(path) || this.folders.has(path)
   }
 
   async mkdir(path: string): Promise<void> {
-    const segments = path.split('/').filter(Boolean)
     let current = ''
-    for (const segment of segments) {
+    for (const segment of path.split('/').filter(Boolean)) {
       current = current ? `${current}/${segment}` : segment
       this.folders.add(current)
     }
   }
 
-  async read(path: string): Promise<string> {
-    const value = this.files.get(path)
-    if (typeof value !== 'string') {
-      throw new Error(`File is not text: ${path}`)
+  async list(path: string): Promise<{ files: string[]; folders: string[] }> {
+    const prefix = `${path}/`
+    return {
+      files: [...this.files.keys()].filter(
+        (candidate) =>
+          candidate.startsWith(prefix) &&
+          !candidate.slice(prefix.length).includes('/'),
+      ),
+      folders: [...this.folders].filter(
+        (candidate) =>
+          candidate !== path &&
+          candidate.startsWith(prefix) &&
+          !candidate.slice(prefix.length).includes('/'),
+      ),
     }
-    return value
-  }
-
-  async write(path: string, content: string): Promise<void> {
-    this.files.set(path, content)
-    await this.ensureParent(path)
   }
 
   async readBinary(path: string): Promise<ArrayBuffer> {
     const value = this.files.get(path)
-    if (!(value instanceof ArrayBuffer)) {
-      throw new Error(`File is not binary: ${path}`)
-    }
+    if (!value) throw new Error(`Missing file: ${path}`)
     return value
   }
 
-  async writeBinary(path: string, content: ArrayBuffer): Promise<void> {
-    if (this.failWriteBinaryPaths.has(path)) {
-      throw new Error(`Mock writeBinary failure: ${path}`)
-    }
-    this.files.set(path, content)
+  async writeBinary(path: string, value: ArrayBuffer): Promise<void> {
     await this.ensureParent(path)
-  }
-
-  async stat(path: string): Promise<Stat | null> {
-    if (this.files.has(path)) {
-      const value = this.files.get(path)
-      return {
-        type: 'file',
-        ctime: 0,
-        mtime: 0,
-        size:
-          typeof value === 'string' ? value.length : (value?.byteLength ?? 0),
-      }
-    }
-
-    if (this.folders.has(path)) {
-      return {
-        type: 'folder',
-        ctime: 0,
-        mtime: 0,
-        size: 0,
-      }
-    }
-
-    return null
+    this.files.set(path, value)
   }
 
   async remove(path: string): Promise<void> {
-    if (this.failRemovePaths.has(path)) {
-      throw new Error(`Mock remove failure: ${path}`)
-    }
-    if (this.folders.has(path)) {
-      throw new Error(`Cannot remove directory as file: ${path}`)
-    }
     this.files.delete(path)
   }
 
-  async rmdir(path: string, recursive: boolean): Promise<void> {
-    if (!this.folders.has(path)) {
-      throw new Error(`Directory does not exist: ${path}`)
-    }
-
-    const prefix = `${path}/`
-    const hasChildren =
-      Array.from(this.files.keys()).some((filePath) =>
-        filePath.startsWith(prefix),
-      ) ||
-      Array.from(this.folders).some(
-        (folderPath) => folderPath !== path && folderPath.startsWith(prefix),
-      )
-
-    if (hasChildren && !recursive) {
-      throw new Error(`Directory is not empty: ${path}`)
-    }
-
-    for (const filePath of Array.from(this.files.keys())) {
-      if (filePath.startsWith(prefix)) {
-        this.files.delete(filePath)
-      }
-    }
-    for (const folderPath of Array.from(this.folders)) {
-      if (folderPath === path || folderPath.startsWith(prefix)) {
-        this.folders.delete(folderPath)
-      }
-    }
+  async rmdir(path: string): Promise<void> {
+    this.folders.delete(path)
   }
 
-  async list(path: string): Promise<Listing> {
-    const prefix = path ? `${path}/` : ''
-    const files = Array.from(this.files.keys()).filter((filePath) => {
-      if (!filePath.startsWith(prefix)) {
-        return false
-      }
-      return !filePath.slice(prefix.length).includes('/')
-    })
-    const folders = Array.from(this.folders).filter((folderPath) => {
-      if (!folderPath.startsWith(prefix) || folderPath === path) {
-        return false
-      }
-      return !folderPath.slice(prefix.length).includes('/')
-    })
-    return { files, folders }
+  async putText(path: string, value: string): Promise<void> {
+    const bytes = new TextEncoder().encode(value)
+    await this.writeBinary(
+      path,
+      bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength),
+    )
   }
 
-  failWriteBinary(path: string): void {
-    this.failWriteBinaryPaths.add(path)
-  }
-
-  failRemove(path: string): void {
-    this.failRemovePaths.add(path)
-  }
-
-  allowRemove(path: string): void {
-    this.failRemovePaths.delete(path)
+  async readText(path: string): Promise<string> {
+    return new TextDecoder().decode(await this.readBinary(path))
   }
 
   private async ensureParent(path: string): Promise<void> {
-    const slashIndex = path.lastIndexOf('/')
-    if (slashIndex <= 0) {
-      return
-    }
-    await this.mkdir(path.slice(0, slashIndex))
+    const index = path.lastIndexOf('/')
+    if (index > 0) await this.mkdir(path.slice(0, index))
   }
 }
 
-const createMockApp = (adapter: MockAdapter): App =>
-  ({
-    vault: {
-      adapter,
-    },
-  }) as unknown as App
+const createApp = (adapter: MockAdapter): App =>
+  ({ vault: { adapter } }) as unknown as App
 
 describe('yoloManagedData', () => {
-  test('creates YOLO base dir even before chat data exists', async () => {
-    const adapter = new MockAdapter()
-    const app = createMockApp(adapter)
+  it('extracts and stamps settings metadata', () => {
+    const meta = { updatedAt: 42, deviceId: 'device-1' }
+    const stamped = stampYoloDataMeta({ version: 1 }, meta)
 
-    const rootDir = await ensureJsonDbRootDir(app, {
-      yolo: { baseDir: 'Config/YOLO' },
+    expect(stamped[YOLO_DATA_META_KEY]).toEqual(meta)
+    expect(extractYoloDataMeta(stamped)).toEqual({
+      raw: { version: 1 },
+      meta,
     })
-
-    expect(rootDir).toBe('Config/YOLO/.yolo_json_db')
-    await expect(adapter.exists('Config/YOLO')).resolves.toBe(true)
   })
 
-  test('moves misplaced learning data to the configured root and overwrites stale targets', async () => {
+  it('creates the configured JSON data root', async () => {
     const adapter = new MockAdapter()
-    const app = createMockApp(adapter)
-    const sourceRoot = 'YOLO/.yolo_json_db'
-    const targetRoot = 'Config/YOLO/.yolo_json_db'
-    await adapter.write(
-      `${sourceRoot}/learning-srs/project.json`,
-      '{"state":"current"}',
-    )
-    await adapter.write(
-      `${targetRoot}/learning-srs/project.json`,
-      '{"state":"stale"}',
-    )
-    await adapter.write(
-      `${targetRoot}/learning-srs/target-only.json`,
-      '{"state":"preserved"}',
-    )
-    await adapter.write(
-      `${sourceRoot}/anki-import-journals/run.json`,
-      JSON.stringify({
-        version: 1,
-        srsPath: `${sourceRoot}/learning-srs/project.json`,
-      }),
-    )
+    const app = createApp(adapter)
 
+    await expect(
+      ensureJsonDbRootDir(app, { yolo: { baseDir: 'Config/YOLO' } }),
+    ).resolves.toBe('Config/YOLO/.yolo_json_db')
     await expect(
       ensureLearningJsonDbRootDir(app, {
         yolo: { baseDir: 'Config/YOLO' },
       }),
-    ).resolves.toBe(targetRoot)
-
-    await expect(
-      adapter.read(`${targetRoot}/learning-srs/project.json`),
-    ).resolves.toBe('{"state":"current"}')
-    await expect(
-      adapter.read(`${targetRoot}/learning-srs/target-only.json`),
-    ).resolves.toBe('{"state":"preserved"}')
-    await expect(
-      adapter.read(`${targetRoot}/anki-import-journals/run.json`),
-    ).resolves.toContain('Config/YOLO/.yolo_json_db/learning-srs/project.json')
-    await expect(adapter.exists(sourceRoot)).resolves.toBe(false)
-    await expect(adapter.exists('YOLO')).resolves.toBe(false)
-  })
-
-  test('preserves a default YOLO root that contains unrelated data', async () => {
-    const adapter = new MockAdapter()
-    const app = createMockApp(adapter)
-    await adapter.write(
-      'YOLO/.yolo_json_db/learning-srs/project.json',
-      '{"state":"current"}',
-    )
-    await adapter.write(
-      'YOLO/.yolo_json_db/chats/chat.json',
-      '{"title":"keep"}',
-    )
-
-    await ensureLearningJsonDbRootDir(app, {
-      yolo: { baseDir: 'Config/YOLO' },
-    })
-
-    await expect(
-      adapter.exists('YOLO/.yolo_json_db/learning-srs'),
-    ).resolves.toBe(false)
-    await expect(
-      adapter.read('YOLO/.yolo_json_db/chats/chat.json'),
-    ).resolves.toBe('{"title":"keep"}')
-    await expect(adapter.exists('YOLO/.yolo_json_db')).resolves.toBe(true)
-    await expect(adapter.exists('YOLO')).resolves.toBe(true)
-  })
-
-  test('resumes cleanup without recopying stale source data after interruption', async () => {
-    const adapter = new MockAdapter()
-    const app = createMockApp(adapter)
-    const sourcePath = 'YOLO/.yolo_json_db/learning-srs/project.json'
-    const targetPath = 'Config/YOLO/.yolo_json_db/learning-srs/project.json'
-    const markerPath = 'Config/YOLO/.yolo_json_db/.learning-path-migration-v1'
-    await adapter.write(sourcePath, '{"state":"source"}')
-    adapter.failRemove(sourcePath)
-
-    await expect(
-      ensureLearningJsonDbRootDir(app, {
-        yolo: { baseDir: 'Config/YOLO' },
-      }),
-    ).rejects.toThrow('Mock remove failure')
-    await expect(adapter.read(targetPath)).resolves.toBe('{"state":"source"}')
-    await expect(adapter.exists(markerPath)).resolves.toBe(true)
-
-    await adapter.write(targetPath, '{"state":"newer-target"}')
-    adapter.allowRemove(sourcePath)
-    await ensureLearningJsonDbRootDir(app, {
-      yolo: { baseDir: 'Config/YOLO' },
-    })
-
-    await expect(adapter.read(targetPath)).resolves.toBe(
-      '{"state":"newer-target"}',
-    )
-    await expect(adapter.exists(sourcePath)).resolves.toBe(false)
-    await expect(adapter.exists(markerPath)).resolves.toBe(false)
-  })
-
-  test('restores a missing migration target before deleting its source', async () => {
-    const adapter = new MockAdapter()
-    const app = createMockApp(adapter)
-    const sourcePath = 'YOLO/.yolo_json_db/learning-srs/project.json'
-    const targetPath = 'Config/YOLO/.yolo_json_db/learning-srs/project.json'
-    await adapter.write(sourcePath, '{"state":"source"}')
-    adapter.failRemove(sourcePath)
-
-    await expect(
-      ensureLearningJsonDbRootDir(app, {
-        yolo: { baseDir: 'Config/YOLO' },
-      }),
-    ).rejects.toThrow('Mock remove failure')
-    await adapter.remove(targetPath)
-    adapter.allowRemove(sourcePath)
-
-    await ensureLearningJsonDbRootDir(app, {
-      yolo: { baseDir: 'Config/YOLO' },
-    })
-
-    await expect(adapter.read(targetPath)).resolves.toBe('{"state":"source"}')
-    await expect(adapter.exists(sourcePath)).resolves.toBe(false)
-  })
-
-  test('migrates legacy chat storage into YOLO root', async () => {
-    const adapter = new MockAdapter()
-    const app = createMockApp(adapter)
-    await adapter.mkdir('.smtcmp_json_db/chats/chat_snapshots')
-    await adapter.write(
-      '.smtcmp_json_db/chats/v1_123.json',
-      '{"id":"123","title":"Legacy"}',
-    )
-    await adapter.write(
-      '.smtcmp_json_db/chats/chat_snapshots/123.json',
-      '{"schemaVersion":1,"entries":{}}',
-    )
-
-    const rootDir = await ensureJsonDbRootDir(app, {
-      yolo: { baseDir: 'YOLO' },
-    })
-
-    expect(rootDir).toBe('YOLO/.yolo_json_db')
-    await expect(
-      adapter.exists('YOLO/.yolo_json_db/chats/v1_123.json'),
-    ).resolves.toBe(true)
-    await expect(
-      adapter.exists('YOLO/.yolo_json_db/chats/chat_snapshots/123.json'),
-    ).resolves.toBe(true)
-    await expect(adapter.exists('.smtcmp_json_db')).resolves.toBe(false)
-  })
-
-  test('cleans up legacy chat directories after migration', async () => {
-    const adapter = new MockAdapter()
-    const app = createMockApp(adapter)
-    await adapter.mkdir('.smtcmp_json_db/chats/chat_snapshots')
-    await adapter.write(
-      '.smtcmp_json_db/chats/chat_snapshots/123.json',
-      '{"schemaVersion":1,"entries":{}}',
-    )
-
-    await ensureJsonDbRootDir(app, {
-      yolo: { baseDir: 'YOLO' },
-    })
-
-    await expect(
-      adapter.exists('.smtcmp_json_db/chats/chat_snapshots'),
-    ).resolves.toBe(false)
-    await expect(adapter.exists('.smtcmp_json_db/chats')).resolves.toBe(false)
-    await expect(adapter.exists('.smtcmp_json_db')).resolves.toBe(false)
-  })
-
-  test('migrates legacy vector db into YOLO root', async () => {
-    const adapter = new MockAdapter()
-    const app = createMockApp(adapter)
-    const payload = new Uint8Array([1, 2, 3]).buffer
-    await adapter.writeBinary('.smtcmp_vector_db.tar.gz', payload)
-
-    const targetPath = await ensureVectorDbPath(app, {
-      yolo: { baseDir: 'Config/YOLO' },
-    })
-
-    expect(targetPath).toBe('Config/YOLO/.yolo_vector_db.tar.gz')
-    await expect(
-      adapter.exists('Config/YOLO/.yolo_vector_db.tar.gz'),
-    ).resolves.toBe(true)
-    await expect(adapter.exists('.smtcmp_vector_db.tar.gz')).resolves.toBe(
-      false,
+    ).resolves.toBe('Config/YOLO/.yolo_json_db')
+    await expect(adapter.exists('Config/YOLO/.yolo_json_db')).resolves.toBe(
+      true,
     )
   })
 
-  test('relocates managed data when YOLO base dir changes', async () => {
+  it('moves current managed data when the configured root changes', async () => {
     const adapter = new MockAdapter()
-    const app = createMockApp(adapter)
-    await adapter.mkdir('YOLO/.yolo_json_db/chats')
-    await adapter.write(
-      'YOLO/.yolo_json_db/chats/v1_abc.json',
-      '{"id":"abc","title":"Moved"}',
+    const app = createApp(adapter)
+    await adapter.putText(
+      'YOLO/.yolo_json_db/chats/v1_chat.json',
+      '{"id":"chat"}',
     )
-    await adapter.writeBinary(
-      'YOLO/.yolo_vector_db.tar.gz',
-      new Uint8Array([9, 9]).buffer,
+    await adapter.putText(
+      'Config/YOLO/.yolo_json_db/chats/target.json',
+      '{"id":"target"}',
     )
 
-    const migrated = await relocateYoloManagedData({
-      app,
-      fromSettings: { yolo: { baseDir: 'YOLO' } },
-      toSettings: { yolo: { baseDir: 'Config/YOLO' } },
-    })
-
-    expect(migrated).toBe(true)
-    await expect(
-      adapter.exists('Config/YOLO/.yolo_json_db/chats/v1_abc.json'),
-    ).resolves.toBe(true)
-    await expect(
-      adapter.exists('Config/YOLO/.yolo_vector_db.tar.gz'),
-    ).resolves.toBe(true)
-    await expect(adapter.exists('YOLO/.yolo_json_db')).resolves.toBe(false)
-    await expect(adapter.exists('YOLO/.yolo_vector_db.tar.gz')).resolves.toBe(
-      false,
-    )
-  })
-
-  test('rejects a configured root nested inside the default managed-data tree', async () => {
-    const adapter = new MockAdapter()
-    const app = createMockApp(adapter)
-
-    await expect(
-      ensureLearningJsonDbRootDir(app, {
-        yolo: { baseDir: 'YOLO/.yolo_json_db/custom' },
-      }),
-    ).rejects.toThrow('cannot be nested inside managed data')
     await expect(
       relocateYoloManagedData({
         app,
         fromSettings: { yolo: { baseDir: 'YOLO' } },
-        toSettings: { yolo: { baseDir: 'YOLO/.yolo_json_db/custom' } },
+        toSettings: { yolo: { baseDir: 'Config/YOLO' } },
+      }),
+    ).resolves.toBe(true)
+
+    await expect(
+      adapter.readText('Config/YOLO/.yolo_json_db/chats/v1_chat.json'),
+    ).resolves.toBe('{"id":"chat"}')
+    await expect(
+      adapter.readText('Config/YOLO/.yolo_json_db/chats/target.json'),
+    ).resolves.toBe('{"id":"target"}')
+    await expect(adapter.exists('YOLO/.yolo_json_db')).resolves.toBe(false)
+  })
+
+  it('refuses a target inside the current managed-data tree', async () => {
+    const adapter = new MockAdapter()
+    const app = createApp(adapter)
+    await adapter.mkdir('YOLO/.yolo_json_db')
+
+    await expect(
+      relocateYoloManagedData({
+        app,
+        fromSettings: { yolo: { baseDir: 'YOLO' } },
+        toSettings: { yolo: { baseDir: 'YOLO/.yolo_json_db/nested' } },
       }),
     ).resolves.toBe(false)
-  })
-
-  test('merges legacy chat storage into existing target dir', async () => {
-    const adapter = new MockAdapter()
-    const app = createMockApp(adapter)
-    await adapter.mkdir('Config/YOLO/.yolo_json_db/chats')
-    await adapter.write(
-      'Config/YOLO/.yolo_json_db/chats/v1_new.json',
-      '{"id":"new","title":"Existing"}',
-    )
-    await adapter.mkdir('YOLO/.yolo_json_db/chats')
-    await adapter.write(
-      'YOLO/.yolo_json_db/chats/v1_old.json',
-      '{"id":"old","title":"Legacy"}',
-    )
-
-    const migrated = await relocateYoloManagedData({
-      app,
-      fromSettings: { yolo: { baseDir: 'YOLO' } },
-      toSettings: { yolo: { baseDir: 'Config/YOLO' } },
-    })
-
-    expect(migrated).toBe(true)
-    await expect(
-      adapter.exists('Config/YOLO/.yolo_json_db/chats/v1_new.json'),
-    ).resolves.toBe(true)
-    await expect(
-      adapter.exists('Config/YOLO/.yolo_json_db/chats/v1_old.json'),
-    ).resolves.toBe(true)
-    await expect(
-      adapter.exists('YOLO/.yolo_json_db/chats/v1_old.json'),
-    ).resolves.toBe(false)
-  })
-
-  test('rolls back chat relocation when vector relocation fails', async () => {
-    const adapter = new MockAdapter()
-    const app = createMockApp(adapter)
-    await adapter.mkdir('YOLO/.yolo_json_db/chats')
-    await adapter.write(
-      'YOLO/.yolo_json_db/chats/v1_abc.json',
-      '{"id":"abc","title":"Moved"}',
-    )
-    await adapter.writeBinary(
-      'YOLO/.yolo_vector_db.tar.gz',
-      new Uint8Array([9, 9]).buffer,
-    )
-    adapter.failWriteBinary('Config/YOLO/.yolo_vector_db.tar.gz')
-
-    const migrated = await relocateYoloManagedData({
-      app,
-      fromSettings: { yolo: { baseDir: 'YOLO' } },
-      toSettings: { yolo: { baseDir: 'Config/YOLO' } },
-    })
-
-    expect(migrated).toBe(false)
-    await expect(
-      adapter.exists('YOLO/.yolo_json_db/chats/v1_abc.json'),
-    ).resolves.toBe(true)
-    await expect(
-      adapter.exists('Config/YOLO/.yolo_json_db/chats/v1_abc.json'),
-    ).resolves.toBe(false)
-    await expect(adapter.exists('YOLO/.yolo_vector_db.tar.gz')).resolves.toBe(
-      true,
-    )
-    await expect(
-      adapter.exists('Config/YOLO/.yolo_vector_db.tar.gz'),
-    ).resolves.toBe(false)
-  })
-
-  test('merges legacy managed data into existing yolo target on startup', async () => {
-    const adapter = new MockAdapter()
-    const app = createMockApp(adapter)
-    await adapter.mkdir('YOLO/.yolo_json_db/chats')
-    await adapter.write(
-      'YOLO/.yolo_json_db/chats/v1_current.json',
-      '{"id":"current","title":"Current"}',
-    )
-    await adapter.mkdir('.smtcmp_json_db/chats')
-    await adapter.write(
-      '.smtcmp_json_db/chats/v1_legacy.json',
-      '{"id":"legacy","title":"Legacy"}',
-    )
-    await adapter.writeBinary(
-      '.smtcmp_vector_db.tar.gz',
-      new Uint8Array([1, 2, 3]).buffer,
-    )
-
-    const migrated = await relocateYoloManagedData({
-      app,
-      fromSettings: { yolo: { baseDir: 'YOLO' } },
-      toSettings: { yolo: { baseDir: 'YOLO' } },
-    })
-
-    expect(migrated).toBe(true)
-    await expect(
-      adapter.exists('YOLO/.yolo_json_db/chats/v1_current.json'),
-    ).resolves.toBe(true)
-    await expect(
-      adapter.exists('YOLO/.yolo_json_db/chats/v1_legacy.json'),
-    ).resolves.toBe(true)
-    await expect(adapter.exists('YOLO/.yolo_vector_db.tar.gz')).resolves.toBe(
-      true,
-    )
-    await expect(adapter.exists('.smtcmp_json_db')).resolves.toBe(false)
-    await expect(adapter.exists('.smtcmp_vector_db.tar.gz')).resolves.toBe(
-      false,
-    )
-  })
-})
-
-describe('yoloManagedData meta helpers', () => {
-  test('extractYoloDataMeta returns null for non-objects', () => {
-    expect(extractYoloDataMeta(null)).toBeNull()
-    expect(extractYoloDataMeta('string')).toBeNull()
-    expect(extractYoloDataMeta([1, 2])).toBeNull()
-  })
-
-  test('extractYoloDataMeta strips meta and returns parsed shape', () => {
-    const result = extractYoloDataMeta({
-      foo: 1,
-      [YOLO_DATA_META_KEY]: { updatedAt: 42, deviceId: 'abc' },
-    })
-    expect(result).not.toBeNull()
-    expect(result?.meta).toEqual({ updatedAt: 42, deviceId: 'abc' })
-    expect(result?.raw).toEqual({ foo: 1 })
-    expect(result?.raw).not.toHaveProperty(YOLO_DATA_META_KEY)
-  })
-
-  test('extractYoloDataMeta returns null meta when shape is invalid', () => {
-    const result = extractYoloDataMeta({
-      foo: 1,
-      [YOLO_DATA_META_KEY]: { updatedAt: 'oops', deviceId: 'abc' },
-    })
-    expect(result?.meta).toBeNull()
-    expect(result?.raw).toEqual({ foo: 1 })
-  })
-
-  test('extractYoloDataMeta returns null meta for legacy data without meta', () => {
-    const result = extractYoloDataMeta({ foo: 1 })
-    expect(result?.meta).toBeNull()
-    expect(result?.raw).toEqual({ foo: 1 })
-  })
-
-  test('stampYoloDataMeta attaches meta and preserves data fields', () => {
-    const stamped = stampYoloDataMeta(
-      { foo: 1 },
-      { updatedAt: 99, deviceId: 'd1' },
-    )
-    expect(stamped).toEqual({
-      foo: 1,
-      [YOLO_DATA_META_KEY]: { updatedAt: 99, deviceId: 'd1' },
-    })
-  })
-
-  test('stampYoloDataMeta tolerates non-object data by yielding meta-only payload', () => {
-    const stamped = stampYoloDataMeta(null, { updatedAt: 1, deviceId: 'd1' })
-    expect(stamped).toEqual({
-      [YOLO_DATA_META_KEY]: { updatedAt: 1, deviceId: 'd1' },
-    })
-  })
-})
-
-describe('readVaultDataJson (legacy mirror reader, used only for one-time migration)', () => {
-  test('roundtrips meta-stamped data when set up via the legacy on-disk layout', async () => {
-    const adapter = new MockAdapter()
-    const app = createMockApp(adapter)
-    const meta = { updatedAt: 12345, deviceId: 'pc-1' }
-
-    await adapter.mkdir('YOLO')
-    await adapter.write(
-      'YOLO/.yolo_data.json',
-      JSON.stringify({ hello: 'world', [YOLO_DATA_META_KEY]: meta }),
-    )
-    await adapter.write(
-      '.yolo_sync',
-      JSON.stringify({ dataPath: 'YOLO/.yolo_data.json' }),
-    )
-
-    const result = await readVaultDataJson(app)
-    expect(result).not.toBeNull()
-    expect(result?.meta).toEqual(meta)
-    expect(result?.raw).toEqual({ hello: 'world' })
-  })
-
-  test('returns null when pointer is missing', async () => {
-    const adapter = new MockAdapter()
-    const app = createMockApp(adapter)
-    await expect(readVaultDataJson(app)).resolves.toBeNull()
-  })
-
-  test('returns null when pointer references a missing file', async () => {
-    const adapter = new MockAdapter()
-    const app = createMockApp(adapter)
-    await adapter.write('.yolo_sync', JSON.stringify({ dataPath: 'gone.json' }))
-    await expect(readVaultDataJson(app)).resolves.toBeNull()
-  })
-
-  test('does NOT fall back to default path when pointer exists but target is missing', async () => {
-    const adapter = new MockAdapter()
-    const app = createMockApp(adapter)
-    // Pointer points to a custom-baseDir mirror that doesn't exist.
-    await adapter.write(
-      '.yolo_sync',
-      JSON.stringify({ dataPath: 'CustomDir/.yolo_data.json' }),
-    )
-    // A stale default-path mirror is left behind from an even older
-    // setup — must NOT be picked up since pointer is authoritative.
-    await adapter.mkdir('YOLO')
-    await adapter.write('YOLO/.yolo_data.json', JSON.stringify({ stale: true }))
-    const result = await readVaultDataJson(app, { yolo: { baseDir: 'YOLO' } })
-    expect(result).toBeNull()
-  })
-
-  test('does NOT fall back when pointer file exists but contents are corrupt', async () => {
-    const adapter = new MockAdapter()
-    const app = createMockApp(adapter)
-    // Pointer file present but unparseable.
-    await adapter.write('.yolo_sync', '{not valid json')
-    // Stale default mirror present — must NOT be picked up since the
-    // pointer file exists (even if corrupt) and is treated as
-    // authoritative.
-    await adapter.mkdir('YOLO')
-    await adapter.write('YOLO/.yolo_data.json', JSON.stringify({ stale: true }))
-    const result = await readVaultDataJson(app, { yolo: { baseDir: 'YOLO' } })
-    expect(result).toBeNull()
-  })
-
-  test('does NOT fall back when pointer file exists with invalid schema', async () => {
-    const adapter = new MockAdapter()
-    const app = createMockApp(adapter)
-    // Pointer parses as JSON but lacks `dataPath`.
-    await adapter.write('.yolo_sync', JSON.stringify({ wrongField: 'X' }))
-    await adapter.mkdir('YOLO')
-    await adapter.write('YOLO/.yolo_data.json', JSON.stringify({ stale: true }))
-    const result = await readVaultDataJson(app, { yolo: { baseDir: 'YOLO' } })
-    expect(result).toBeNull()
-  })
-
-  test('falls back to settings-derived default path only when pointer is absent', async () => {
-    const adapter = new MockAdapter()
-    const app = createMockApp(adapter)
-    await adapter.mkdir('YOLO')
-    await adapter.write(
-      'YOLO/.yolo_data.json',
-      JSON.stringify({ recovered: true }),
-    )
-    const result = await readVaultDataJson(app, { yolo: { baseDir: 'YOLO' } })
-    expect(result).not.toBeNull()
-    expect(result?.raw).toEqual({ recovered: true })
-  })
-
-  test('legacy mirror without meta still parses with meta=null', async () => {
-    const adapter = new MockAdapter()
-    const app = createMockApp(adapter)
-    await adapter.mkdir('YOLO')
-    await adapter.write(
-      'YOLO/.yolo_data.json',
-      JSON.stringify({ legacy: true }),
-    )
-    await adapter.write(
-      '.yolo_sync',
-      JSON.stringify({ dataPath: 'YOLO/.yolo_data.json' }),
-    )
-    const result = await readVaultDataJson(app)
-    expect(result).not.toBeNull()
-    expect(result?.meta).toBeNull()
-    expect(result?.raw).toEqual({ legacy: true })
   })
 })

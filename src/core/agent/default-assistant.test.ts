@@ -2,31 +2,13 @@ import { parseYoloSettings } from '../../settings/schema/settings'
 
 import {
   DEFAULT_ASSISTANT_ID,
+  createDefaultAssistant,
   ensureDefaultAssistantInSettings,
 } from './default-assistant'
 
 const createBaseSettings = () =>
   parseYoloSettings({
     chatModelId: 'model-a',
-    continuationOptions: {
-      enableTabCompletion: false,
-      tabCompletionSystemPrompt: '',
-      tabCompletionLengthPreset: 'medium',
-      quickAskContextBeforeChars: 5000,
-      quickAskContextAfterChars: 2000,
-      tabCompletionOptions: {
-        idleTriggerEnabled: false,
-        autoTriggerDelayMs: 3000,
-        autoTriggerCooldownMs: 15000,
-        triggerDelayMs: 3000,
-        minContextLength: 20,
-        contextRange: 4000,
-        maxSuggestionLength: 2000,
-        temperature: 0.5,
-        requestTimeoutMs: 12000,
-      },
-      tabCompletionTriggers: [],
-    },
   })
 
 describe('ensureDefaultAssistantInSettings', () => {
@@ -35,17 +17,7 @@ describe('ensureDefaultAssistantInSettings', () => {
       ...createBaseSettings(),
       assistants: [
         {
-          id: DEFAULT_ASSISTANT_ID,
-          name: 'Default',
-          description: 'Default editing agent for sidebar chat.',
-          systemPrompt: '',
-          modelId: 'model-a',
-          persona: 'balanced' as const,
-          enableTools: true,
-          includeBuiltinTools: true,
-          enabledToolNames: [],
-          enabledSkills: [],
-          skillPreferences: {},
+          ...createDefaultAssistant('model-a'),
           createdAt: 111,
           updatedAt: 222,
         },
@@ -73,6 +45,8 @@ describe('ensureDefaultAssistantInSettings', () => {
             name: '',
             description: '',
             systemPrompt: '',
+            includeCurrentFileContent: true,
+            timeContextEnabled: true,
             createdAt: 111,
             updatedAt: 222,
           },

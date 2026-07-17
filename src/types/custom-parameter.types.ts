@@ -14,8 +14,7 @@ export const customParameterSchema = z.object({
     })
     .min(1, 'custom parameter key is required'),
   value: z.string().default(''),
-  // Optional for backward compatibility with existing saved settings
-  type: customParameterTypeSchema.optional(),
+  type: customParameterTypeSchema,
 })
 
 export type CustomParameterType = z.infer<typeof customParameterTypeSchema>

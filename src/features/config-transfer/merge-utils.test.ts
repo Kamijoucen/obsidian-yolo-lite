@@ -10,7 +10,7 @@ describe('deepMerge', () => {
 
   it('should recursively merge nested objects', () => {
     const base = {
-      ragOptions: {
+      agentOptions: {
         enabled: true,
         chunkSize: 1000,
         limit: 10,
@@ -18,14 +18,14 @@ describe('deepMerge', () => {
       },
     }
     const incoming = {
-      ragOptions: {
+      agentOptions: {
         chunkSize: 800,
         limit: 20,
       },
     }
     const result = deepMerge(base, incoming)
     expect(result).toEqual({
-      ragOptions: {
+      agentOptions: {
         enabled: true,
         chunkSize: 800,
         limit: 20,

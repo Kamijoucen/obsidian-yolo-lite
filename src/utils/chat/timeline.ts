@@ -138,7 +138,6 @@ function estimateAssistantGroupHeight(
     }
 
     if (
-      message.role === 'external_agent_result' ||
       message.role === 'subagent_result' ||
       message.role === 'terminal_command_result'
     ) {

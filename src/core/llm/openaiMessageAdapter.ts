@@ -30,10 +30,8 @@ import { filterEmptyAssistantMessages } from '../../utils/chat/tool-boundary'
 import { requireResponseChoicesArray } from './responseFormatError'
 
 /**
- * Normalize OpenAI-compatible `annotations` (returned by OpenAI's hosted web
- * search and OpenRouter's `openrouter:web_search` server tool) into our
- * internal `Annotation` shape. We only retain `url_citation` entries — that's
- * the only variant both upstreams emit today and the only one the UI knows
+ * Normalize OpenAI-compatible `annotations` into our internal `Annotation`
+ * shape. We only retain `url_citation` entries, the only variant the UI knows
  * how to render. Unknown variants are dropped silently.
  */
 const normalizeAnnotations = (raw: unknown): Annotation[] | undefined => {
@@ -68,8 +66,8 @@ const normalizeAnnotations = (raw: unknown): Annotation[] | undefined => {
  * `cache_read_input_tokens` slot so the UI can treat them uniformly.
  *
  * Known shapes:
- *   - OpenAI / Moonshot / OpenRouter / Groq / ...: usage.prompt_tokens_details.cached_tokens
- *   - DeepSeek (non-standard extension):            usage.prompt_cache_hit_tokens
+ *   - OpenAI / Moonshot: usage.prompt_tokens_details.cached_tokens
+ *   - DeepSeek:          usage.prompt_cache_hit_tokens
  */
 export function normalizeOpenAICompatUsage(
   raw: unknown,
@@ -576,21 +574,6 @@ export class OpenAIMessageAdapter {
                     return { type: 'text', text: part.text }
                   case 'image_url':
                     return { type: 'image_url', image_url: part.image_url }
-                  case 'document':
-                    // Pass-through as OpenAI Chat Completions `file` content
-                    // part — the de-facto standard adopted by OpenRouter and
-                    // most OpenAI-compatible proxies that forward to PDF-capable
-                    // upstreams (Gemini / Claude). Reaching here means the user
-                    // explicitly enabled the `pdf` modality on this model; if
-                    // their proxy doesn't speak this format the proxy will
-                    // surface its own error, which is more useful than ours.
-                    return {
-                      type: 'file',
-                      file: {
-                        filename: part.name,
-                        file_data: `data:${part.mediaType};base64,${part.data}`,
-                      },
-                    }
                   default:
                     throw new Error('Unsupported content part type.')
                 }

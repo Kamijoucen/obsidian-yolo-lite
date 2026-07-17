@@ -103,13 +103,11 @@ export type ToolEditSummary = {
 export type ToolFsReadOperationSummary =
   | {
       type: 'full'
-      isPdf: boolean
     }
   | {
       type: 'lines'
       startLine: number
       endLine: number
-      isPdf: boolean
     }
 
 export type ToolCallRequest = {
@@ -117,7 +115,6 @@ export type ToolCallRequest = {
   name: string
   arguments?: ToolCallArguments
   metadata?: {
-    thoughtSignature?: string
     argumentDiagnostics?: ToolCallArgumentDiagnostics
   }
 }

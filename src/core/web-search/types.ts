@@ -24,8 +24,6 @@ export const WEB_SEARCH_PROVIDER_TYPES = [
   'jina',
   'searxng',
   'bing',
-  'gemini-grounding',
-  'grok',
   'zhipu',
 ] as const
 export type WebSearchProviderType = (typeof WEB_SEARCH_PROVIDER_TYPES)[number]
@@ -67,19 +65,6 @@ export const bingOptionsSchema = z.object({
   type: z.literal('bing'),
 })
 
-export const geminiGroundingOptionsSchema = z.object({
-  ...baseFields,
-  type: z.literal('gemini-grounding'),
-  apiKey: z.string().default(''),
-  model: z.string().default('gemini-2.5-flash'),
-  baseUrl: z.string().default('https://generativelanguage.googleapis.com'),
-  systemPrompt: z
-    .string()
-    .default(
-      'You are a search engine. Return concise factual answers with citations.',
-    ),
-})
-
 export const ZHIPU_SEARCH_ENGINES = [
   'search_std',
   'search_pro',
@@ -105,27 +90,11 @@ export const zhipuOptionsSchema = z.object({
   searchDomainFilter: z.string().default(''),
 })
 
-export const grokSearchOptionsSchema = z.object({
-  ...baseFields,
-  type: z.literal('grok'),
-  apiKey: z.string().default(''),
-  model: z.string().default('x-ai/grok-4.1-fast'),
-  baseUrl: z.string().default('https://openrouter.ai/api/v1/responses'),
-  systemPrompt: z
-    .string()
-    .default(
-      "You are a helpful search assistant. Search the web to find accurate and up-to-date information for the user's query. Provide a comprehensive answer with citations.",
-    ),
-  enableX: z.boolean().default(false),
-})
-
 export const webSearchProviderOptionsSchema = z.discriminatedUnion('type', [
   tavilyOptionsSchema,
   jinaOptionsSchema,
   searxngOptionsSchema,
   bingOptionsSchema,
-  geminiGroundingOptionsSchema,
-  grokSearchOptionsSchema,
   zhipuOptionsSchema,
 ])
 export type WebSearchProviderOptions = z.infer<
@@ -236,29 +205,6 @@ export function createDefaultProviderOptions(
       }
     case 'bing':
       return { id, name: 'Bing', type: 'bing' }
-    case 'gemini-grounding':
-      return {
-        id,
-        name: 'Gemini Grounding',
-        type: 'gemini-grounding',
-        apiKey: '',
-        model: 'gemini-2.5-flash',
-        baseUrl: 'https://generativelanguage.googleapis.com',
-        systemPrompt:
-          'You are a search engine. Return concise factual answers with citations.',
-      }
-    case 'grok':
-      return {
-        id,
-        name: 'Grok',
-        type: 'grok',
-        apiKey: '',
-        model: 'x-ai/grok-4.1-fast',
-        baseUrl: 'https://openrouter.ai/api/v1/responses',
-        systemPrompt:
-          "You are a helpful search assistant. Search the web to find accurate and up-to-date information for the user's query. Provide a comprehensive answer with citations.",
-        enableX: false,
-      }
     case 'zhipu':
       return {
         id,

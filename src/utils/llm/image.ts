@@ -13,7 +13,7 @@ import { arrayBufferToBase64 } from '../base64'
  * Vault-file extensions we treat as images for vision payloads.
  *
  * Restricted to the intersection supported by all current provider adapters
- * (OpenAI / Anthropic / Bedrock / Gemini): jpeg, png, gif, webp. Adding
+ * (OpenAI and compatible providers): jpeg, png, gif, webp. Adding
  * formats outside this set (e.g. svg, bmp, heic) would fail provider-side
  * MIME validation and abort the whole request.
  */
@@ -68,7 +68,7 @@ export async function fileToMentionableImage(
 
 /**
  * Read a vault image TFile and return a base64 data URL suitable for the
- * `image_url` content part used by OpenAI / Anthropic vision payloads.
+ * `image_url` content part used by OpenAI-compatible vision payloads.
  *
  * Pass `options.cache` to enable the persistent image cache.
  * When cache is disabled (default), behaviour is unchanged.

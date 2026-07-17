@@ -43,20 +43,3 @@ export function normalizeToolPreferencesForPersistence(
 
   return Object.fromEntries(entries)
 }
-
-export function normalizeToolSelectionForPersistence(
-  enabledToolNames: string[] | undefined,
-  availableTools: McpTool[],
-): string[] {
-  if (!enabledToolNames || enabledToolNames.length === 0) {
-    return []
-  }
-
-  const available = new Set(availableTools.map((tool) => tool.name))
-  const knownBuiltinToolNames = getKnownBuiltinToolNames()
-  return enabledToolNames.filter(
-    (toolName) =>
-      available.has(toolName) ||
-      isKnownOrRemoteToolName(toolName, knownBuiltinToolNames),
-  )
-}

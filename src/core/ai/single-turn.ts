@@ -8,7 +8,6 @@ import {
 import {
   Annotation,
   LLMResponseStreaming,
-  ProviderMetadata,
   ResponseUsage,
 } from '../../types/llm/response'
 import { LLMProvider } from '../../types/provider.types'
@@ -23,7 +22,7 @@ import {
   bindLLMDebugTraceToSignal,
   runWithLLMDebugTrace,
 } from '../llm/debugCapture'
-import { applyLightweightRequestPolicy } from '../llm/lightweight-request-policy'
+import { stripHeavyProviderFeatures } from '../llm/lightweight-request-policy'
 import { ModelRequestTimeoutError } from '../llm/requestPolicy'
 import { ResponseDeliveryMode } from '../llm/responseDeliveryMode'
 import { isLocalFsWriteToolName } from '../mcp/localFileTools'
@@ -40,13 +39,11 @@ export type SingleTurnExecutionResult = {
   annotations?: Annotation[]
   usage?: ResponseUsage
   finishReason?: string | null
-  providerMetadata?: ProviderMetadata
   toolCalls: {
     id?: string
     name: string
     arguments?: ToolCallArguments
     metadata?: {
-      thoughtSignature?: string
       argumentDiagnostics?: ToolCallArgumentDiagnostics
     }
   }[]
@@ -57,7 +54,6 @@ type StreamedToolCall = {
   id?: string
   type?: 'function'
   metadata?: {
-    thoughtSignature?: string
     argumentDiagnostics?: ToolCallArgumentDiagnostics
   }
   function?: {
@@ -81,16 +77,12 @@ type SingleTurnExecutionInput = {
   deliveryMode?: ResponseDeliveryMode
   primaryRequestTimeoutMs?: number
   streamFallbackRecoveryEnabled?: boolean
-  geminiTools?: {
-    useWebSearch?: boolean
-    useUrlContext?: boolean
-  }
   debugTraceId?: string
   /**
    * `standard` (default): forward the model as-configured, including any
    * hosted tools, reasoning, and custom-parameter injections.
    * `lightweight`: apply the lightweight request policy for one-shot helper
-   * calls (title generation, tab completion, short summaries) that
+   * calls (title generation and short summaries) that
    * should not inherit hosted tools or heavyweight model customizations.
    */
   purpose?: 'standard' | 'lightweight'
@@ -265,7 +257,6 @@ export async function executeSingleTurn({
   deliveryMode = 'incremental',
   primaryRequestTimeoutMs = DEFAULT_PRIMARY_REQUEST_TIMEOUT_MS,
   streamFallbackRecoveryEnabled = true,
-  geminiTools,
   debugTraceId,
   purpose = 'standard',
   onStreamDelta,
@@ -273,15 +264,9 @@ export async function executeSingleTurn({
   const resolvedToolChoice: RequestToolChoice | undefined =
     tool_choice ?? (tools ? 'auto' : undefined)
   const isLightweight = purpose === 'lightweight'
-  const baseProviderOptions = { geminiTools }
-  const effectivePolicy = isLightweight
-    ? applyLightweightRequestPolicy({
-        model,
-        options: baseProviderOptions,
-      })
-    : { model, options: baseProviderOptions }
-  const effectiveModel = effectivePolicy.model
-  const effectiveProviderOptions = effectivePolicy.options
+  const effectiveModel = isLightweight
+    ? stripHeavyProviderFeatures(model)
+    : model
   const executionMode =
     providerClient.resolveResponseExecutionMode(deliveryMode)
   const withDebugTrace = <T>(run: () => Promise<T>): Promise<T> =>
@@ -335,7 +320,6 @@ export async function executeSingleTurn({
           {
             signal: requestController.signal,
             debugTraceId,
-            geminiTools: effectiveProviderOptions.geminiTools,
           },
         ),
       )
@@ -346,7 +330,6 @@ export async function executeSingleTurn({
         annotations: response.choices?.[0]?.message?.annotations,
         usage: response.usage,
         finishReason: response.choices?.[0]?.finish_reason,
-        providerMetadata: response.choices?.[0]?.message?.providerMetadata,
         toolCalls:
           response.choices?.[0]?.message?.tool_calls
             ?.map((toolCall) => {
@@ -361,7 +344,6 @@ export async function executeSingleTurn({
                   toolCall.function?.arguments,
                   { allowPartial: true },
                 ),
-                metadata: toolCall.metadata,
               }
             })
             .filter((toolCall): toolCall is NonNullable<typeof toolCall> =>
@@ -409,7 +391,6 @@ export async function executeSingleTurn({
   let annotations: Annotation[] | undefined
   let usage: ResponseUsage | undefined
   let finishReason: string | null = null
-  let providerMetadata: ProviderMetadata | undefined
   const turnKey = `single-turn:${Date.now()}:${Math.random().toString(36).slice(2)}`
   const toolCallAccumulator = new ToolCallAccumulator(turnKey)
 
@@ -443,7 +424,6 @@ export async function executeSingleTurn({
         {
           signal: streamController.signal,
           debugTraceId,
-          geminiTools: effectiveProviderOptions.geminiTools,
         },
       )
 
@@ -475,12 +455,6 @@ export async function executeSingleTurn({
         }
         if (chunk.usage) {
           usage = chunk.usage
-        }
-        if (delta?.providerMetadata) {
-          providerMetadata = mergeProviderMetadata(
-            providerMetadata,
-            delta.providerMetadata,
-          )
         }
         if (delta?.annotations) {
           annotations = mergeAnnotations(annotations, delta.annotations)
@@ -535,7 +509,6 @@ export async function executeSingleTurn({
           return null
         }
         const shouldAttachDiagnostics =
-          Boolean(toolCall.metadata) ||
           toolCall.diagnostics.parseState !== 'valid' ||
           toolCall.diagnostics.rawArgsLength === 0
         return {
@@ -544,7 +517,6 @@ export async function executeSingleTurn({
           arguments: toolCall.function?.arguments,
           metadata: shouldAttachDiagnostics
             ? {
-                ...toolCall.metadata,
                 argumentDiagnostics: {
                   ...toolCall.diagnostics,
                   finishReason,
@@ -569,7 +541,6 @@ export async function executeSingleTurn({
       streamedToolCallList
     let finalFinishReason: SingleTurnExecutionResult['finishReason'] =
       finishReason ?? undefined
-    let finalProviderMetadata: ProviderMetadata | undefined = providerMetadata
 
     if (
       !isBufferedStreaming &&
@@ -591,8 +562,6 @@ export async function executeSingleTurn({
         if (nonStreamingResult.toolCalls.length > 0) {
           finalToolCalls = nonStreamingResult.toolCalls
           finalFinishReason = nonStreamingResult.finishReason
-          finalProviderMetadata =
-            nonStreamingResult.providerMetadata ?? finalProviderMetadata
         }
       } catch {
         // Preserve invalid tool calls so they can surface as explicit errors
@@ -624,7 +593,6 @@ export async function executeSingleTurn({
       annotations,
       usage,
       finishReason: finalFinishReason,
-      providerMetadata: finalProviderMetadata,
       toolCalls: finalToolCalls,
     }
   } catch (error) {
@@ -648,23 +616,6 @@ export async function executeSingleTurn({
   } finally {
     clearTimeoutId()
     signal?.removeEventListener('abort', handleAbort)
-  }
-}
-
-function mergeProviderMetadata(
-  prev: ProviderMetadata | undefined,
-  next: ProviderMetadata,
-): ProviderMetadata {
-  return {
-    gemini:
-      prev?.gemini || next.gemini
-        ? {
-            parts: [
-              ...(prev?.gemini?.parts ?? []),
-              ...(next.gemini?.parts ?? []),
-            ],
-          }
-        : undefined,
   }
 }
 

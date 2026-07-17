@@ -1,111 +1,101 @@
 import {
+  getDefaultApiTypeForPresetType,
   getDefaultRequestTransportModeForPresetType,
   getSupportedApiTypesForPresetType,
   llmProviderSchema,
+  providerApiTypeSchema,
+  providerPresetTypeSchema,
 } from './provider.types'
 
-describe('llmProviderSchema', () => {
-  it('normalizes legacy kimi presetType to moonshot', () => {
+describe('provider schemas', () => {
+  it('accepts the built-in OpenAI and domestic provider presets', () => {
+    expect(providerPresetTypeSchema.options).toEqual([
+      'openai',
+      'chatgpt-oauth',
+      'deepseek',
+      'moonshot',
+      'zhipu',
+      'doubao',
+      'siliconflow',
+      'stepfun',
+      'minimax',
+      'hunyuan',
+      'xiaomimimo',
+      'openai-compatible',
+    ])
+    expect(providerApiTypeSchema.options).toEqual([
+      'openai-compatible',
+      'openai-responses',
+    ])
+  })
+
+  it('parses a current provider without inferring old fields', () => {
     expect(
       llmProviderSchema.parse({
-        id: 'moonshot',
-        presetType: 'kimi',
+        id: 'deepseek',
+        presetType: 'deepseek',
+        apiType: 'openai-compatible',
         apiKey: 'token',
       }),
-    ).toMatchObject({
-      id: 'moonshot',
-      presetType: 'moonshot',
+    ).toEqual({
+      id: 'deepseek',
+      presetType: 'deepseek',
       apiType: 'openai-compatible',
       apiKey: 'token',
     })
   })
 
-  it('normalizes legacy kimi type to moonshot', () => {
-    expect(
+  it('rejects unknown presets and protocols', () => {
+    expect(() =>
       llmProviderSchema.parse({
-        id: 'moonshot',
-        type: 'kimi',
-        apiKey: 'token',
+        id: 'unknown',
+        presetType: 'unknown',
+        apiType: 'unknown',
       }),
-    ).toMatchObject({
-      id: 'moonshot',
-      presetType: 'moonshot',
-      apiType: 'openai-compatible',
-      apiKey: 'token',
-    })
+    ).toThrow()
   })
 
-  // Regression: providers synced from a newer plugin version (with a
-  // presetType the local enum doesn't know) used to fail safeParse and get
-  // silently dropped by `resilientArraySchema`, wiping the user's provider
-  // list across devices. Unknown values must now degrade to
-  // `openai-compatible` instead of dropping the whole entry.
-  it('coerces unknown presetType to openai-compatible instead of failing', () => {
-    expect(
+  it('rejects malformed custom headers', () => {
+    expect(() =>
       llmProviderSchema.parse({
-        id: 'future',
-        presetType: 'some-future-preset',
-        apiKey: 'token',
+        id: 'openai',
+        presetType: 'openai',
+        apiType: 'openai-responses',
+        customHeaders: [{ key: '', value: 'bad' }],
       }),
-    ).toMatchObject({
-      id: 'future',
-      presetType: 'openai-compatible',
-      apiType: 'openai-compatible',
-      apiKey: 'token',
-    })
-  })
-
-  it('coerces unknown apiType to the preset default', () => {
-    expect(
-      llmProviderSchema.parse({
-        id: 'anthropic',
-        presetType: 'anthropic',
-        apiType: 'something-new',
-      }),
-    ).toMatchObject({
-      id: 'anthropic',
-      presetType: 'anthropic',
-      apiType: 'anthropic',
-    })
-  })
-
-  it('drops malformed customHeaders entries instead of failing the provider', () => {
-    const parsed = llmProviderSchema.parse({
-      id: 'openai',
-      presetType: 'openai',
-      customHeaders: [
-        { key: 'X-Good', value: 'ok' },
-        { key: '', value: 'bad' },
-        { value: 'no-key' },
-      ],
-    })
-    expect(parsed.id).toBe('openai')
-    expect(parsed.customHeaders).toEqual([{ key: 'X-Good', value: 'ok' }])
+    ).toThrow('header key is required')
   })
 })
 
-describe('getDefaultRequestTransportModeForPresetType', () => {
-  it('defaults desktop providers to node', () => {
-    expect(
-      getDefaultRequestTransportModeForPresetType('chatgpt-oauth', true),
-    ).toBe('node')
+describe('provider defaults', () => {
+  it('uses node transport on desktop and browser transport on mobile', () => {
     expect(getDefaultRequestTransportModeForPresetType('openai', true)).toBe(
       'node',
     )
-  })
-
-  it('defaults mobile providers to browser', () => {
-    expect(getDefaultRequestTransportModeForPresetType('openai', false)).toBe(
+    expect(getDefaultRequestTransportModeForPresetType('deepseek', false)).toBe(
       'browser',
     )
   })
-})
 
-describe('getSupportedApiTypesForPresetType', () => {
-  it('limits DeepSeek to its official OpenAI-compatible and Anthropic APIs', () => {
+  it('uses Responses for OpenAI and OpenAI-compatible chat elsewhere', () => {
+    expect(getDefaultApiTypeForPresetType('openai')).toBe('openai-responses')
+    expect(getDefaultApiTypeForPresetType('chatgpt-oauth')).toBe(
+      'openai-responses',
+    )
+    expect(getDefaultApiTypeForPresetType('deepseek')).toBe('openai-compatible')
+  })
+
+  it('allows both supported OpenAI protocols only where configurable', () => {
+    expect(getSupportedApiTypesForPresetType('openai')).toEqual([
+      'openai-responses',
+      'openai-compatible',
+    ])
+    expect(getSupportedApiTypesForPresetType('openai-compatible')).toEqual([
+      'openai-responses',
+      'openai-compatible',
+    ])
     expect(getSupportedApiTypesForPresetType('deepseek')).toEqual([
       'openai-compatible',
-      'anthropic',
     ])
   })
 })

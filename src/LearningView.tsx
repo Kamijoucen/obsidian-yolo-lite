@@ -7,12 +7,10 @@ import { LearningWorkspace } from './components/learning-view/LearningWorkspace'
 import { LEARNING_VIEW_TYPE } from './constants'
 import { AppProvider } from './contexts/app-context'
 import { DarkModeProvider } from './contexts/dark-mode-context'
-import { DatabaseProvider } from './contexts/database-context'
 import { DialogContainerProvider } from './contexts/dialog-container-context'
 import { LanguageProvider } from './contexts/language-context'
 import { McpProvider } from './contexts/mcp-context'
 import { PluginProvider } from './contexts/plugin-context'
-import { RAGProvider } from './contexts/rag-context'
 import { SettingsProvider } from './contexts/settings-context'
 import YoloPlugin from './main'
 
@@ -164,27 +162,17 @@ export class LearningView extends ItemView {
               }
             >
               <DarkModeProvider>
-                <DatabaseProvider
-                  getDatabaseManager={() => this.plugin.getDbManager()}
-                >
-                  <RAGProvider getRAGEngine={() => this.plugin.getRAGEngine()}>
-                    <McpProvider
-                      getMcpManager={() => this.plugin.getMcpManager()}
-                    >
-                      <QueryClientProvider client={queryClient}>
-                        <React.StrictMode>
-                          <DialogContainerProvider
-                            container={
-                              this.containerEl.children[1] as HTMLElement
-                            }
-                          >
-                            <LearningWorkspace />
-                          </DialogContainerProvider>
-                        </React.StrictMode>
-                      </QueryClientProvider>
-                    </McpProvider>
-                  </RAGProvider>
-                </DatabaseProvider>
+                <McpProvider getMcpManager={() => this.plugin.getMcpManager()}>
+                  <QueryClientProvider client={queryClient}>
+                    <React.StrictMode>
+                      <DialogContainerProvider
+                        container={this.containerEl.children[1] as HTMLElement}
+                      >
+                        <LearningWorkspace />
+                      </DialogContainerProvider>
+                    </React.StrictMode>
+                  </QueryClientProvider>
+                </McpProvider>
               </DarkModeProvider>
             </SettingsProvider>
           </AppProvider>

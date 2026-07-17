@@ -1,5 +1,4 @@
 import {
-  Database,
   FileCode2,
   FolderOpen,
   Globe2,
@@ -43,7 +42,6 @@ type JsSandboxConfigModalProps = {
 type CapKey =
   | 'allowFetch'
   | 'allowVaultRead'
-  | 'allowDbQuery'
   | 'allowBrowserRead'
   | 'allowExternalScripts'
 
@@ -127,60 +125,6 @@ function JsSandboxConfigModalContent({
         </div>
 
         <div className="yolo-js-exec-cap-list">
-          <CapabilityCard
-            icon={<Database size={17} />}
-            title={t(
-              'settings.agent.jsSandboxAllowDbQuery',
-              'Allow Knowledge Base Query',
-            )}
-            description={t(
-              'settings.agent.jsSandboxAllowDbQueryDesc',
-              'Let scripts query indexed vault content with semantic search and read Markdown/text content by known path. This capability is not constrained by the agent directory scope.',
-            )}
-            enabled={Boolean(config.allowDbQuery)}
-            onToggle={(v) =>
-              handleCapToggle(
-                'allowDbQuery',
-                v,
-                t(
-                  'settings.agent.jsSandboxAllowDbQueryConfirm',
-                  'Enabling knowledge base query lets AI-generated scripts search indexed content and read Markdown/text content by known path. Continue?',
-                ),
-              )
-            }
-          >
-            <div className="yolo-js-exec-nested">
-              <ObsidianSetting
-                className="yolo-js-exec-setting yolo-js-exec-textarea-header"
-                name={t(
-                  'settings.agent.jsSandboxDbMaxLimit',
-                  'Max semantic rows',
-                )}
-                desc={t(
-                  'settings.agent.jsSandboxDbMaxLimitDesc',
-                  'Upper bound on semantic search results. Path reads are not affected. Range 1–100.',
-                )}
-              >
-                <ObsidianTextInput
-                  type="number"
-                  value={String(config.dbQueryMaxLimit ?? '')}
-                  placeholder="20"
-                  onChange={(raw) => {
-                    const parsed = Number.parseInt(raw, 10)
-                    if (!Number.isFinite(parsed) || parsed <= 0) {
-                      update({ ...config, dbQueryMaxLimit: undefined })
-                      return
-                    }
-                    update({
-                      ...config,
-                      dbQueryMaxLimit: Math.min(100, Math.max(1, parsed)),
-                    })
-                  }}
-                />
-              </ObsidianSetting>
-            </div>
-          </CapabilityCard>
-
           <CapabilityCard
             icon={<FolderOpen size={17} />}
             title={t(

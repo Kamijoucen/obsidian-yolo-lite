@@ -2,7 +2,6 @@ import type { TranslationKeys } from '../types'
 
 export const en: TranslationKeys = {
   commands: {
-    openChat: 'Open chat',
     openChatSidebar: 'Open chat (sidebar)',
     openLearningMode: 'Open learning mode',
     learningModeLabel: 'YOLO: Learning mode',
@@ -11,20 +10,8 @@ export const en: TranslationKeys = {
     openNewChatTab: 'Open new chat (new tab)',
     openNewChatSplit: 'Open new chat (right split)',
     openNewChatWindow: 'Open new chat (new window)',
-    addSelectionToChat: 'Add selection to chat',
     addFileToChat: 'Add file to chat',
     addFolderToChat: 'Add folder to chat',
-    rebuildVaultIndex: 'Rebuild entire vault index',
-    updateVaultIndex: 'Update index for modified files',
-    continueWriting: 'AI continue writing',
-    continueWritingSelected: 'AI continue writing (selection)',
-    customContinueWriting: 'AI custom continue',
-    customRewrite: 'AI custom rewrite',
-    triggerSmartSpace: 'Trigger smart space',
-    triggerQuickAsk: 'Trigger quick ask',
-    triggerTabCompletion: 'Trigger tab completion',
-    acceptInlineSuggestion: 'Accept completion',
-    capturePdfRegion: 'Capture PDF region to chat',
     exportSettings: 'Export plugin settings',
     importSettings: 'Import plugin settings',
   },
@@ -36,7 +23,6 @@ export const en: TranslationKeys = {
     edit: 'Edit',
     add: 'Add',
     adding: 'Adding...',
-    probingDimension: 'Detecting dimensions...',
     clear: 'Clear',
     remove: 'Remove',
     confirm: 'Confirm',
@@ -65,7 +51,6 @@ export const en: TranslationKeys = {
     tabs: {
       chat: 'Chat',
       agent: 'Agent',
-      composer: 'Sparkle',
     },
     chatList: {
       searchPlaceholder: 'Search conversations',
@@ -90,53 +75,6 @@ export const en: TranslationKeys = {
       exportSuccess: 'Exported chat to {path}',
       exportError: 'Could not export conversation',
     },
-    composer: {
-      title: 'Sparkle',
-      subtitle:
-        'Configure continuation parameters and context before generating.',
-      backToChat: 'Back to chat',
-      modelSectionTitle: 'Model',
-      continuationModel: 'Continuation model',
-      continuationModelDesc:
-        'When super continuation is enabled, this view uses this model for continuation tasks.',
-      contextSectionTitle: 'Context sources',
-      ragToggle: 'Enable retrieval with embeddings',
-      ragToggleDesc:
-        'Fetch similar notes via embeddings before generating new text.',
-      sections: {
-        modelWithPrompt: {
-          title: 'Model & prompt',
-        },
-        model: {
-          title: 'Model selection',
-          desc: 'Choose which model powers these tasks.',
-        },
-        parameters: {
-          title: 'Parameters',
-          desc: 'Adjust parameters for the model used in this view.',
-        },
-        context: {
-          title: 'Context management',
-          desc: 'Prioritize the content sources referenced when this view runs.',
-        },
-      },
-      continuationPrompt: 'Continuation system prompt',
-      maxContinuationChars: 'Max continuation characters',
-      referenceRulesTitle: 'Reference rules',
-      referenceRulesPlaceholder:
-        'Select folders whose content should be fully injected.',
-      knowledgeBaseTitle: 'Knowledge base',
-      knowledgeBasePlaceholder:
-        'Select folders or files used as the retrieval scope (leave empty for all).',
-      knowledgeBaseHint:
-        'Enable embedding search to limit the retrieval scope.',
-    },
-  },
-
-  smartSpace: {
-    webSearch: 'Web',
-    urlContext: 'URL',
-    mentionContextLabel: 'Mentioned files',
   },
 
   learning: {
@@ -298,7 +236,7 @@ export const en: TranslationKeys = {
       referencesHint: 'YOLO will customize the outline based on uploaded files',
       optional: '(Optional)',
       uploadTitle: 'Drop files here or click to upload',
-      uploadHint: 'Supports PDF, Word, and Markdown. Max 20 MB per file.',
+      uploadHint: 'Supports Markdown files. Max 20 MB per file.',
       levels: {
         beginner: 'Beginner',
         familiar: 'Know the basics',
@@ -465,26 +403,10 @@ export const en: TranslationKeys = {
     },
   },
 
-  selection: {
-    actions: {
-      addToChat: 'Add to chat',
-      addToSidebar: 'Add to sidebar',
-      customRewrite: 'Custom rewrite',
-      customAsk: 'Custom ask',
-      rewrite: 'AI rewrite',
-      explain: 'Explain in depth',
-      suggest: 'Provide suggestions',
-      translateToChinese: 'Translate to Chinese',
-    },
-  },
-
   settings: {
     title: 'Yolo settings',
     tabs: {
       models: 'Models',
-      editor: 'Editor',
-      knowledge: 'Knowledge',
-      tools: 'Tools',
       agent: 'Agent',
       learning: 'Learning',
       others: 'Others',
@@ -513,110 +435,15 @@ export const en: TranslationKeys = {
       globalSystemPrompt: 'Global system prompt',
       globalSystemPromptDesc:
         'This prompt is added to the beginning of every chat conversation.',
-      continuationSystemPrompt: 'Default continuation system prompt',
-      continuationSystemPromptDesc:
-        'Used as the system message when generating continuation text; leave empty to fall back to the built-in default.',
       chatTitlePrompt: 'Chat title prompt',
       chatTitlePromptDesc:
         'Prompt used when automatically generating conversation titles from the first user message.',
-      tabCompletionSystemPrompt: 'Tab completion system prompt',
-      tabCompletionSystemPromptDesc:
-        'System message applied when generating tab completion suggestions; leave empty to use the built-in default.',
     },
     learning: {
       generationTitle: 'Generation',
       generationModel: 'Learning generation model',
       generationModelDesc:
         'Used to generate outlines, knowledge points, and cards. This selection is independent of the current assistant.',
-    },
-    smartSpace: {
-      quickActionsTitle: 'Smart space quick actions',
-      quickActionsDesc:
-        'Customize the quick actions and prompts displayed in smart space',
-      configureActions: 'Configure quick actions',
-      actionsCount: 'Configured {count} quick actions',
-      addAction: 'Add action',
-      resetToDefault: 'Reset to default',
-      confirmReset:
-        'Are you sure you want to reset to default quick actions and delete all custom settings?',
-      resetConfirmTitle: 'Reset Smart Space quick actions',
-      actionLabel: 'Action label',
-      actionLabelDesc: 'Text displayed in the quick action',
-      actionLabelPlaceholder: 'For example, continue writing',
-      actionInstruction: 'Prompt',
-      actionInstructionDesc: 'Instruction sent to AI',
-      actionInstructionPlaceholder:
-        'For example, please continue expanding the current paragraph while maintaining the original tone and style.',
-      actionCategory: 'Category',
-      actionCategoryDesc: 'Category this action belongs to',
-      actionIcon: 'Icon',
-      actionIconDesc: 'Choose an icon',
-      actionEnabled: 'Enabled',
-      actionEnabledDesc: 'Whether to show this action in smart space',
-      moveUp: 'Move up',
-      moveDown: 'Move down',
-      duplicate: 'Duplicate',
-      disabled: 'Disabled',
-      categories: {
-        suggestions: 'Suggestions',
-        writing: 'Writing',
-        thinking: 'Thinking · inquiry · dialogue',
-        custom: 'Custom',
-      },
-      iconLabels: {
-        sparkles: 'Sparkles',
-        file: 'File',
-        todo: 'Todo',
-        workflow: 'Workflow',
-        table: 'Table',
-        pen: 'Pen',
-        lightbulb: 'Lightbulb',
-        brain: 'Brain',
-        message: 'Message',
-        settings: 'Settings',
-      },
-      copySuffix: ' (copy)',
-      dragHandleAria: 'Drag to reorder',
-    },
-    selectionChat: {
-      quickActionsTitle: 'Cursor Chat quick actions',
-      quickActionsDesc:
-        'Customize the quick actions and prompts displayed after selecting text',
-      configureActions: 'Configure quick actions',
-      actionsCount: 'Configured {count} quick actions',
-      addAction: 'Add quick action',
-      resetToDefault: 'Reset to default',
-      confirmReset:
-        'Are you sure you want to reset to default quick actions and delete all custom settings?',
-      resetConfirmTitle: 'Reset Cursor Chat quick actions',
-      actionLabel: 'Action label',
-      actionLabelDesc: 'Text displayed in the quick action',
-      actionLabelPlaceholder: 'For example, explain',
-      actionMode: 'Mode',
-      actionModeDesc:
-        'The first two use Quick Ask: Ask auto-sends, and Rewrite enters preview mode. The last two use Chat: you can either prefill the input box or send immediately.',
-      actionModeAsk: 'Quick Ask ask',
-      actionModeChatInput: 'Add to chat input',
-      actionModeChatSend: 'Add to chat input and send',
-      actionModeRewrite: 'Quick Ask rewrite',
-      actionRewriteType: 'Rewrite type',
-      actionRewriteTypeDesc: 'Choose whether rewrite requires a prompt',
-      actionRewriteTypeCustom: 'Custom prompt (ask each time)',
-      actionRewriteTypePreset: 'Preset prompt (run directly)',
-      actionInstruction: 'Prompt',
-      actionInstructionDesc: 'Instruction sent to AI',
-      actionInstructionPlaceholder:
-        'For example, explain the selected content.',
-      actionInstructionRewriteDesc:
-        'Rewrite instruction (required for preset prompt).',
-      actionInstructionRewritePlaceholder:
-        'For example: make it concise and keep Markdown structure.',
-      duplicate: 'Duplicate',
-      copySuffix: ' (copy)',
-      dragHandleAria: 'Drag to reorder',
-      fixedActionHint: 'Built-in action',
-      hideFixedAction: 'Hide from Cursor Chat',
-      showFixedAction: 'Show in Cursor Chat',
     },
     chatPreferences: {
       title: 'Chat preferences',
@@ -917,7 +744,7 @@ export const en: TranslationKeys = {
       agentCapabilitiesBlockTitle: 'Agent capabilities',
       focusSyncTitle: 'Focus sync',
       focusSyncDesc:
-        'When enabled, the AI can sense where you are in the note, PDF, or web page you are viewing. Full web page content is read via fs_read with a browser:// path.',
+        'When enabled, the AI can sense where you are in the note or web page you are viewing. Full web page content is read via fs_read with a browser:// path.',
       timeContextTitle: 'Current time awareness',
       timeContextDesc:
         'Lets the model know the current time when each message is sent.',
@@ -980,11 +807,6 @@ export const en: TranslationKeys = {
       jsSandboxBrowserReadMaxKb: 'Max page HTML size (KB)',
       jsSandboxBrowserReadMaxKbDesc:
         'Per-call full HTML limit. Larger pages are refused instead of shortened. Range 1–1048576 KB. Leave blank to use the default.',
-      jsSandboxAllowDbQuery: 'Allow Knowledge Base Query',
-      jsSandboxAllowDbQueryDesc:
-        'Let scripts query indexed vault content with semantic search and read Markdown/text content by known path. This capability is not constrained by the agent directory scope.',
-      jsSandboxAllowDbQueryConfirm:
-        'Enabling knowledge base query lets AI-generated scripts search indexed content and read Markdown/text content by known path. Continue?',
       jsSandboxAllowExternalScripts: 'Allow External Scripts',
       jsSandboxAllowExternalScriptsDesc:
         'Allow scripts to load and run remote JavaScript, and open the broader browser capabilities needed by those scripts.',
@@ -1002,9 +824,6 @@ export const en: TranslationKeys = {
       jsSandboxVaultReadMaxKb: 'Max read size (KB)',
       jsSandboxVaultReadMaxKbDesc:
         'Per-call read limit. Larger text is shortened with a notice; larger binary files are refused. Range {min}–{max} KB.',
-      jsSandboxDbMaxLimit: 'Max semantic rows',
-      jsSandboxDbMaxLimitDesc:
-        'Upper bound on semantic search results. Path reads are not affected. Range 1–100.',
     },
     jsSandbox: {
       openSettings: 'Configure JavaScript execution',
@@ -1077,8 +896,6 @@ export const en: TranslationKeys = {
         jina: 'Jina',
         searxng: 'SearXNG',
         bing: 'Bing (no key)',
-        'gemini-grounding': 'Gemini (Grounding)',
-        grok: 'Grok',
         zhipu: 'Zhipu Web Search',
       },
       fieldName: 'Display name',
@@ -1094,9 +911,6 @@ export const en: TranslationKeys = {
       fieldEngines: 'Engines (comma-separated)',
       fieldUsername: 'Basic auth username',
       fieldPassword: 'Basic auth password',
-      fieldModel: 'Model',
-      fieldSystemPrompt: 'System prompt',
-      fieldEnableX: 'Also search X',
       fieldZhipuEngine: 'Search engine',
       fieldZhipuContentSize: 'Content size',
       fieldZhipuRecency: 'Recency filter',
@@ -1117,30 +931,14 @@ export const en: TranslationKeys = {
       categoryAll: 'All',
       categoryMain: 'International',
       categoryCn: 'China',
-      categoryGateway: 'Gateway',
-      categoryCloud: 'Cloud',
-      categoryLocal: 'Local',
       badgeOpenAiCompatible: 'OpenAI compatible',
-      badgeNative: 'Native protocol',
       badgeOAuth: 'OAuth',
       badgeAdded: 'Added',
       kind: {
         openai: 'Reasoning · Multimodal',
         chatgptOAuth: 'ChatGPT Plus / Pro',
-        anthropic: 'Chat · Reasoning',
-        gemini: 'Multimodal',
-        geminiOAuth: 'Google account',
-        mistral: 'Chat · Embedding',
-        perplexity: 'Search-augmented chat',
-        groq: 'Fast inference',
-        morph: 'Edit model',
         deepseek: 'Chat · Reasoning',
         moonshot: 'Long context',
-        openrouter: 'Router',
-        azure: 'Enterprise cloud',
-        bedrock: 'Enterprise cloud',
-        ollama: 'Local',
-        lmStudio: 'Local',
       },
       providersCount: '{count} providers added',
       editProvider: 'Edit provider',
@@ -1149,13 +947,9 @@ export const en: TranslationKeys = {
       deleteWarning: 'This will also delete',
       requestDelete: 'Delete provider',
       deleteConfirmTitle: 'Delete provider "{provider}"?',
-      deleteConfirmImpact:
-        'This also removes {chatCount} chat models, {embeddingCount} embedding models, and related vector data.',
+      deleteConfirmImpact: 'This also removes {chatCount} chat models.',
       confirmDeleteAction: 'Confirm delete',
       chatModels: 'chats',
-      embeddingModels: 'embeddings',
-      embeddingsWillBeDeleted:
-        'All embeddings generated using the related embedding models will also be deleted.',
       editProviderTitle: 'Edit provider',
       providerId: 'ID',
       providerIdDesc:
@@ -1172,9 +966,6 @@ export const en: TranslationKeys = {
       noStainlessHeaders: 'No stainless headers',
       noStainlessHeadersDesc:
         'Enable this if you encounter cross-origin errors related to stainless headers.',
-      useObsidianRequestUrl: 'Use Obsidian requestUrl',
-      useObsidianRequestUrlDesc:
-        'Use Obsidian requestUrl to bypass cross-origin restrictions. Streaming responses are buffered.',
       requestTransportMode: 'Network request method',
       requestTransportModeDesc:
         'Choose how this provider sends network requests on this device. Desktop direct connection is recommended on desktop. On mobile, switch to Obsidian built-in request if browser requests have streaming or network issues.',
@@ -1188,9 +979,6 @@ export const en: TranslationKeys = {
       responseStreamingModeAuto: 'Auto (default)',
       responseStreamingModeStreaming: 'Streaming',
       responseStreamingModeNonStreaming: 'Non-streaming',
-      promptCaching: 'Prompt caching',
-      promptCachingDesc:
-        'Enable Anthropic ephemeral prompt caching. Reuses system prompt, tools, and conversation history across turns to cut input tokens. Cache writes carry a 25% premium; reads cost ~10% of normal input. Available whenever the provider API type is Anthropic; upstream must actually honor the cache_control field.',
       customHeaders: 'Custom headers',
       customHeadersDesc:
         'Attach extra HTTP headers to all requests sent through this provider.',
@@ -1211,34 +999,17 @@ export const en: TranslationKeys = {
       chatgptOAuthPendingCode: 'Current device code:',
       oauthDesktopOnly:
         'OAuth login is only available on desktop. Please connect on desktop first.',
-      geminiOAuthTitle: 'Gemini OAuth',
-      geminiOAuthConnect: 'Connect',
-      geminiOAuthDisconnect: 'Disconnect',
-      geminiOAuthConnecting: 'Connecting...',
-      geminiOAuthLoadingStatus: 'Loading Gemini OAuth status...',
-      geminiOAuthConnected: 'Connected',
-      geminiOAuthExpires: 'expires',
-      geminiOAuthDisconnectedHelp:
-        'Not connected. Connect to use Gemini quota from your Google account.',
-      geminiOAuthProject: 'project',
-      geminiOAuthStreamingNotice:
-        'Gemini OAuth supports streaming. Obsidian requestUrl buffers the response, while desktop Node fetch can stream it in real time.',
     },
     models: {
       title: 'Models',
       chatModels: 'Chat models',
-      embeddingModels: 'Embedding models',
       addChatModel: 'Add chat model',
-      addEmbeddingModel: 'Add embedding model',
       addCustomChatModel: 'Add custom chat model',
-      addCustomEmbeddingModel: 'Add custom embedding model',
       editChatModel: 'Edit chat model',
-      editEmbeddingModel: 'Edit embedding model',
       editCustomChatModel: 'Edit custom chat model',
-      editCustomEmbeddingModel: 'Edit custom embedding model',
       modelId: 'Model ID',
       modelIdDesc:
-        'API model identifier used for requests (e.g., gpt-4o-mini, claude-3-5-sonnet)',
+        'API model identifier used for requests (e.g., gpt-4o-mini, deepseek-chat)',
       modelIdPlaceholder: 'Example: gpt-4o-mini',
       modelName: 'Display name',
       modelNamePlaceholder: 'Enter a display name',
@@ -1260,14 +1031,10 @@ export const en: TranslationKeys = {
         notTested: 'Not tested yet',
         noResponse: 'No response',
         firstToken: 'First token',
-        dims: 'dims',
         noModels: 'No models configured under this provider',
         deleteModel: 'Delete model',
         deleteChatModelBlocked:
           'Cannot delete the model currently selected as chat or title model',
-        deleteEmbeddingModelBlocked:
-          'Cannot delete the currently selected embedding model',
-        deleteEmbeddingModelInProgress: 'Deleting embedding model…',
       },
       availableModelsAuto: 'Available models (auto-fetched)',
       searchModels: 'Search models...',
@@ -1280,13 +1047,10 @@ export const en: TranslationKeys = {
       batchHint:
         'Batch-added models use default settings; fine-tune each one afterwards.',
       fetchModelsFailed: 'Failed to fetch models',
-      embeddingModelsFirst: 'Embedding models are listed first',
       reasoningType: 'Model type',
       reasoningTypeDesc: 'When unsure, OpenAI reasoning is the safer pick.',
       reasoningTypeNone: 'Non-reasoning model / default',
       reasoningTypeOpenAI: 'OpenAI reasoning_effort style',
-      reasoningTypeGemini: 'Gemini thinking_budget style',
-      reasoningTypeAnthropic: 'Anthropic extended thinking (adaptive + effort)',
       reasoningTypeGeneric: 'Generic reasoning model',
       inputModality: 'Input modality',
       inputModalityDesc:
@@ -1295,46 +1059,18 @@ export const en: TranslationKeys = {
       inputModalityVision: 'Vision',
       inputModalityVisionTooltip:
         'Requires a model with native vision capability.',
-      inputModalityPdf: 'PDF (native)',
-      inputModalityPdfTooltip:
-        'Requires a model that supports native PDF input (Gemini / Anthropic).',
       openaiReasoningEffort: 'Reasoning effort',
       openaiReasoningEffortDesc:
         'Choose effort: minimal (gpt-5 only) / low / medium / high',
-      geminiThinkingBudget: 'Thinking budget (thinking budget)',
-      geminiThinkingBudgetDesc:
-        'Units are thinking tokens. 0 = off; -1 = dynamic (gemini only); ranges vary by model.',
-      geminiThinkingBudgetPlaceholder: 'For example, -1 (dynamic, 0=off)',
       builtinToolProvider: 'Built-in provider tools',
       builtinToolProviderDesc:
         'Native tools provided by the model provider. Independent of YOLO built-in tools. Whether they actually take effect depends on the gateway the request runs through.',
       builtinToolProviderNone: 'Disabled',
-      builtinToolProviderGemini: 'Gemini',
       builtinToolProviderGpt: 'OpenAI',
-      builtinToolProviderOpenRouter: 'OpenRouter',
-      builtinToolProviderGrok: 'Grok',
       builtinToolsGpt: 'OpenAI built-in tools',
-      builtinToolsOpenRouter: 'OpenRouter built-in tools',
-      builtinToolsGrok: 'Grok built-in tools',
-      builtinToolsGemini: 'Gemini built-in tools',
       builtinToolWebSearch: 'Web Search',
       builtinToolWebSearchDesc:
         'Allow the model to search the web and return cited sources.',
-      builtinToolUrlContext: 'URL Context',
-      builtinToolUrlContextDesc:
-        'Allow the model to fetch links mentioned in the conversation as context.',
-      openRouterWebSearchEngine: 'Search engine',
-      openRouterWebSearchEngineDesc:
-        "Auto lets OpenRouter pick (default). Native uses the model provider's built-in search. Exa / Firecrawl / Parallel force the corresponding engine. Firecrawl requires your own API key configured in the OpenRouter dashboard.",
-      openRouterWebSearchEngineAuto: 'Auto (default)',
-      openRouterWebSearchEngineNative: 'Native',
-      openRouterWebSearchEngineExa: 'Exa',
-      openRouterWebSearchEngineFirecrawl: 'Firecrawl (BYOK)',
-      openRouterWebSearchEngineParallel: 'Parallel',
-      openRouterWebSearchMaxResults: 'Max results',
-      openRouterWebSearchMaxResultsDesc:
-        'Optional, 1–25. Leave empty to use the OpenRouter default.',
-      openRouterWebSearchMaxResultsPlaceholder: 'default',
       sampling: 'Custom parameters',
       restoreDefaults: 'Restore defaults',
       maxContextTokens: 'Context window tokens',
@@ -1351,173 +1087,7 @@ export const en: TranslationKeys = {
       customParameterTypeNumber: 'Number',
       customParameterTypeBoolean: 'Boolean',
       customParameterTypeJson: 'JSON',
-      dimension: 'Dimension',
-      dimensionDesc: 'The dimension of the embedding model (optional)',
-      dimensionPlaceholder: '1536',
       noChatModelsConfigured: 'No chat models configured',
-      noEmbeddingModelsConfigured: 'No embedding models configured',
-    },
-    rag: {
-      title: 'Knowledge base',
-      desc: 'Manage knowledge base indexing. RAG is invoked automatically when the Agent uses the Search tool in Hybrid or RAG mode.',
-      enableRag: 'Enable knowledge base indexing',
-      enableRagDesc: 'Build indexes for documents within the selected scope.',
-      partialFailureSummary: 'Done · {{count}} file(s) could not be indexed',
-      embeddingModel: 'Embedding model',
-      embeddingModelDesc: 'Choose the model you want to use for embeddings',
-      chunkSize: 'Chunk size',
-      chunkSizeDesc:
-        "Set the chunk size for text splitting. After changing this, please re-index the vault using the 'rebuild entire vault index' command.",
-      minSimilarity: 'Minimum similarity',
-      minSimilarityDesc:
-        'Minimum similarity score for retrieval-augmented generation results; higher values return more relevant but potentially fewer results.',
-      limit: 'Limit',
-      limitDesc:
-        'Maximum number of retrieval-augmented generation results to include in the prompt; higher values provide more context but increase token usage.',
-      embeddingConcurrency: 'Embedding concurrency',
-      embeddingConcurrencyDesc:
-        'Maximum parallel embedding requests during indexing (1–24, default 10). Lower this if the embedding provider returns 429 / rate-limit errors (e.g. Azure S0 tier or per-minute-quota free tiers).',
-      includePatterns: 'Include patterns',
-      includePatternsDesc:
-        "Specify glob patterns to include files in indexing (one per line); for example, use 'notes/**' for all files in the notes folder, leave empty to include all files, and rebuild the entire vault index after changes.",
-      excludePatterns: 'Exclude patterns',
-      excludePatternsDesc:
-        "Specify glob patterns to exclude files from indexing (one per line); for example, use 'notes/**' for all files in the notes folder, leave empty to exclude nothing, and rebuild the entire vault index after changes.",
-      testPatterns: 'Test patterns',
-      manageEmbeddingDatabase: 'Manage embedding database',
-      manage: 'Manage',
-      rebuildIndex: 'Rebuild index',
-      rebuildFromScratch: 'Rebuild from scratch',
-      rebuildFromScratchConfirm:
-        'This will clear all existing vectors for the current embedding model and re-index the entire vault, which may incur many embedding API calls. Continue?',
-      continueIndex: 'Continue indexing',
-      continueIndexNow: 'Continue now',
-      // UI additions
-      selectedFolders: 'Selected folders',
-      excludedFolders: 'Excluded folders',
-      selectFoldersPlaceholder:
-        'Click here to select folders (leave empty to include all)',
-      selectFilesOrFoldersPlaceholder:
-        'Click here to pick files or folders (leave empty for the entire vault)',
-      selectExcludeFoldersPlaceholder:
-        'Click here to select folders to exclude (leave empty to exclude nothing)',
-      conflictNoteDefaultInclude:
-        'Tip: no include folders are selected, so all are included by default; if exclude folders are set, exclusion takes precedence.',
-      conflictExact:
-        'The following folders are both included and excluded; they will be excluded:',
-      conflictParentExclude:
-        'The following included folders are under excluded parents and will be excluded:',
-      conflictChildExclude:
-        'The following excluded subfolders are under included folders (partial exclusion applies):',
-      conflictRule:
-        'When include and exclude overlap, exclusion takes precedence.',
-      // Auto update
-      autoUpdate: 'Auto update index',
-      autoUpdateDesc:
-        'When enabled, incrementally update the index in the background after documents change.',
-      indexPdf: 'Index PDF files',
-      indexPdfDesc:
-        'Extract and index PDF text for the knowledge base. The first full rebuild may take longer; turn off for very large vaults if you do not need PDF retrieval.',
-      autoUpdateInterval: 'Minimum interval (hours)',
-      autoUpdateIntervalDesc:
-        'Only trigger auto update after this interval to avoid frequent re-indexing.',
-      manualUpdateNow: 'Update now',
-      manualUpdateNowDesc:
-        'Run an incremental update immediately and record the last updated time.',
-      advanced: 'Advanced settings',
-      basicCardTitle: 'Knowledge base',
-      basicCardDesc:
-        'Control knowledge base indexing, the embedding model, and related maintenance actions.',
-      resourceCardTitle: 'PGlite Resources',
-      resourceCardDesc:
-        'Manage the database runtime resources required by the knowledge base.',
-      scopeCardTitle: 'Index scope',
-      scopeCardDesc:
-        'Choose which folders should be included in or excluded from indexing.',
-      maintenanceCardTitle: 'Status & maintenance',
-      maintenanceCardDesc:
-        'Review the current knowledge base status and run maintenance actions when needed.',
-      maintenanceUnavailableHint:
-        'Prepare PGlite resources above before running index maintenance or embedding database management.',
-      currentStatus: 'Current status',
-      currentStatusDesc:
-        'Once enabled, the knowledge base maintains its index in the background according to the auto-update setting.',
-      lastIndexedAt: 'Last synced',
-      lastIndexedAtDesc:
-        'The most recent time indexing or a background sync completed successfully.',
-      maintenanceActions: 'Maintenance actions',
-      deleteIndex: 'Delete current index',
-      deleteIndexConfirm:
-        'Delete all index data for the currently selected embedding model?',
-      deleteIndexSuccess: 'The current index has been deleted.',
-      deleteIndexFailed: 'Failed to delete the current index.',
-      statusDisabled: 'Disabled',
-      statusSyncing: 'Background sync in progress',
-      statusRuntimeRequired: 'Waiting for database resources',
-      statusReady: 'Enabled',
-      statusEmpty: 'No index has been built yet',
-      selectEmbeddingModelFirst:
-        'Select an embedding model before enabling knowledge base indexing.',
-      openKnowledgeSettings: 'Open knowledge base settings',
-      openKnowledgeSettingsDesc:
-        'Go to settings to manage indexing, scope, status, and advanced options.',
-      composerEntryDesc:
-        'Knowledge base indexing is now managed from the settings page, and this view keeps a quick shortcut.',
-      pgliteStatusCurrent: 'Current status',
-      pgliteStatusSource: 'Resource source',
-      pgliteStatusPath: 'Resource path',
-      pgliteStatusCheckedAt: 'Last checked',
-      pgliteStatusVersion: 'Runtime version',
-      pgliteStatusReadyAt: 'Last prepared',
-      pgliteStatusReason: 'Details',
-      pgliteStateUnchecked: 'Not recorded',
-      pgliteStateChecking: 'Checking',
-      pgliteStateMissing: 'Not downloaded',
-      pgliteStateDownloading: 'Downloading',
-      pgliteStateUnavailable: 'Unavailable',
-      pgliteStateFailed: 'Failed',
-      pgliteStateReady: 'Ready',
-      pgliteSourceRemote: 'Remote cache',
-      pgliteSourceBundled: 'Bundled with plugin',
-      pgliteSourceLocalCache: 'Local cache',
-      pgliteDeliveryManual: 'Manual download',
-      pgliteDownload: 'Download resources',
-      pgliteRedownload: 'Download again',
-      pgliteRecheck: 'Check again',
-      pgliteDeleteLocal: 'Delete local resources',
-      pgliteDownloadPlaceholder:
-        'The manual download entry point for remote PGlite resources will be wired here.',
-      pgliteDeletePlaceholder:
-        'The local PGlite resource deletion entry point will be wired here.',
-      pgliteDownloadingUnknownFile: 'runtime file',
-      pgliteInlineErrorTitle: 'Download failed',
-      pgliteSummaryReadyRemote:
-        'PGlite runtime resources are ready and can be used for indexing and embedding database management.',
-      pgliteSummaryReadyBundled:
-        'The plugin is still using bundled PGlite resources. After remote distribution is introduced, this card will show local cache status and host the manual download entry.',
-      pgliteSummaryUnavailable:
-        'PGlite runtime resources are unavailable. Index maintenance and embedding database management will remain disabled until resources are ready.',
-      pgliteSummaryReady:
-        'PGlite runtime resources are ready and can be used for indexing and embedding database management.',
-      pgliteSummaryDownloading:
-        'PGlite runtime resources are being prepared. Once the download completes, index maintenance and embedding database management will become available automatically.',
-      pgliteSummaryFailed:
-        'PGlite runtime preparation failed. Retry downloading or clear the local cache before using knowledge base features again.',
-      pgliteSummaryMissing:
-        'PGlite runtime resources have not been prepared yet. They will be downloaded automatically on first knowledge base use, and you can also prepare them here manually.',
-      pgliteDownloadingFile: 'Downloading',
-      // Index progress header/status
-      indexProgressTitle: 'Retrieval-augmented generation index progress',
-      indexing: 'In progress',
-      notStarted: 'Not started',
-      waitingRateLimit: 'Waiting for rate limit to reset...',
-      preparingProgress: 'Preparing index...',
-      notIndexedYet: 'Not indexed yet',
-      indexComplete: 'Index complete',
-      indexIncomplete: 'Last index did not finish',
-      retryNow: 'Retry now',
-      waitingRetry: 'Waiting to retry...',
-      cancelIndex: 'Cancel',
     },
     mcp: {
       title: 'Custom tools (MCP)',
@@ -1575,22 +1145,6 @@ export const en: TranslationKeys = {
       failedToAddServer: 'Failed to add custom tool server (MCP).',
       failedToDeleteServer: 'Failed to delete server.',
     },
-    templates: {
-      title: 'Templates',
-      desc: 'Create reusable prompt templates',
-      howToUse:
-        'Create templates with reusable content that you can quickly insert into your chat by typing /template-name in the chat input to trigger template insertion, or drag and select text in the chat input to reveal a "create template" button for quick template creation.',
-      savedTemplates: 'Saved templates',
-      addTemplate: 'Add prompt template',
-      templateName: 'Template name',
-      noTemplates: 'No templates found',
-      loading: 'Loading templates...',
-      deleteTemplate: 'Delete template',
-      deleteTemplateConfirm: 'Are you sure you want to delete template',
-      editTemplate: 'Edit template',
-      name: 'Name',
-      actions: 'Actions',
-    },
     editor: {
       snippets: {
         sectionTitle: 'Snippets',
@@ -1618,132 +1172,8 @@ export const en: TranslationKeys = {
         openError: 'Failed to open snippets.md: {error}',
       },
     },
-    continuation: {
-      title: 'Sparkle mode',
-      aiSubsectionTitle: 'Super continuation',
-      customSubsectionTitle: 'Smart space',
-      tabSubsectionTitle: 'Tab completion',
-      superContinuation: 'Enable sparkle view',
-      superContinuationDesc:
-        'Enable the sparkle sidebar view where you can configure dedicated continuation models, parameters, rules, and reference sources; when disabled, only the chat view is available.',
-      continuationModel: 'Sparkle continuation model',
-      continuationModelDesc:
-        'Select the model used for continuation while sparkle mode is enabled.',
-      smartSpaceDescription:
-        'Smart space offers a lightweight floating composer while you write; by default it appears when you press the space key on an empty line or type “/” followed by space anywhere. You can switch below to double-space on empty lines or disable space-triggering. Press enter twice to submit and press escape to close.',
-      smartSpaceToggle: 'Enable smart space',
-      smartSpaceToggleDesc:
-        'When disabled, the space bar or "/"+space will no longer summon the smart space floating composer.',
-      smartSpaceTriggerMode: 'Empty-line space trigger',
-      smartSpaceTriggerModeDesc:
-        'How smart space should respond when you press space on an empty line.',
-      smartSpaceTriggerModeSingle:
-        'Single space to trigger (original behavior)',
-      smartSpaceTriggerModeDouble:
-        'Double space to trigger (~600ms; first space inserts a real space)',
-      smartSpaceTriggerModeOff:
-        'Disable empty-line space trigger (keep "/"+space only)',
-      selectionChatSubsectionTitle: 'Cursor chat',
-      selectionChatDescription:
-        'Provides inline ask, rewrite, explain, and other quick actions around selected text.',
-      selectionChatToggle: 'Enable cursor chat',
-      selectionChatToggleDesc:
-        'When enabled, selecting text shows quick actions so you can ask or run preset commands directly.',
-      selectionChatAutoDock: 'Auto dock to top right',
-      selectionChatAutoDockDesc:
-        'After sending, move to the editor top right (manual drag disables auto follow).',
-      keywordTrigger: 'Enable keyword trigger for AI continuation',
-      keywordTriggerDesc:
-        'Automatically trigger continuation when the specified keyword is detected in the editor; recommended value: cc.',
-      triggerKeyword: 'Trigger keyword',
-      triggerKeywordDesc:
-        'Continuation is triggered when the text immediately before the cursor equals this keyword (default: cc).',
-      quickAskSubsectionTitle: 'Quick ask',
-      quickAskDescription:
-        'Quick ask lets you ask questions directly in the editor. Type the trigger character (default @) on an empty line to open a floating chat panel, select an assistant, and get responses. Supports multi-turn conversations, copying answers, inserting at cursor, or opening in sidebar.',
-      quickAskToggle: 'Enable quick ask',
-      quickAskToggleDesc:
-        'When disabled, the trigger character will no longer summon the quick ask floating panel.',
-      quickAskTrigger: 'Trigger character',
-      quickAskTriggerDesc:
-        'Typing this character on an empty line triggers quick ask (default: @). Supports 1-3 characters.',
-      quickAskContextBeforeChars: 'Context before cursor (chars)',
-      quickAskContextBeforeCharsDesc:
-        'Maximum characters before the cursor to include (default: 5000).',
-      quickAskContextAfterChars: 'Context after cursor (chars)',
-      quickAskContextAfterCharsDesc:
-        'Maximum characters after the cursor to include (default: 2000).',
-      tabCompletionBasicTitle: 'Basic settings',
-      tabCompletionBasicDesc: 'Enable tab completion and set core parameters.',
-      tabCompletionTriggersSectionTitle: 'Trigger settings',
-      tabCompletionTriggersSectionDesc:
-        'Configure when completion should fire.',
-      tabCompletionAutoSectionTitle: 'Auto completion settings',
-      tabCompletionAutoSectionDesc: 'Tune idle auto completion behavior.',
-      tabCompletionAdvancedSectionDesc:
-        'Configure advanced tab completion options.',
-      tabCompletion: 'Enable tab completion',
-      tabCompletionDesc:
-        'Request a completion when a trigger rule matches, then show it as gray ghost text that can be accepted with the tab key.',
-      tabCompletionModel: 'Completion model',
-      tabCompletionModelDesc:
-        'Choose which model provides tab completion suggestions.',
-      tabCompletionTriggerDelay: 'Trigger delay (ms)',
-      tabCompletionTriggerDelayDesc:
-        'How long to wait after you stop typing before a prefix completion request is sent.',
-      tabCompletionAutoTrigger: 'Auto completion after idle',
-      tabCompletionAutoTriggerDesc:
-        'Trigger tab completion after you stop typing, even when no trigger matches.',
-      tabCompletionAutoTriggerDelay: 'Auto completion idle delay (ms)',
-      tabCompletionAutoTriggerDelayDesc:
-        'How long to wait after you stop typing before auto completion runs.',
-      tabCompletionAutoTriggerCooldown: 'Auto completion cooldown (ms)',
-      tabCompletionAutoTriggerCooldownDesc:
-        'Cooldown period after auto completion triggers to avoid frequent requests.',
-      tabCompletionMaxSuggestionLength: 'Max suggestion length',
-      tabCompletionMaxSuggestionLengthDesc:
-        'Cap the number of characters inserted when accepting a suggestion.',
-      tabCompletionLengthPreset: 'Completion length',
-      tabCompletionLengthPresetDesc:
-        'Ask the model to keep the completion short, medium, or long.',
-      tabCompletionLengthPresetShort: 'Short',
-      tabCompletionLengthPresetMedium: 'Medium',
-      tabCompletionLengthPresetLong: 'Long',
-      tabCompletionAdvanced: 'Advanced settings',
-      tabCompletionContextRange: 'Context range',
-      tabCompletionContextRangeDesc:
-        'Total characters of context sent to the model (split 4:1 between before and after cursor).',
-      tabCompletionMinContextLength: 'Minimum context length',
-      tabCompletionMinContextLengthDesc:
-        'Skip tab completion unless the text before the cursor contains at least this many characters.',
-      tabCompletionTemperature: 'Sampling temperature',
-      tabCompletionTemperatureDesc:
-        'Controls creativity for prefix suggestions (0 = deterministic, higher = more diverse).',
-      tabCompletionRequestTimeout: 'Request timeout (ms)',
-      tabCompletionRequestTimeoutDesc:
-        'Abort a prefix completion request if it takes longer than this time.',
-      tabCompletionConstraints: 'Tab completion constraints',
-      tabCompletionConstraintsDesc:
-        'Optional rules inserted into the tab completion prompt (for example, "write in another language" or "match a specific style").',
-      tabCompletionTriggersTitle: 'Triggers',
-      tabCompletionTriggersDesc:
-        'Tab completion is triggered only when one of the enabled rules matches.',
-      tabCompletionTriggerAdd: 'Add trigger',
-      tabCompletionTriggerEnabled: 'Enabled',
-      tabCompletionTriggerType: 'Type',
-      tabCompletionTriggerTypeString: 'String',
-      tabCompletionTriggerTypeRegex: 'Regex',
-      tabCompletionTriggerPattern: 'Pattern',
-      tabCompletionTriggerDescription: 'Description',
-      tabCompletionTriggerRemove: 'Remove',
-    },
     etc: {
       title: 'Other',
-      pluginAutoUpdate: 'Auto-download updates',
-      pluginAutoUpdateDesc:
-        'When enabled, new versions are downloaded automatically in the background when detected.',
-      pluginAutoUpdateDescUnavailable:
-        'One-click install is only available on desktop with a writable plugin folder. On this device, update via Community plugins or GitHub.',
       exportConfig: 'Export settings',
       exportConfigDesc:
         'Export current plugin settings to a JSON file for use in other vaults.',
@@ -1784,13 +1214,6 @@ export const en: TranslationKeys = {
       captureRawRequestDebug: 'Enable LLM request debugging',
       captureRawRequestDebugDesc:
         'When enabled, each AI response shows a Debug button (in the info bar and the more-actions menu) that lets you view or export the raw LLM, tool-call, and web-search requests and responses for that turn. Captured data is kept in memory for the current Obsidian session only and is cleared on restart. API keys are redacted in the export, but the original conversation content is included.',
-      captureRawRequestDebugExcludeLogsTitle:
-        'Exclude debug logs from knowledge base?',
-      captureRawRequestDebugExcludeLogsMessage:
-        'Debug logs may contain raw conversation and tool contents. Add {{path}} to the knowledge base exclude list so they are not indexed by RAG?',
-      captureRawRequestDebugExcludeLogsCta: 'Exclude logs',
-      captureRawRequestDebugExcludeLogsSuccess:
-        '{{path}} has been excluded from the knowledge base.',
       yoloBaseDir: 'YOLO base folder',
       yoloBaseDirDesc:
         'Enter a vault-relative path (without a leading /). Example: use YOLO at vault root, or setting/YOLO under the setting folder. Current skills directory: {path}.',
@@ -1818,9 +1241,6 @@ export const en: TranslationKeys = {
         'Only affects Apply in the sidebar Chat. Choose whether edits open inline review first or write directly to the file. Turning review off skips the second confirmation step.',
       chatApplyModeReviewRequired: 'Review before apply',
       chatApplyModeDirectApply: 'Write directly to file',
-      persistSelectionHighlight: 'Keep selection block highlight',
-      persistSelectionHighlightDesc:
-        'Keep showing the block highlight for selected editor content while interacting with sidebar Chat or Quick Ask.',
       chatExportSubsectionTitle: 'Chat export',
       chatExportIncludeThinking: 'Export thinking process',
       chatExportIncludeThinkingDesc:
@@ -1862,6 +1282,10 @@ export const en: TranslationKeys = {
     placeholderPrefix: 'Type a message...',
     placeholderMention: 'add references or models',
     placeholderSkill: 'choose a skill or command',
+    editPartialSuccess:
+      'Applied {appliedCount} of {totalEdits} edits. Check console for details.',
+    statusRequesting: 'Requesting...',
+    statusThinking: 'Thinking...',
     contextUsage: 'Context window usage',
     contextUsageUnknownMaxSuffix: ' (context window limit not set)',
     contextBreakdown: {
@@ -1949,7 +1373,6 @@ export const en: TranslationKeys = {
       'This model has not declared image support. Enable the "Vision" input modality in the model settings to attach images.',
     unsupportedFileType: 'Unsupported file type: {names}',
     processImagesFailed: 'Failed to process uploaded images',
-    readPdfFailed: 'Failed to read PDF "{name}": {error}',
     readOfficeFailed: 'Failed to read Office document "{name}": {error}',
     readTextAttachmentFailed: 'Failed to read text file "{name}": {error}',
     addContext: 'Add context',
@@ -1964,9 +1387,6 @@ export const en: TranslationKeys = {
     noAssistantContent: 'No assistant content to insert',
     regenerate: 'Regenerate',
     reasoning: 'Reasoning',
-    annotations: 'Annotations',
-    vaultSources: 'Vault sources ({count})',
-    pdfReferenceNoPreview: '(PDF: click the title to open the page)',
     assistantQuote: {
       add: 'Quote',
       badge: 'Reply quote',
@@ -2193,15 +1613,10 @@ export const en: TranslationKeys = {
         delete: 'Delete',
         create_dir: 'Create folder',
         move: 'Move path',
-        // Legacy keys kept for rendering historical conversations.
-        create_file: 'Create file',
-        delete_file: 'Delete file',
-        delete_dir: 'Delete folder',
       },
       readMode: {
         full: 'Full',
         linesSuffix: ' lines',
-        pagesSuffix: ' pages',
       },
       detail: {
         target: 'Target',
@@ -2266,18 +1681,6 @@ export const en: TranslationKeys = {
         viewDetails: 'View parameters',
       },
     },
-    conversationSettings: {
-      openAria: 'Conversation settings',
-      chatMemory: 'Chat memory',
-      maxContext: 'Maximum context',
-      sampling: 'Sampling parameters',
-      temperature: 'Temperature',
-      topP: 'Top p',
-      streaming: 'Streaming',
-      geminiTools: 'Gemini tools',
-      webSearch: 'Web search',
-      urlContext: 'URL context',
-    },
     notification: {
       approvalTitle: 'YOLO needs your confirmation',
       approvalBody:
@@ -2291,41 +1694,8 @@ export const en: TranslationKeys = {
   },
 
   notices: {
-    rebuildingIndex: 'Rebuilding vault index…',
-    rebuildComplete: 'Rebuilding vault index complete.',
-    rebuildFailed: 'Rebuilding vault index failed.',
-    indexedWithSkipped:
-      'Index complete · {{count}} file(s) could not be indexed.',
-    continueComplete: 'Resumed index completed.',
-    continueFailed: 'Resumed index failed.',
     openYoloNewChatFailed:
       'Failed to open the YOLO chat window; try the command palette first.',
-    pgliteUnavailable:
-      'PGlite runtime unavailable; retry downloading the runtime assets.',
-    downloadingPglite:
-      'Downloading PGlite runtime assets; first-time knowledge base usage may take a moment…',
-    updatingIndex: 'Updating vault index…',
-    indexUpdated: 'Vault index updated.',
-    indexUpdateFailed: 'Vault index update failed.',
-    migrationComplete: 'Migration to JSON storage completed successfully.',
-    migrationFailed:
-      'Failed to migrate to JSON storage; please check the console for details.',
-    reloadingPlugin: 'Reloading "next-composer" due to migration',
-    settingsInvalid: 'Invalid settings',
-    transportModeAutoPromoted:
-      'Detected network/CORS issue. Automatically switched this provider to {mode}.',
-    capturePdfNoLeaf: 'No PDF file is currently open.',
-    capturePdfFailed: 'Failed to capture the selected region.',
-    capturePdfInjectFailed: 'Failed to add the screenshot to chat.',
-  },
-
-  pdf: {
-    regionSelectorHint: 'Drag to select a region. Press ESC to cancel.',
-    toolbarButtonTooltip: 'Capture PDF region to chat',
-  },
-
-  mentionable: {
-    pdfPage: 'Page {{page}}',
   },
 
   statusBar: {
@@ -2349,12 +1719,6 @@ export const en: TranslationKeys = {
     learningReviewLabel: 'YOLO Learning: {count} cards due today',
     learningReviewTitle: 'YOLO Learning',
     learningReviewDetail: '{count} cards to review',
-    ragAutoUpdateRunning: 'Knowledge base updating in background',
-    ragAutoUpdateRunningDetail:
-      'Incrementally synchronizing the knowledge base index.',
-    ragAutoUpdateFailed: 'Knowledge base auto-update failed',
-    ragAutoUpdateFailedDetail:
-      'The latest background sync failed. Please retry later.',
   },
 
   errors: {
@@ -2362,7 +1726,6 @@ export const en: TranslationKeys = {
     modelNotFound: 'Model not found',
     invalidApiKey: 'Invalid API key',
     networkError: 'Network error',
-    databaseError: 'Database error',
     mcpServerError: 'Server error',
   },
 
@@ -2389,44 +1752,6 @@ export const en: TranslationKeys = {
     revertedChange: 'Reverted this change',
     mergedBoth: 'Merged both',
     undo: 'Undo',
-  },
-
-  quickAsk: {
-    selectAssistant: 'Select an assistant',
-    noAssistant: 'No assistant',
-    noAssistantDescription: 'Use default system prompt',
-    navigationHint: 'Use ↑/↓ to navigate, enter to select, esc to cancel',
-    inputPlaceholder: 'Ask a question...',
-    close: 'Close',
-    copy: 'Copy',
-    insert: 'Insert',
-    openInSidebar: 'Open in sidebar',
-    stop: 'Stop',
-    send: 'Send',
-    clear: 'Clear conversation',
-    clearConfirm: 'Are you sure you want to clear the current conversation?',
-    cleared: 'Conversation cleared',
-    error: 'Failed to generate response',
-    noModelConfigured:
-      'No chat model configured. Please add a model in settings.',
-    copied: 'Copied to clipboard',
-    inserted: 'Inserted at cursor',
-    // Mode select
-    modeAsk: 'Ask',
-    modeEdit: 'Edit',
-    modeEditDirect: 'Edit (full access)',
-    modeAskDesc: 'Ask questions and get answers',
-    modeEditDesc: 'Edit the current document',
-    modeEditDirectDesc: 'Edit document directly without confirmation',
-    editNoFile: 'Please open a file first',
-    editNoChanges: 'No valid changes returned by model',
-    editPartialSuccess:
-      'Applied {appliedCount} of {totalEdits} edits. Check console for details.',
-    editApplied: 'Successfully applied {appliedCount} edit(s) to {fileName}',
-    statusRequesting: 'Requesting...',
-    statusThinking: 'Thinking...',
-    statusGenerating: 'Generating...',
-    statusModifying: 'Modifying...',
   },
 
   chatMode: {
@@ -2539,8 +1864,8 @@ export const en: TranslationKeys = {
         'Invalid export format version — the file may be corrupted.',
       errorInvalidSettingsVersion:
         'Invalid settings version in the export file — it may be corrupted.',
-      errorFileFromNewerVersion:
-        'This file was exported by a newer plugin version ({fileVersion}); current plugin schema is {currentVersion}. Please upgrade this plugin before importing.',
+      errorSettingsVersionMismatch:
+        'Settings version {fileVersion} does not match the current version {currentVersion}.',
       errorEmptyKeys: 'The export file contains no settings to import.',
       errorMissingData:
         'The data field is missing or invalid in the export file.',
@@ -2551,24 +1876,21 @@ export const en: TranslationKeys = {
       errorVaultParseFailed:
         'Could not parse the settings data from the target vault.',
       errorVaultMissingVersion:
-        'Target vault settings are missing the version field — cannot check compatibility.',
-      errorVaultFromNewerVersion:
-        'Target vault uses a newer plugin version ({vaultVersion}); current is {currentVersion}. Please upgrade this plugin before importing.',
+        'Target vault settings are missing the required version field.',
+      errorVaultVersionMismatch:
+        'Target vault settings version {vaultVersion} does not match the current version {currentVersion}.',
       errorVaultEmpty: 'Target vault contains no exportable settings.',
       errorApplyVersionMismatch:
-        'Import data version ({importVersion}) is newer than the current plugin schema ({currentVersion}).',
+        'Import data version {importVersion} does not match the current schema {currentVersion}.',
       errorApplySchema:
         'The imported settings failed validation — fields may be missing or malformed.',
     },
     keyLabels: {
       providers: 'AI providers',
       chatModels: 'Chat models',
-      embeddingModels: 'Embedding models',
       chatModelId: 'Default chat model',
       chatTitleModelId: 'Title-generation model',
-      embeddingModelId: 'Default embedding model',
       systemPrompt: 'System prompt',
-      ragOptions: 'Knowledge base settings',
       mcp: 'MCP tools',
       webSearch: 'Web search',
       skills: 'Skills',
@@ -2576,48 +1898,9 @@ export const en: TranslationKeys = {
       debug: 'Debug settings',
       chatOptions: 'Chat preferences',
       notificationOptions: 'Notifications',
-      continuationOptions: 'Continuation & completion',
+      requestPolicy: 'Model request policy',
       assistants: 'Agents',
       currentAssistantId: 'Current agent',
-      quickAskAssistantId: 'Quick Ask agent',
     },
-  },
-
-  update: {
-    newVersionAvailable: 'New version {version} is available',
-    toastTitle: 'YOLO · New version',
-    currentVersion: 'Current',
-    viewDetails: 'Check for updates',
-    goUpdate: 'Update',
-    dismiss: 'Dismiss',
-    languageEnglish: 'EN',
-    languageChinese: '中文',
-    viewHistory: 'View update history',
-    skipVersion: "Don't remind me for this version",
-    historyTitle: 'Release history',
-    historyLoading: 'Loading release history...',
-    historyError: 'Failed to load release history. Please try again later.',
-    historyEmpty: 'No release history found.',
-    historyPage: 'Page {{current}}',
-    historyPrev: 'Previous',
-    historyNext: 'Next',
-    installationIncompleteTitle: 'Plugin installation incomplete',
-    installationIncompleteMeta:
-      'main.js {mainVersion} · manifest {manifestVersion} · styles {stylesVersion}',
-    installationIncompleteSuspects: 'Files to repair: {files}',
-    installationIncompleteNotes:
-      'Plugin files may not have downloaded completely. A repair download will start automatically; you can also retry below.',
-    tryRepair: 'Try repair',
-    repairing: 'Repairing {{progress}}%',
-    repairAndReload: 'Repair and reload',
-    downloadUpdate: 'Download update',
-    downloading: 'Downloading {{progress}}%',
-    installAndReload: 'Install and reload',
-    applying: 'Installing…',
-    downloadFailed: 'Download failed',
-    installFailed: 'Install failed',
-    viewOnGitHub: 'View on GitHub',
-    updateInCommunityPlugins: 'Update in community plugins',
-    manualInstallOnGitHub: "Can't update? Install manually from GitHub",
   },
 }

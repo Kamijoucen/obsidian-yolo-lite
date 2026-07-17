@@ -36,8 +36,6 @@ export const serializeMentionable = (
         file: mentionable.file.path,
         startLine: mentionable.startLine,
         endLine: mentionable.endLine,
-        pageNumber: mentionable.pageNumber,
-        source: mentionable.source,
         contentFormat: mentionable.contentFormat,
         contentHash:
           mentionable.contentHash ?? getBlockContentHash(mentionable.content),
@@ -62,36 +60,12 @@ export const serializeMentionable = (
         type: 'url',
         url: mentionable.url,
       }
-    case 'web-selection':
-      return {
-        type: 'web-selection',
-        content: mentionable.content,
-        url: mentionable.url,
-        title: mentionable.title,
-        pageId: mentionable.pageId,
-        source: mentionable.source,
-        contentHash:
-          mentionable.contentHash ?? getBlockContentHash(mentionable.content),
-        contentCount: mentionable.contentCount,
-        contentUnit: mentionable.contentUnit,
-      }
     case 'image':
       return {
         type: 'image',
         name: mentionable.name,
         mimeType: mentionable.mimeType,
         data: mentionable.data,
-      }
-    case 'pdf':
-      return {
-        type: 'pdf',
-        name: mentionable.name,
-        // rawData (base64 of original bytes) is the source-of-truth for new
-        // uploads; legacy mentionables only have `data` (extracted text).
-        // Persist whichever is present so reload/replay reproduces faithfully.
-        rawData: mentionable.rawData,
-        data: mentionable.data,
-        pageCount: mentionable.pageCount,
       }
     case 'office':
       return {
@@ -125,10 +99,8 @@ export const deserializeMentionable = (
   try {
     switch (mentionable.type) {
       default:
-        // Unknown/legacy types persisted in old conversations (e.g. 'vault'
-        // from the removed Vault similarity search feature, or 'current-file'
-        // from the removed focus-sync badge path) are silently dropped so
-        // they disappear on next save.
+        // Ignore malformed mention records that do not match the current
+        // serialized mention schema.
         return null
       case 'file': {
         const filePath =
@@ -181,8 +153,6 @@ export const deserializeMentionable = (
           file: file,
           startLine: mentionable.startLine,
           endLine: mentionable.endLine,
-          pageNumber: mentionable.pageNumber,
-          source: mentionable.source,
           contentFormat: mentionable.contentFormat,
           contentHash:
             mentionable.contentHash ?? getBlockContentHash(mentionable.content),
@@ -213,50 +183,12 @@ export const deserializeMentionable = (
           url: mentionable.url,
         }
       }
-      case 'web-selection': {
-        if (
-          typeof mentionable.content !== 'string' ||
-          typeof mentionable.url !== 'string' ||
-          typeof mentionable.title !== 'string'
-        ) {
-          return null
-        }
-        return {
-          type: 'web-selection',
-          content: mentionable.content,
-          url: mentionable.url,
-          title: mentionable.title,
-          pageId: mentionable.pageId,
-          source: mentionable.source,
-          contentHash:
-            mentionable.contentHash ?? getBlockContentHash(mentionable.content),
-          contentCount: mentionable.contentCount,
-          contentUnit: mentionable.contentUnit,
-        }
-      }
       case 'image': {
         return {
           type: 'image',
           name: mentionable.name,
           mimeType: mentionable.mimeType,
           data: mentionable.data,
-        }
-      }
-      case 'pdf': {
-        const rawData =
-          typeof mentionable.rawData === 'string' ? mentionable.rawData : null
-        const data =
-          typeof mentionable.data === 'string' ? mentionable.data : null
-        // Need at least one of: rawData (native path) or data (legacy text fallback).
-        if (!rawData && !data) {
-          return null
-        }
-        return {
-          type: 'pdf',
-          name: mentionable.name,
-          ...(rawData ? { rawData } : {}),
-          ...(data ? { data } : {}),
-          pageCount: mentionable.pageCount,
         }
       }
       case 'office': {
@@ -326,28 +258,14 @@ export function getMentionableKey(mentionable: SerializedMentionable): string {
       return `file:${mentionable.file}`
     case 'folder':
       return `folder:${mentionable.folder}`
-    case 'block': {
-      const pageTag =
-        mentionable.pageNumber !== undefined
-          ? `:p${mentionable.pageNumber}`
-          : ''
-      return `block:${mentionable.file}:${mentionable.startLine}:${mentionable.endLine}${pageTag}:${mentionable.contentHash ?? (typeof mentionable.content === 'string' ? getBlockContentHash(mentionable.content) : 'nohash')}`
-    }
+    case 'block':
+      return `block:${mentionable.file}:${mentionable.startLine}:${mentionable.endLine}:${mentionable.contentHash ?? (typeof mentionable.content === 'string' ? getBlockContentHash(mentionable.content) : 'nohash')}`
     case 'assistant-quote':
       return `assistant-quote:${mentionable.conversationId}:${mentionable.messageId}:${mentionable.contentHash ?? (typeof mentionable.content === 'string' ? getBlockContentHash(mentionable.content) : 'nohash')}`
     case 'url':
       return `url:${mentionable.url}`
-    case 'web-selection':
-      return `web-selection:${mentionable.url}:${mentionable.contentHash ?? getBlockContentHash(mentionable.content)}`
     case 'image':
       return `image:${mentionable.name}:${mentionable.data.length}:${mentionable.data.slice(-32)}`
-    case 'pdf': {
-      // Identity is keyed by whichever payload is present: rawData (new
-      // uploads) or the legacy `data` text (mentionables serialized before
-      // native PDF support). Both are persistent enough to dedupe with.
-      const payload = mentionable.rawData ?? mentionable.data ?? ''
-      return `pdf:${mentionable.name}:${payload.length}:${payload.slice(-32)}`
-    }
     case 'office':
       return `office:${mentionable.name}:${mentionable.kind}:${mentionable.rawData.length}:${mentionable.rawData.slice(-32)}`
     case 'text-attachment':
@@ -466,16 +384,7 @@ export function getMentionableName(
     }
     case 'url':
       return mentionable.url
-    case 'web-selection': {
-      const info = getBlockMentionableCountInfo(mentionable.content)
-      const count = mentionable.contentCount ?? info.count
-      const unit = mentionable.contentUnit ?? info.unit
-      const unitLabel = resolveUnitLabel(unit, options?.unitLabels)
-      return `${mentionable.title || mentionable.url} (${count} ${unitLabel})`
-    }
     case 'image':
-      return mentionable.name
-    case 'pdf':
       return mentionable.name
     case 'office':
       return mentionable.name

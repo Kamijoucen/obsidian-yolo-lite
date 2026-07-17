@@ -15,7 +15,7 @@ describe('requestPolicy', () => {
   it('uses default timeout and no retries', () => {
     expect(
       resolveModelRequestPolicy({
-        continuationOptions: undefined,
+        requestPolicy: undefined,
       } as never),
     ).toEqual(DEFAULT_MODEL_REQUEST_POLICY)
   })
@@ -23,7 +23,7 @@ describe('requestPolicy', () => {
   it('reads the configured primary request timeout', () => {
     expect(
       resolveModelRequestPolicy({
-        continuationOptions: {
+        requestPolicy: {
           primaryRequestTimeoutMs: DEFAULT_MODEL_REQUEST_TIMEOUT_MS,
         },
       } as never),
@@ -35,7 +35,7 @@ describe('requestPolicy', () => {
   it('clamps timeout to supported bounds', () => {
     expect(
       resolveModelRequestPolicy({
-        continuationOptions: {
+        requestPolicy: {
           primaryRequestTimeoutMs: 500,
         },
       } as never),
@@ -45,7 +45,7 @@ describe('requestPolicy', () => {
 
     expect(
       resolveModelRequestPolicy({
-        continuationOptions: {
+        requestPolicy: {
           primaryRequestTimeoutMs: 999999,
         },
       } as never),
@@ -55,7 +55,7 @@ describe('requestPolicy', () => {
 
     expect(
       resolveModelRequestPolicy({
-        continuationOptions: {
+        requestPolicy: {
           primaryRequestTimeoutMs: MAX_MODEL_REQUEST_TIMEOUT_MS + 1000,
         },
       } as never),

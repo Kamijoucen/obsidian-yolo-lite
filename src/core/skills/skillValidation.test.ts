@@ -121,7 +121,7 @@ describe('parseFrontmatter', () => {
 
 describe('validateSkillName', () => {
   it('passes for valid names', () => {
-    expect(validateSkillName('pdf-processing')).toEqual([])
+    expect(validateSkillName('document-processing')).toEqual([])
     expect(validateSkillName('data-analysis')).toEqual([])
     expect(validateSkillName('code-review')).toEqual([])
     expect(validateSkillName('a')).toEqual([])
@@ -154,28 +154,28 @@ describe('validateSkillName', () => {
   })
 
   it('fails when name contains uppercase', () => {
-    expect(validateSkillName('PDF-Processing')).toContainEqual({
+    expect(validateSkillName('Document-Processing')).toContainEqual({
       field: 'name',
       message: 'uppercase not allowed',
     })
   })
 
   it('fails when name starts with hyphen', () => {
-    expect(validateSkillName('-pdf')).toContainEqual({
+    expect(validateSkillName('-document')).toContainEqual({
       field: 'name',
       message: 'cannot start or end with hyphen',
     })
   })
 
   it('fails when name ends with hyphen', () => {
-    expect(validateSkillName('pdf-')).toContainEqual({
+    expect(validateSkillName('document-')).toContainEqual({
       field: 'name',
       message: 'cannot start or end with hyphen',
     })
   })
 
   it('fails when name contains consecutive hyphens', () => {
-    expect(validateSkillName('pdf--processing')).toContainEqual({
+    expect(validateSkillName('document--processing')).toContainEqual({
       field: 'name',
       message: 'consecutive hyphens not allowed',
     })
@@ -213,7 +213,7 @@ describe('validateSkillName', () => {
 
 describe('validateDescription', () => {
   it('passes for valid description', () => {
-    expect(validateDescription('Extracts text from PDF files.')).toEqual([])
+    expect(validateDescription('Processes structured documents.')).toEqual([])
   })
 
   it('fails when description is missing', () => {
@@ -360,7 +360,7 @@ describe('validateDirectoryPackage', () => {
   it('fails when frontmatter.name does not match folder name', () => {
     const content = [
       '---',
-      'name: pdf-processing',
+      'name: document-processing',
       'description: A useful skill.',
       '---',
     ].join('\n')
@@ -375,12 +375,12 @@ describe('validateDirectoryPackage', () => {
   it('does not report mismatch when name is already invalid', () => {
     const content = [
       '---',
-      'name: PDF-Processing',
+      'name: Document-Processing',
       'description: A useful skill.',
       '---',
     ].join('\n')
     const files = [{ relativePath: 'SKILL.md', content }]
-    const errors = validateDirectoryPackage('pdf-processing', files)
+    const errors = validateDirectoryPackage('document-processing', files)
     expect(errors).toContainEqual({
       field: 'name',
       message: 'uppercase not allowed',
@@ -394,8 +394,8 @@ describe('validateDirectoryPackage', () => {
   it('passes with all optional fields valid', () => {
     const content = [
       '---',
-      'name: pdf-processing',
-      'description: Extract PDF text, fill forms, merge files.',
+      'name: document-processing',
+      'description: Process structured documents and extract tables.',
       'license: Apache-2.0',
       'compatibility: Requires Python 3.14+',
       'metadata:',
@@ -410,7 +410,7 @@ describe('validateDirectoryPackage', () => {
       { relativePath: 'scripts/extract.py', content: '# python' },
       { relativePath: 'references/REFERENCE.md', content: '# ref' },
     ]
-    expect(validateDirectoryPackage('pdf-processing', files)).toEqual([])
+    expect(validateDirectoryPackage('document-processing', files)).toEqual([])
   })
 })
 
@@ -449,9 +449,9 @@ describe('validateSingleFileSkill', () => {
     })
   })
 
-  it('passes with name only (legacy format allows free-form names)', () => {
+  it('passes with name only (standalone format allows free-form names)', () => {
     const content = ['---', 'name: Any Name With Spaces', '---'].join('\n')
-    // Legacy 格式不强制 name 命名规范
+    // 独立文件格式允许自由命名。
     expect(validateSingleFileSkill(content)).toEqual([])
   })
 

@@ -477,7 +477,7 @@ export function useCascadingTypeaheadMenu<
     return createPortal(
       <div
         ref={popoverRef}
-        className="yolo-smart-space-mention-popover"
+        className="yolo-mention-menu-popover"
         data-placement={placement}
         data-safe-active={safeActive ? 'true' : undefined}
         onPointerLeave={scheduleHoverClose}
@@ -490,11 +490,11 @@ export function useCascadingTypeaheadMenu<
         />
         <div
           ref={mainPanelRef}
-          className="yolo-popover-surface yolo-popover-surface--smart-space yolo-smart-space-mention-dropdown"
+          className="yolo-popover-surface yolo-popover-surface--elevated yolo-mention-menu-dropdown"
         >
           <div
             key={mainListKey}
-            className="yolo-smart-space-mention-list"
+            className="yolo-mention-menu-list"
             role="listbox"
             data-transition={mainListTransition}
             onAnimationEnd={onMainListAnimationEnd}
@@ -549,13 +549,13 @@ export function useCascadingTypeaheadMenu<
           <div
             key={`sub:${previewEntry}:${subSide}`}
             ref={subPanelRef}
-            className="yolo-popover-surface yolo-popover-surface--smart-space yolo-smart-space-mention-dropdown yolo-smart-space-mention-subpanel"
+            className="yolo-popover-surface yolo-popover-surface--elevated yolo-mention-menu-dropdown yolo-mention-menu-subpanel"
             data-side={subSide}
             role="listbox"
             onPointerEnter={cancelHoverClose}
             onPointerLeave={scheduleHoverClose}
           >
-            <div className="yolo-smart-space-mention-list">
+            <div className="yolo-mention-menu-list">
               {subOptions.map((option, index) =>
                 renderItem({
                   id: `typeahead-subitem-${index}`,

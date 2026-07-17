@@ -1,7 +1,5 @@
 import { YoloSettings } from '../../settings/schema/setting.types'
 import { ChatModel } from '../../types/chat-model.types'
-import { EmbeddingModel } from '../../types/embedding-model.types'
-import { getEmbeddingModelClient } from '../rag/embedding'
 
 import {
   LLMAPIKeyInvalidException,
@@ -21,9 +19,6 @@ export type HealthResult =
       totalMs: number
       // chat metric: time-to-first-token
       firstTokenMs?: number
-      // embedding metrics
-      latencyMs?: number
-      dimension?: number
     }
   | { status: 'timeout'; totalMs: number }
   | { status: 'fail'; code?: number; message: string }
@@ -46,10 +41,7 @@ export class HealthCheckAbortedError extends Error {
 }
 
 /**
- * Best-effort HTTP status extraction across the various error shapes the
- * provider clients surface: OpenAI/Anthropic SDK errors carry `status`, AWS
- * Bedrock uses `$metadata.httpStatusCode`, and the project's wrapped
- * exceptions chain the original error under `rawError` / `cause`.
+ * Best-effort HTTP status extraction across provider and wrapped error shapes.
  */
 function extractHttpStatus(error: unknown): number | undefined {
   const visited = new Set<unknown>()
@@ -65,15 +57,6 @@ function extractHttpStatus(error: unknown): number | undefined {
     // `code` is only an HTTP status when numeric — some SDKs use string codes
     // like 'model_not_found', which we must not treat as a status.
     if (typeof obj.code === 'number') return obj.code
-
-    const metadata = obj.$metadata
-    if (
-      metadata &&
-      typeof metadata === 'object' &&
-      typeof (metadata as Record<string, unknown>).httpStatusCode === 'number'
-    ) {
-      return (metadata as Record<string, unknown>).httpStatusCode as number
-    }
 
     return visit(obj.rawError) ?? visit(obj.cause)
   }
@@ -225,78 +208,5 @@ export async function testChatModelHealth(
   } finally {
     clearTimeout(timer)
     opts.signal.removeEventListener('abort', onExternalAbort)
-  }
-}
-
-/**
- * Probe an embedding model via the shared RAG client so the dimension handling
- * (sending `dimensions` when it differs from the native output, and validating
- * the returned vector length) matches real runtime behaviour. A length
- * mismatch surfaces as a legitimate failure (misconfigured dimension).
- *
- * `getEmbedding` has no AbortSignal, so timeout/stop are implemented by racing
- * the call against a timer and discarding a late result via the hook guard.
- */
-export async function testEmbeddingModelHealth(
-  settings: YoloSettings,
-  model: EmbeddingModel,
-  opts: HealthCheckOptions,
-): Promise<HealthResult> {
-  const timeoutMs = opts.timeoutMs ?? HEALTH_CHECK_TIMEOUT_MS
-  const client = getEmbeddingModelClient({
-    settings,
-    embeddingModelId: model.id,
-  })
-
-  const start = performance.now()
-  let timer: ReturnType<typeof setTimeout> | undefined
-  let onExternalAbort: (() => void) | undefined
-
-  try {
-    const outcome = await new Promise<
-      | { kind: 'ok'; vector: number[] }
-      | { kind: 'timeout' }
-      | { kind: 'aborted' }
-      | { kind: 'error'; error: unknown }
-    >((resolve) => {
-      timer = setTimeout(() => resolve({ kind: 'timeout' }), timeoutMs)
-      if (opts.signal.aborted) {
-        resolve({ kind: 'aborted' })
-      } else {
-        onExternalAbort = () => resolve({ kind: 'aborted' })
-        opts.signal.addEventListener('abort', onExternalAbort)
-      }
-      client.getEmbedding('ok').then(
-        (vector) => resolve({ kind: 'ok', vector }),
-        (error) => resolve({ kind: 'error', error }),
-      )
-    })
-
-    if (outcome.kind === 'aborted') {
-      throw new HealthCheckAbortedError()
-    }
-    if (outcome.kind === 'timeout') {
-      return { status: 'timeout', totalMs: timeoutMs }
-    }
-    if (outcome.kind === 'error') {
-      return mapErrorToResult(outcome.error)
-    }
-    const totalMs = performance.now() - start
-    return {
-      status: 'ok',
-      totalMs,
-      latencyMs: totalMs,
-      dimension: outcome.vector.length,
-    }
-  } catch (error) {
-    if (error instanceof HealthCheckAbortedError) {
-      throw error
-    }
-    return mapErrorToResult(error)
-  } finally {
-    if (timer) clearTimeout(timer)
-    if (onExternalAbort) {
-      opts.signal.removeEventListener('abort', onExternalAbort)
-    }
   }
 }

@@ -1,15 +1,11 @@
 import {
   isDeepSeekBaseUrl,
-  isMistralBaseUrl,
   isMoonshotBaseUrl,
-  isPerplexityBaseUrl,
   resolveAdapterForBaseUrl,
 } from './baseUrlDetection'
 import { DeepSeekMessageAdapter } from './deepseekMessageAdapter'
 import { KimiMessageAdapter } from './kimiMessageAdapter'
-import { MistralMessageAdapter } from './mistralMessageAdapter'
 import { OpenAIMessageAdapter } from './openaiMessageAdapter'
-import { PerplexityMessageAdapter } from './perplexityMessageAdapter'
 
 describe('isDeepSeekBaseUrl', () => {
   it('returns true for api.deepseek.com', () => {
@@ -65,58 +61,6 @@ describe('isMoonshotBaseUrl', () => {
   })
 })
 
-describe('isMistralBaseUrl', () => {
-  it('returns true for api.mistral.ai', () => {
-    expect(isMistralBaseUrl('https://api.mistral.ai')).toBe(true)
-    expect(isMistralBaseUrl('https://api.mistral.ai/v1')).toBe(true)
-  })
-
-  it('returns true for subdomains of mistral.ai', () => {
-    expect(isMistralBaseUrl('https://proxy.mistral.ai')).toBe(true)
-  })
-
-  it('returns false for undefined or empty', () => {
-    expect(isMistralBaseUrl(undefined)).toBe(false)
-    expect(isMistralBaseUrl('')).toBe(false)
-  })
-
-  it('returns false for unrelated URLs', () => {
-    expect(isMistralBaseUrl('https://api.openai.com/v1')).toBe(false)
-  })
-
-  it('returns false when mistral.ai appears only in path or query', () => {
-    expect(isMistralBaseUrl('https://evil.com/redirect?to=mistral.ai')).toBe(
-      false,
-    )
-  })
-})
-
-describe('isPerplexityBaseUrl', () => {
-  it('returns true for api.perplexity.ai', () => {
-    expect(isPerplexityBaseUrl('https://api.perplexity.ai')).toBe(true)
-    expect(isPerplexityBaseUrl('https://api.perplexity.ai/v1')).toBe(true)
-  })
-
-  it('returns true for subdomains of perplexity.ai', () => {
-    expect(isPerplexityBaseUrl('https://proxy.perplexity.ai')).toBe(true)
-  })
-
-  it('returns false for undefined or empty', () => {
-    expect(isPerplexityBaseUrl(undefined)).toBe(false)
-    expect(isPerplexityBaseUrl('')).toBe(false)
-  })
-
-  it('returns false for unrelated URLs', () => {
-    expect(isPerplexityBaseUrl('https://api.openai.com/v1')).toBe(false)
-  })
-
-  it('returns false when perplexity.ai appears only in path or query', () => {
-    expect(
-      isPerplexityBaseUrl('https://evil.com/redirect?to=perplexity.ai'),
-    ).toBe(false)
-  })
-})
-
 describe('resolveAdapterForBaseUrl', () => {
   it('returns DeepSeekMessageAdapter for DeepSeek URLs', () => {
     expect(resolveAdapterForBaseUrl('https://api.deepseek.com')).toBeInstanceOf(
@@ -128,18 +72,6 @@ describe('resolveAdapterForBaseUrl', () => {
     expect(
       resolveAdapterForBaseUrl('https://api.moonshot.cn/v1'),
     ).toBeInstanceOf(KimiMessageAdapter)
-  })
-
-  it('returns MistralMessageAdapter for Mistral URLs', () => {
-    expect(
-      resolveAdapterForBaseUrl('https://api.mistral.ai/v1'),
-    ).toBeInstanceOf(MistralMessageAdapter)
-  })
-
-  it('returns PerplexityMessageAdapter for Perplexity URLs', () => {
-    expect(
-      resolveAdapterForBaseUrl('https://api.perplexity.ai'),
-    ).toBeInstanceOf(PerplexityMessageAdapter)
   })
 
   it('returns OpenAIMessageAdapter for unknown URLs', () => {

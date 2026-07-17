@@ -67,8 +67,6 @@ const PROVIDER_MONO: Record<WebSearchProviderType, string> = {
   jina: 'J',
   searxng: 'S',
   bing: 'B',
-  'gemini-grounding': 'G',
-  grok: 'X',
   zhipu: 'Z',
 }
 
@@ -390,10 +388,6 @@ function defaultTypeLabel(type: WebSearchProviderType): string {
       return 'SearXNG'
     case 'bing':
       return 'Bing (no key)'
-    case 'gemini-grounding':
-      return 'Gemini (Grounding)'
-    case 'grok':
-      return 'Grok'
     case 'zhipu':
       return 'Zhipu Web Search'
   }

@@ -5,7 +5,7 @@ import {
 } from './mcp.types'
 
 describe('normalizeMcpServerParameters', () => {
-  it('normalizes legacy stdio format', () => {
+  it('normalizes the common stdio shorthand', () => {
     const result = normalizeMcpServerParameters({
       value: {
         command: 'npx',

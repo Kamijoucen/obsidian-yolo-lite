@@ -169,16 +169,6 @@
 .yolo-ws-monogram--bing {
   background: var(--color-cyan, #3f9aa6);
 }
-.yolo-ws-monogram--gemini-grounding {
-  background: var(--color-purple, #7c6ad6);
-}
-.yolo-ws-monogram--grok {
-  background: color-mix(
-    in srgb,
-    var(--text-normal) 70%,
-    var(--background-primary)
-  );
-}
 .yolo-ws-monogram--zhipu {
   background: var(--color-red, #c8553d);
 }

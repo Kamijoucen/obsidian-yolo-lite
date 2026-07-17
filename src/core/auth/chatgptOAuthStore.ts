@@ -11,7 +11,6 @@ export type ChatGPTOAuthCredential = {
 }
 
 const CREDENTIAL_DIR_NAME = 'chatgpt-oauth'
-const LEGACY_CREDENTIAL_FILE_NAME = 'chatgpt-oauth.json'
 const DEFAULT_PROVIDER_ID = 'chatgpt-oauth'
 const EXPIRY_BUFFER_MS = 30_000
 
@@ -21,7 +20,6 @@ const encodeProviderId = (providerId: string): string =>
 export class ChatGPTOAuthStore {
   private readonly dir: string
   private readonly file: string
-  private readonly legacyFile: string
 
   constructor(
     private readonly app: App,
@@ -36,9 +34,6 @@ export class ChatGPTOAuthStore {
         `${encodeProviderId(this.providerId)}.json`,
       ),
     )
-    this.legacyFile = normalizePath(
-      path.posix.join(this.dir, LEGACY_CREDENTIAL_FILE_NAME),
-    )
   }
 
   getFilePath(): string {
@@ -46,7 +41,6 @@ export class ChatGPTOAuthStore {
   }
 
   async get(): Promise<ChatGPTOAuthCredential | null> {
-    await this.migrateLegacyCredentialIfNeeded()
     const exists = await this.app.vault.adapter.exists(this.file)
     if (!exists) {
       return null
@@ -110,26 +104,5 @@ export class ChatGPTOAuthStore {
       return
     }
     await this.app.vault.adapter.mkdir(credentialDir)
-  }
-
-  private async migrateLegacyCredentialIfNeeded(): Promise<void> {
-    if (this.providerId !== DEFAULT_PROVIDER_ID) {
-      return
-    }
-
-    const currentExists = await this.app.vault.adapter.exists(this.file)
-    if (currentExists) {
-      return
-    }
-
-    const legacyExists = await this.app.vault.adapter.exists(this.legacyFile)
-    if (!legacyExists) {
-      return
-    }
-
-    await this.ensureDir()
-    const raw = await this.app.vault.adapter.read(this.legacyFile)
-    await this.app.vault.adapter.write(this.file, raw)
-    await this.app.vault.adapter.remove(this.legacyFile)
   }
 }

@@ -185,7 +185,7 @@ export function validateDirectoryPackage(
 }
 
 /**
- * 对单文件格式的 skill 进行校验(Legacy 格式)。
+ * 对独立单文件格式的 skill 进行校验。
  * 要求有 frontmatter 且包含 name 字段。
  */
 export function validateSingleFileSkill(content: string): ValidationError[] {

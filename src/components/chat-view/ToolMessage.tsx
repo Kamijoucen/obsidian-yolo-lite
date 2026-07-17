@@ -53,7 +53,7 @@ export type ToolLabels = {
   displayNames: Record<string, string>
   writeActionLabels: Record<string, string>
   readFull: string
-  readLineRange: (startLine: number, endLine: number, isPdf: boolean) => string
+  readLineRange: (startLine: number, endLine: number) => string
   target: string
   scope: string
   query: string
@@ -100,10 +100,6 @@ const DEFAULT_LOCAL_FILE_TOOL_DISPLAY_NAMES: Record<string, string> = {
   fs_delete: 'Delete',
   fs_create_dir: 'Create folder',
   fs_move: 'Move path',
-  // Legacy tool names kept for displaying historical conversations.
-  fs_create_file: 'Create file',
-  fs_delete_file: 'Delete file',
-  fs_delete_dir: 'Delete folder',
 }
 
 const DEFAULT_WRITE_ACTION_LABELS: Record<string, string> = {
@@ -111,10 +107,6 @@ const DEFAULT_WRITE_ACTION_LABELS: Record<string, string> = {
   delete: 'Delete',
   create_dir: 'Create folder',
   move: 'Move path',
-  // Legacy actions kept for displaying historical conversations.
-  create_file: 'Create file',
-  delete_file: 'Delete file',
-  delete_dir: 'Delete folder',
 }
 
 export const getToolLabels = (t?: TranslateFn): ToolLabels => {
@@ -175,19 +167,6 @@ export const getToolLabels = (t?: TranslateFn): ToolLabels => {
         'chat.toolCall.writeAction.move',
         DEFAULT_LOCAL_FILE_TOOL_DISPLAY_NAMES.fs_move,
       ),
-      // Legacy tool names — keep rendering historical conversations.
-      fs_create_file: translate(
-        'chat.toolCall.writeAction.create_file',
-        DEFAULT_LOCAL_FILE_TOOL_DISPLAY_NAMES.fs_create_file,
-      ),
-      fs_delete_file: translate(
-        'chat.toolCall.writeAction.delete_file',
-        DEFAULT_LOCAL_FILE_TOOL_DISPLAY_NAMES.fs_delete_file,
-      ),
-      fs_delete_dir: translate(
-        'chat.toolCall.writeAction.delete_dir',
-        DEFAULT_LOCAL_FILE_TOOL_DISPLAY_NAMES.fs_delete_dir,
-      ),
     },
     writeActionLabels: {
       write: translate(
@@ -206,27 +185,10 @@ export const getToolLabels = (t?: TranslateFn): ToolLabels => {
         'chat.toolCall.writeAction.move',
         DEFAULT_WRITE_ACTION_LABELS.move,
       ),
-      // Legacy actions — keep rendering historical conversations.
-      create_file: translate(
-        'chat.toolCall.writeAction.create_file',
-        DEFAULT_WRITE_ACTION_LABELS.create_file,
-      ),
-      delete_file: translate(
-        'chat.toolCall.writeAction.delete_file',
-        DEFAULT_WRITE_ACTION_LABELS.delete_file,
-      ),
-      delete_dir: translate(
-        'chat.toolCall.writeAction.delete_dir',
-        DEFAULT_WRITE_ACTION_LABELS.delete_dir,
-      ),
     },
     readFull: translate('chat.toolCall.readMode.full', 'Full'),
-    readLineRange: (startLine: number, endLine: number, isPdf: boolean) =>
-      `${startLine}-${endLine}${
-        isPdf
-          ? translate('chat.toolCall.readMode.pagesSuffix', ' pages')
-          : translate('chat.toolCall.readMode.linesSuffix', ' lines')
-      }`,
+    readLineRange: (startLine: number, endLine: number) =>
+      `${startLine}-${endLine}${translate('chat.toolCall.readMode.linesSuffix', ' lines')}`,
     target: translate('chat.toolCall.detail.target', 'Target'),
     scope: translate('chat.toolCall.detail.scope', 'Scope'),
     query: translate('chat.toolCall.detail.query', 'Query'),
@@ -288,17 +250,6 @@ export const getToolLabels = (t?: TranslateFn): ToolLabels => {
   }
 }
 
-const isLegacyDelegateExternalAgentRequest = (
-  request: ToolRequestLike,
-): boolean => {
-  try {
-    const { toolName } = parseToolName(request.name)
-    return toolName === 'delegate_external_agent'
-  } catch {
-    return false
-  }
-}
-
 const isDelegateSubagentRequest = (request: ToolRequestLike): boolean => {
   try {
     const { toolName } = parseToolName(request.name)
@@ -315,21 +266,6 @@ const isTerminalCommandRequest = (request: ToolRequestLike): boolean => {
   } catch {
     return false
   }
-}
-
-const extractLegacyExternalAgentArgs = (
-  rawArguments?: ToolCallRequest['arguments'],
-): { command?: string; workingDirectory?: string } | undefined => {
-  const parsed = getToolCallArgumentsObject(rawArguments)
-  if (!parsed) return undefined
-  const prompt =
-    typeof parsed.prompt === 'string' ? parsed.prompt.trim() : undefined
-  const workingDirectory =
-    typeof parsed.workingDirectory === 'string'
-      ? parsed.workingDirectory
-      : undefined
-  if (!prompt && !workingDirectory) return undefined
-  return { command: prompt, workingDirectory }
 }
 
 const extractSubagentArgs = (
@@ -712,11 +648,7 @@ const formatFsReadHeadlineMode = (
   if (operation.type === 'full') {
     return labels.readFull
   }
-  return labels.readLineRange(
-    operation.startLine,
-    operation.endLine,
-    operation.isPdf,
-  )
+  return labels.readLineRange(operation.startLine, operation.endLine)
 }
 
 export const getHeadlineDisplayInfo = ({
@@ -946,11 +878,7 @@ const getLocalToolSummaryText = ({
   if (
     toolName === 'fs_write' ||
     toolName === 'fs_delete' ||
-    toolName === 'fs_create_dir' ||
-    // Legacy tool names from historical conversations.
-    toolName === 'fs_create_file' ||
-    toolName === 'fs_delete_file' ||
-    toolName === 'fs_delete_dir'
+    toolName === 'fs_create_dir'
   ) {
     const path =
       typeof argumentsObject?.path === 'string' ? argumentsObject.path : ''
@@ -1106,9 +1034,8 @@ const ToolMessage = memo(function ToolMessage({
   )
   const handleFallbackToolCallResponseUpdate = useCallback(
     (toolCallId: string, response: ToolCallResponse) => {
-      // Fallback is for read-only/legacy hosts that have not adopted
-      // onToolCallResponseUpdate; performance-sensitive chat surfaces should
-      // use the parent-owned id update path above.
+      // Read-only surfaces can omit the fine-grained callback; the normal chat
+      // surface uses the parent-owned id update path above.
       onMessageUpdate({
         ...message,
         toolCalls: message.toolCalls.map((toolCall) =>
@@ -1474,9 +1401,7 @@ function ToolCallItem({
             request.arguments,
             toolLabels.noParameters,
           )
-          const isTerminalLikeRequest =
-            isTerminalCommandRequest(request) ||
-            isLegacyDelegateExternalAgentRequest(request)
+          const isTerminalLikeRequest = isTerminalCommandRequest(request)
           const effectiveTerminalResponse =
             terminalCommandResult && isTerminalCommandRequest(request)
               ? buildHydratedTerminalCommandResponse(
@@ -1508,11 +1433,7 @@ function ToolCallItem({
                 <LiveTaskCard
                   toolCallId={request.id}
                   response={effectiveTerminalResponse}
-                  args={
-                    isLegacyDelegateExternalAgentRequest(request)
-                      ? extractLegacyExternalAgentArgs(request.arguments)
-                      : extractTerminalCommandArgs(request.arguments)
-                  }
+                  args={extractTerminalCommandArgs(request.arguments)}
                   initialStdout={
                     terminalCommandResult?.stdout ??
                     syntheticLiveTaskOutput.stdout

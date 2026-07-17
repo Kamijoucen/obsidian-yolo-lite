@@ -35,7 +35,6 @@ import {
 } from './bash/command-classifier'
 import type { BashTaskRecord } from './bash/types'
 import { DEFAULT_BRANCH_ID } from './branch'
-import { CitationRegistry } from './citationRegistry'
 import { NativeAgentRuntime } from './native-runtime'
 import { PromptSourceWatcher } from './promptSourceWatcher'
 import {
@@ -49,11 +48,7 @@ import {
 import { subagentTaskRegistry } from './subagent/task-registry'
 import type { SubagentTaskRecord } from './subagent/types'
 import { SystemPromptSnapshotStore } from './systemPromptSnapshotStore'
-import {
-  AgentRunContext,
-  AgentRuntimeLoopConfig,
-  AgentRuntimeRunInput,
-} from './types'
+import { AgentRuntimeLoopConfig, AgentRuntimeRunInput } from './types'
 
 export type AgentRunStatus =
   | 'idle'
@@ -142,7 +137,6 @@ export type AgentConversationRunSummarySubscriber = (
 type PendingApprovalRecoveryContext = {
   lastRunInput: AgentRuntimeRunInput
   lastLoopConfig: AgentRuntimeLoopConfig
-  lastRunContext: AgentRunContext | null
 }
 
 type ConversationEntry = {
@@ -167,11 +161,6 @@ type AgentRunEntry = {
   runToken: symbol | null
   lastRunInput: AgentRuntimeRunInput | null
   lastLoopConfig: AgentRuntimeLoopConfig | null
-  // Holds the citationRegistry for the run currently associated with this
-  // entry, so manual-approval/recovery paths (which call mcpManager.callTool
-  // directly, bypassing the loop-worker) can attach citations the same way
-  // auto-executed tool calls do.
-  lastRunContext: AgentRunContext | null
 }
 
 type ConversationPublishMode = 'immediate' | 'scheduled'
@@ -392,8 +381,7 @@ const createRuntimeMessageSignature = (
 
   if (
     message.role === 'terminal_command_result' ||
-    message.role === 'subagent_result' ||
-    message.role === 'external_agent_result'
+    message.role === 'subagent_result'
   ) {
     return {
       role: message.role,
@@ -853,7 +841,6 @@ const buildBranchAggregateMessages = ({
       break
     }
     const currentSourceUserMessageId =
-      currentMessage.role === 'external_agent_result' ||
       currentMessage.role === 'subagent_result' ||
       currentMessage.role === 'terminal_command_result'
         ? undefined
@@ -1519,11 +1506,6 @@ export class AgentService {
     const lastRunInput = activeRunInput ?? recoveryContext?.lastRunInput ?? null
     const lastLoopConfig =
       activeLoopConfig ?? recoveryContext?.lastLoopConfig ?? null
-    const lastRunContext =
-      located.runEntry?.lastRunContext ??
-      recoveryContext?.lastRunContext ??
-      null
-
     if (!lastRunInput || !lastLoopConfig) {
       return false
     }
@@ -1609,7 +1591,6 @@ export class AgentService {
           roundId: toolMessage.id,
           chatModelId: lastRunInput.model.id,
           workspaceScope: lastRunInput.workspaceScope,
-          runContext: lastRunContext ?? undefined,
           subagentParentContext: buildSubagentParentContext(
             lastRunInput,
             lastLoopConfig,
@@ -2057,32 +2038,6 @@ export class AgentService {
     }
   }
 
-  private attachSourcesToLatestAssistant(
-    messages: ChatMessage[],
-    registry: CitationRegistry,
-  ): ChatMessage[] {
-    if (registry.size === 0) {
-      return messages
-    }
-    const sources = registry.toArray()
-    for (let index = messages.length - 1; index >= 0; index -= 1) {
-      const message = messages[index]
-      if (message.role !== 'assistant') {
-        continue
-      }
-      const next = [...messages]
-      next[index] = {
-        ...message,
-        metadata: {
-          ...message.metadata,
-          sources,
-        },
-      }
-      return next
-    }
-    return messages
-  }
-
   private findDebugTraceIdForToolCall(
     messages: ChatMessage[],
     toolCallId: string | undefined,
@@ -2157,13 +2112,8 @@ export class AgentService {
     runEntry.lastRunInput = input
     runEntry.lastLoopConfig = loopConfig
 
-    const citationRegistry = new CitationRegistry()
-    const runContext: AgentRunContext = { citationRegistry }
-    runEntry.lastRunContext = runContext
-
     const runtimeInput: AgentRuntimeRunInput = {
       ...input,
-      runContext,
       drainPendingUserMessages: () => {
         const queue = this.pendingUserMessagesByKey.get(runKey)
         if (!queue || queue.length === 0) {
@@ -2249,14 +2199,8 @@ export class AgentService {
         return
       }
 
-      const nextMessages = this.attachSourcesToLatestAssistant(
-        currentRunEntry.state.messages,
-        citationRegistry,
-      )
-
       currentRunEntry.state = {
         ...currentRunEntry.state,
-        messages: nextMessages,
         status: input.abortSignal?.aborted ? 'aborted' : 'completed',
         pendingCompactionAnchorMessageId: null,
       }
@@ -2501,7 +2445,6 @@ export class AgentService {
       runToken: null,
       lastRunInput: null,
       lastLoopConfig: null,
-      lastRunContext: null,
       state: {
         conversationId,
         status: 'idle',
@@ -2615,7 +2558,6 @@ export class AgentService {
         conversationEntry.pendingApprovalRecoveryContext = {
           lastRunInput: defaultBranchEntry.lastRunInput,
           lastLoopConfig: defaultBranchEntry.lastLoopConfig,
-          lastRunContext: defaultBranchEntry.lastRunContext,
         }
       }
       runEntries.forEach((entry) => {

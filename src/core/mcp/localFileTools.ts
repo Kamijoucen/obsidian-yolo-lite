@@ -10,12 +10,10 @@ import {
 } from 'obsidian'
 
 import { upsertEditReviewSnapshot } from '../../database/json/chat/editReviewSnapshotStore'
-import { buildPdfPageImageCacheKey } from '../../database/json/chat/imageCacheStore'
 import type { YoloSettings } from '../../settings/schema/setting.types'
 import type { ApplyViewState } from '../../types/apply-view.types'
 import type { AssistantWorkspaceScope } from '../../types/assistant.types'
 import type { ChatMessage } from '../../types/chat'
-import type { ChatModelModality } from '../../types/chat-model.types'
 import type { ContentPart } from '../../types/llm/request'
 import { McpTool } from '../../types/mcp.types'
 import {
@@ -23,7 +21,6 @@ import {
   type ToolEditSummary,
   type ToolFsReadOperationSummary,
 } from '../../types/tool-call.types'
-import { uint8ArrayToBase64 } from '../../utils/base64'
 import {
   createToolEditSummary,
   deriveToolEditUndoStatus,
@@ -32,26 +29,15 @@ import { editUndoSnapshotStore } from '../../utils/chat/editUndoSnapshotStore'
 import { isContextPrunableToolName } from '../../utils/chat/tool-context-pruning'
 import { collectWikilinkPaths } from '../../utils/llm/annotate-wikilinks'
 import { extractMarkdownImages } from '../../utils/llm/extract-markdown-images'
-import {
-  chatModelSupportsPdf,
-  chatModelSupportsVision,
-} from '../../utils/llm/model-modalities'
+import { chatModelSupportsVision } from '../../utils/llm/model-modalities'
 import {
   type OfficeDocumentKind,
   parseOfficeDocument,
 } from '../../utils/office'
-import {
-  PDF_INDEX_MAX_BYTES,
-  PDF_INDEX_MAX_PAGES,
-  extractPdfText,
-} from '../../utils/pdf/extractPdfText'
-import { renderPdfPagesToImages } from '../../utils/pdf/renderPdfPagesToImages'
-import { PdfSliceError, slicePdfPages } from '../../utils/pdf/slicePdfPages'
 import type { PromptSourceWatcher } from '../agent/promptSourceWatcher'
 import { resolveSubagentModelConfig } from '../agent/subagent/model-config'
 import type { SubagentParentContext } from '../agent/subagent/parent-context'
 import type { TodoItem } from '../agent/todos-from-messages'
-import type { AgentRunContext } from '../agent/types'
 import {
   BROWSER_READ_PATH_PREFIX,
   BUILTIN_SKILL_PATH_PREFIX,
@@ -83,16 +69,6 @@ import {
   memoryDelete,
   memoryUpdate,
 } from '../memory/memoryManager'
-import type { RAGEngine } from '../rag/ragEngine'
-import {
-  type SuperSearchResult,
-  fuseRrfHybrid,
-  superSearchDedupKey,
-} from '../search/hybridSearch'
-import {
-  type AggregatedSearchResult,
-  aggregateSearchResults,
-} from '../search/searchResultAggregation'
 import { getLiteSkillDocumentByPath } from '../skills/liteSkills'
 import {
   WEB_SCRAPE_TOOL_NAME,
@@ -109,9 +85,6 @@ import {
   JS_SANDBOX_BROWSER_READ_DEFAULT_MAX_KB,
   JS_SANDBOX_BROWSER_READ_HARD_MAX_KB,
   JS_SANDBOX_BROWSER_READ_MIN_KB,
-  JS_SANDBOX_DB_QUERY_DEFAULT_MAX_LIMIT,
-  JS_SANDBOX_DB_QUERY_DEFAULT_REQUEST_LIMIT,
-  JS_SANDBOX_DB_QUERY_HARD_MAX_LIMIT,
   JS_SANDBOX_FETCH_DEFAULT_MAX_CONCURRENT,
   JS_SANDBOX_FETCH_DEFAULT_MAX_RESPONSE_KB,
   JS_SANDBOX_FETCH_HARD_MAX_CONCURRENT,
@@ -145,8 +118,6 @@ const DEFAULT_READ_START_LINE = 1
 const DEFAULT_READ_MAX_LINES = 50
 const MAX_READ_MAX_LINES = 2000
 const MAX_READ_LINE_INDEX = 1_000_000
-const MAX_RAG_SNIPPET_CHARS = 500
-const RAG_FETCH_LIMIT_MAX = 300
 const BROWSER_READ_PATH_USAGE =
   'browser:// paths only read open Obsidian web pages by page_id copied exactly from <browser_context> (browser://page_<8 lowercase base36>_<8 lowercase base36>). Do not append URL paths to a page_id and do not use browser:// to open or fetch internet URLs. For internet access, use web_search or web_scrape when available; if those tools are unavailable, tell the user.'
 
@@ -221,24 +192,14 @@ export const USER_FACING_LOCAL_TOOL_SHORT_NAMES: readonly string[] =
   LOCAL_FILE_TOOL_SHORT_NAMES.filter((name) => name !== 'load_tool_schemas')
 type LocalFileToolName = (typeof LOCAL_FILE_TOOL_SHORT_NAMES)[number]
 type FsSearchScope = 'files' | 'dirs' | 'content' | 'all'
-type FsSearchMode = 'keyword' | 'rag' | 'hybrid'
-type LegacyFsSearchItem =
+type FsSearchItem =
   | { kind: 'file'; path: string }
   | { kind: 'dir'; path: string }
   | { kind: 'content_match'; path: string; line: number; snippet: string }
 type FsListScope = 'files' | 'dirs' | 'all'
-// PDF read modality override. Omitted = default behavior (native PDF when the
-// chat model supports it, otherwise text). Concrete values are presented to
-// the model via a per-capability schema (see buildFsReadModalitySchema):
-//   - PDF-capable models: ['text', 'pdf']
-//   - vision-capable (non-PDF): ['text', 'image']
-//   - text-only: field is omitted from the schema entirely
-// The parser still accepts the full superset for resilience (see notes there).
-type FsReadModality = 'text' | 'image' | 'pdf'
 type FsReadOperation =
   | {
       type: 'full'
-      modality?: FsReadModality
       format?: BrowserReadFormat
     }
   | {
@@ -246,7 +207,6 @@ type FsReadOperation =
       startLine: number
       endLine?: number
       maxLines: number
-      modality?: FsReadModality
       format?: BrowserReadFormat
     }
 type ContextPruneMode = 'selected' | 'all'
@@ -596,63 +556,6 @@ export function getLocalFileToolServerName(): string {
 export const LOAD_TOOL_SCHEMAS_LOCAL_TOOL_NAME = 'load_tool_schemas'
 
 /**
- * Build the modality enum + description fragment exposed to the current chat
- * model in fs_read's schema.
- *
- *   - PDF-capable model      → ['text', 'pdf']
- *   - vision (non-PDF) model → ['text', 'image']
- *   - text-only model        → undefined (field is omitted from schema)
- *   - no model context       → ['text', 'image', 'pdf'] (superset; used by UI
- *                              listings and permission persistence — the LLM
- *                              never sees this branch because every runtime
- *                              call site threads the active model through)
- *
- * Image and pdf are mutually exclusive by product definition: image is only a
- * workaround for models lacking native PDF input, and pdf is meaningless on
- * models that can't accept it. Tailoring the enum per model collapses the
- * "model picks a value that has to be silently corrected" failure mode into
- * "the wrong value isn't representable to begin with."
- */
-const buildFsReadModalitySchema = (
-  modalities: ChatModelModality[] | undefined,
-): { type: 'string'; enum: string[]; description: string } | undefined => {
-  const isPdfCapable = modalities?.includes('pdf')
-  const isVisionCapable = modalities?.includes('vision')
-
-  if (!modalities) {
-    // Superset (UI / permission listing). Not seen by any live LLM call.
-    return {
-      type: 'string',
-      enum: ['text', 'image', 'pdf'],
-      description:
-        'PDF-only modality override. Omit for the default per active model. text = plain text extraction. image = render pages as images (only available on vision-capable, non-PDF-capable models). pdf = native PDF input (only available on PDF-capable models). Ignored for non-PDF files.',
-    }
-  }
-
-  if (isPdfCapable) {
-    return {
-      type: 'string',
-      enum: ['text', 'pdf'],
-      description:
-        'PDF-only modality override. Omit for default (= "pdf"). "text" = plain text extraction (cheap and fast; pick this only when the user explicitly asks for text-only). "pdf" = native PDF input (highest fidelity). Ignored for non-PDF files.',
-    }
-  }
-
-  if (isVisionCapable) {
-    return {
-      type: 'string',
-      enum: ['text', 'image'],
-      description:
-        'PDF-only modality override. Omit for default (= "text"). "text" = plain text extraction. "image" = render the requested pages as images — opt in ONLY when text is insufficient (formulas, figures, scans, complex layout); avoid for large page ranges. Ignored for non-PDF files.',
-    }
-  }
-
-  // Text-only model: no override is meaningful. Field is omitted from schema
-  // entirely so the model has no decision to make.
-  return undefined
-}
-
-/**
  * Standalone tool definition for `load_tool_schemas`. Used by the runtime to
  * inject the loader on demand (when `enableToolDisclosure=true` AND the
  * filtered tool set contains any `on_demand` tool). Not surfaced through
@@ -679,11 +582,7 @@ export function getLoadToolSchemasTool(): McpTool {
   }
 }
 
-export function getLocalFileTools(options?: {
-  vaultBasePath?: string
-  chatModelModalities?: ChatModelModality[]
-}): McpTool[] {
-  const modalitySchema = buildFsReadModalitySchema(options?.chatModelModalities)
+export function getLocalFileTools(): McpTool[] {
   return [
     {
       name: 'fs_list',
@@ -713,32 +612,28 @@ export function getLocalFileTools(options?: {
     {
       name: 'fs_search',
       description:
-        'Search the vault. Prefer hybrid mode (keyword + RAG fused). Results grouped by file with snippets. For PDF hits, startLine/endLine are page numbers. Use keyword for exact terms; rag for semantic-only. ' +
-        'Each returned snippet carries a `cite: N` field. When you write the answer using content from this tool, annotate each citing point with a markdown link `[N](yolo-cite:N?yolo-cite=N)` where N is the `cite` number of the snippet you relied on. The same `N` may be reused as often as needed; multiple `[1](...)[2](...)` may appear back-to-back. Do not emit `yolo-cite:` links unless they correspond to a `cite` number from this tool.',
+        'Search vault file names, folders, and text content by keyword.',
       inputSchema: {
         type: 'object',
         properties: {
           mode: {
             type: 'string',
-            enum: ['keyword', 'rag', 'hybrid'],
-            description:
-              'Default: hybrid (keyword+RAG). keyword: exact match. rag: semantic only.',
+            enum: ['keyword'],
+            description: 'Keyword search mode.',
           },
           scope: {
             type: 'string',
             enum: ['files', 'dirs', 'content', 'all'],
-            description:
-              'Keyword scope (default: all). rag/hybrid: content or all only.',
+            description: 'Search scope. Defaults to all.',
           },
           query: {
             type: 'string',
-            description:
-              'Search query. Optional for keyword files/dirs. Required for content/rag/hybrid.',
+            description: 'Search query. Optional for file and folder names.',
           },
           path: {
             type: 'string',
             description:
-              "Optional vault-relative path to scope search. Folder (recursive) or single file. For a file, RAG is restricted to that file's chunks and keyword content scans only that file (markdown only for keyword content).",
+              'Optional vault-relative folder or file path used to scope search.',
           },
           maxResults: {
             type: 'integer',
@@ -750,23 +645,13 @@ export function getLocalFileTools(options?: {
             description:
               'Whether matching should be case-sensitive. Mainly useful for content scope.',
           },
-          ragMinSimilarity: {
-            type: 'number',
-            description:
-              'Optional minimum similarity threshold (0-1) for rag/hybrid; defaults to settings.',
-          },
-          ragLimit: {
-            type: 'integer',
-            description:
-              'Optional max RAG chunks to retrieve for rag/hybrid; defaults to settings, range 1-300.',
-          },
         },
       },
     },
     {
       name: 'fs_read',
       description:
-        'Read vault files, skill instructions, or open Obsidian web pages. Lines are 1-based. For PDFs, output is <page N> tags; lines mode uses page numbers. Office files (.docx/.pptx/.xlsx) are parsed to markdown text. Prefer lines for targeted reads. Skill paths from <available_skills> may use builtin:// prefixes. Open web pages use browser://<page_id> copied exactly from <browser_context>. browser:// does not open URLs or fetch internet content; use web_search or web_scrape when available, and tell the user if those tools are unavailable. Do not call browser:// paths when <browser_context> is absent.',
+        'Read vault text files, Office documents, skill instructions, or open Obsidian web pages. Lines are 1-based. Office files (.docx/.pptx/.xlsx) are parsed to markdown text.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -780,7 +665,7 @@ export function getLocalFileTools(options?: {
           operation: {
             type: 'object',
             description:
-              'Read strategy. Omit for full. full: whole file/page. lines: targeted range (PDFs use page numbers). format applies only to browser:// paths.',
+              'Read strategy. Omit for full. full reads the whole file/page; lines reads a targeted range. format applies only to browser:// paths.',
             properties: {
               type: {
                 type: 'string',
@@ -806,7 +691,6 @@ export function getLocalFileTools(options?: {
                 description:
                   'Browser pages only. key_visible_info (default): compact visible headings, text blocks, tables, code, and formulas — prefer for long pages. readable: fuller Markdown-like text.',
               },
-              ...(modalitySchema ? { modality: modalitySchema } : {}),
             },
             required: ['type'],
           },
@@ -1360,25 +1244,6 @@ const getOptionalBoundedIntegerArg = ({
   return value
 }
 
-const getOptionalBoundedFloatArg = (
-  args: Record<string, unknown>,
-  key: string,
-  min: number,
-  max: number,
-): number | undefined => {
-  const value = args[key]
-  if (value === undefined) {
-    return undefined
-  }
-  if (typeof value !== 'number' || !Number.isFinite(value)) {
-    throw new Error(`${key} must be a number.`)
-  }
-  if (value < min || value > max) {
-    throw new Error(`${key} must be between ${min} and ${max}.`)
-  }
-  return value
-}
-
 const getOptionalBooleanArg = (
   args: Record<string, unknown>,
   key: string,
@@ -1545,8 +1410,7 @@ const toJsSandboxVaultListEntry = (
 
 /**
  * Scope for fs_search. `vault` = entire vault, `folder` = recursive subtree,
- * `file` = a single file (RAG restricts to that file's chunks; keyword content
- * scans only that file).
+ * `file` = a single file whose content may be scanned.
  */
 type FsSearchScopeTarget =
   | { kind: 'vault'; normalizedPath: '' }
@@ -1640,75 +1504,6 @@ const makeContentSnippet = ({
   return `${prefix}${snippet}${suffix}`
 }
 
-const truncateRagSnippet = (text: string): string => {
-  const normalized = text.replace(/\s+/g, ' ').trim()
-  if (normalized.length <= MAX_RAG_SNIPPET_CHARS) {
-    return normalized
-  }
-  return `${normalized.slice(0, MAX_RAG_SNIPPET_CHARS)}...`
-}
-
-const legacyFsSearchItemsToSuper = (
-  items: LegacyFsSearchItem[],
-  source: 'keyword' | 'rag',
-): SuperSearchResult[] => {
-  return items.map((item) => {
-    if (item.kind === 'file') {
-      return { kind: 'file', path: item.path, source }
-    }
-    if (item.kind === 'dir') {
-      return { kind: 'dir', path: item.path, source }
-    }
-    return {
-      kind: 'content',
-      path: item.path,
-      line: item.line,
-      startLine: item.line,
-      endLine: item.line,
-      snippet: item.snippet,
-      source,
-    }
-  })
-}
-
-type RagEmbeddingRow = {
-  path: string
-  content: string
-  metadata: { startLine: number; endLine: number; page?: number }
-  similarity: number
-}
-
-const mapRagRowsToSuper = (
-  rows: RagEmbeddingRow[],
-  source: 'rag',
-): SuperSearchResult[] => {
-  return rows.map((row) => {
-    const page = row.metadata.page
-    const locLine = page ?? row.metadata.startLine
-    const locEnd = page ?? row.metadata.endLine
-    return {
-      kind: 'content' as const,
-      path: row.path,
-      line: locLine,
-      startLine: locLine,
-      endLine: locEnd,
-      page,
-      snippet: truncateRagSnippet(row.content),
-      similarity: row.similarity,
-      source,
-    }
-  })
-}
-
-const pathToRagScope = (
-  scope: FsSearchScopeTarget,
-): { files: string[]; folders: string[] } | undefined => {
-  if (scope.kind === 'vault') return undefined
-  if (scope.kind === 'folder')
-    return { files: [], folders: [scope.normalizedPath] }
-  return { files: [scope.normalizedPath], folders: [] }
-}
-
 const collectKeywordFsSearchResults = async ({
   app,
   scopeTarget,
@@ -1725,7 +1520,7 @@ const collectKeywordFsSearchResults = async ({
   maxResults: number
   caseSensitive: boolean
   signal?: AbortSignal
-}): Promise<LegacyFsSearchItem[]> => {
+}): Promise<FsSearchItem[]> => {
   const queryForMatch = caseSensitive ? query : query.toLowerCase()
   const queryTokens = Array.from(
     new Set(
@@ -1801,7 +1596,7 @@ const collectKeywordFsSearchResults = async ({
     throw new Error('query is required when scope includes content.')
   }
 
-  const results: LegacyFsSearchItem[] = []
+  const results: FsSearchItem[] = []
   if (includeFiles) {
     const files = app.vault
       .getFiles()
@@ -1967,15 +1762,11 @@ const getFsSearchScope = (args: Record<string, unknown>): FsSearchScope => {
   return value
 }
 
-const getFsSearchMode = (args: Record<string, unknown>): FsSearchMode => {
+const validateFsSearchMode = (args: Record<string, unknown>): void => {
   const value = args.mode
-  if (value === undefined) {
-    return 'hybrid'
+  if (value !== undefined && value !== 'keyword') {
+    throw new Error('mode must be keyword.')
   }
-  if (value !== 'keyword' && value !== 'rag' && value !== 'hybrid') {
-    throw new Error('mode must be one of: keyword, rag, hybrid.')
-  }
-  return value
 }
 
 const getOptionalFsSearchScope = (
@@ -1986,25 +1777,6 @@ const getOptionalFsSearchScope = (
     return defaultScope
   }
   return getFsSearchScope(args)
-}
-
-const getSemanticSearchUnavailableReason = ({
-  settings,
-  getRagEngine,
-}: {
-  settings?: YoloSettings
-  getRagEngine?: () => Promise<RAGEngine>
-}): string | null => {
-  if (!getRagEngine || !settings) {
-    return 'Semantic search is not available in this context.'
-  }
-  if (!settings.ragOptions.enabled) {
-    return 'RAG is not enabled. Fell back to keyword search.'
-  }
-  if (!settings.embeddingModelId?.trim()) {
-    return 'No embedding model configured. Fell back to keyword search.'
-  }
-  return null
 }
 
 const getContextPruneMode = (
@@ -2145,7 +1917,6 @@ const getFsReadOperation = (args: Record<string, unknown>): FsReadOperation => {
     'endLine',
     'maxLines',
     'format',
-    'modality',
   ]
   const hasTopLevelOperationKey = topLevelOperationKeys.some(
     (key) => args[key] !== undefined,
@@ -2160,42 +1931,6 @@ const getFsReadOperation = (args: Record<string, unknown>): FsReadOperation => {
 
   const parsedOperation = coerceOperationObject(args.operation)
   const type = asOptionalString(parsedOperation.type).trim().toLowerCase()
-
-  // Strict modality parsing: accept undefined / null / empty string (→ unset,
-  // use default per active model) or one of 'text' / 'image' / 'pdf'. Numbers,
-  // booleans, objects, arrays, and any other strings (including legacy 'auto')
-  // all reject.
-  //
-  // The schema presented to the model is tailored per model capability
-  // (see buildFsReadModalitySchema), so e.g. PDF-capable models only see
-  // ['text','pdf']. The parser accepts the full superset because (a) it
-  // doesn't have model context here, and (b) resolveModality below maps any
-  // request to a sensible effective modality given the active model — a
-  // model that somehow sends 'image' to a PDF-capable model gets upgraded to
-  // native PDF rather than rejected, which is the more conservative path.
-  const rawModalityValue = parsedOperation.modality
-  let modality: FsReadModality | undefined
-  if (rawModalityValue !== undefined && rawModalityValue !== null) {
-    if (typeof rawModalityValue !== 'string') {
-      throw new Error(
-        "operation.modality must be 'text', 'image', or 'pdf' (or omitted for default behavior).",
-      )
-    }
-    const normalized = rawModalityValue.trim().toLowerCase()
-    if (normalized === '') {
-      // Empty string is treated as "not provided" → default behavior.
-    } else if (
-      normalized === 'text' ||
-      normalized === 'image' ||
-      normalized === 'pdf'
-    ) {
-      modality = normalized
-    } else {
-      throw new Error(
-        "operation.modality must be 'text', 'image', or 'pdf' (or omitted for default behavior).",
-      )
-    }
-  }
 
   let format: BrowserReadFormat | undefined
   const rawFormatValue = parsedOperation.format
@@ -2221,7 +1956,7 @@ const getFsReadOperation = (args: Record<string, unknown>): FsReadOperation => {
   }
 
   if (type === 'full') {
-    return { type: 'full', modality, format }
+    return { type: 'full', format }
   }
 
   if (type === 'lines') {
@@ -2265,7 +2000,6 @@ const getFsReadOperation = (args: Record<string, unknown>): FsReadOperation => {
       startLine,
       endLine,
       maxLines,
-      modality,
       format,
     }
   }
@@ -2286,48 +2020,6 @@ const ensureParentFolderExists = async (
 
 const formatJsonResult = (payload: unknown): string => {
   return JSON.stringify(payload, null, 2)
-}
-
-const annotateAggregatedSearchWithCitations = (
-  results: AggregatedSearchResult[],
-  runContext: AgentRunContext | undefined,
-): AggregatedSearchResult[] => {
-  const registry = runContext?.citationRegistry
-  if (!registry) {
-    return results
-  }
-  return results.map((group) => {
-    if (group.kind !== 'content_group') {
-      return group
-    }
-    const decoratedSnippets = group.snippets.map((snippet) => {
-      const start = snippet.startLine ?? snippet.line ?? 0
-      const end = snippet.endLine ?? snippet.line ?? start
-      const dedupKey = superSearchDedupKey({
-        kind: 'content',
-        path: group.path,
-        line: snippet.line,
-        startLine: snippet.startLine,
-        endLine: snippet.endLine,
-        page: snippet.page,
-        snippet: snippet.snippet,
-        source: snippet.source,
-        similarity: snippet.similarity,
-        rrfScore: snippet.rrfScore,
-      })
-      const ordinal = registry.assign(dedupKey, {
-        path: group.path,
-        startLine: start,
-        endLine: end,
-        page: snippet.page,
-        snippet: snippet.snippet ?? '',
-        similarity: snippet.similarity,
-        source: snippet.source,
-      })
-      return { ...snippet, cite: ordinal }
-    })
-    return { ...group, snippets: decoratedSnippets }
-  })
 }
 
 const normalizeLocalToolName = (toolName: string): string => {
@@ -2945,7 +2637,6 @@ export async function callLocalFileTool({
   app,
   settings,
   openApplyReview,
-  getRagEngine,
   conversationId,
   conversationMessages,
   roundId,
@@ -2957,14 +2648,12 @@ export async function callLocalFileTool({
   chatModelId,
   workspaceScope,
   allowedSkillPaths,
-  runContext,
   subagentParentContext,
   promptSourceWatcher,
 }: {
   app: App
   settings?: YoloSettings
   openApplyReview?: (state: ApplyViewState) => Promise<boolean>
-  getRagEngine?: () => Promise<RAGEngine>
   conversationId?: string
   conversationMessages?: ChatMessage[]
   roundId?: string
@@ -2976,7 +2665,6 @@ export async function callLocalFileTool({
   chatModelId?: string
   workspaceScope?: AssistantWorkspaceScope
   allowedSkillPaths?: readonly string[]
-  runContext?: AgentRunContext
   subagentParentContext?: SubagentParentContext
   promptSourceWatcher?: PromptSourceWatcher
 }): Promise<LocalToolCallResult> {
@@ -3118,8 +2806,6 @@ export async function callLocalFileTool({
               nextStartLine: number | null
               content: string
               wikilinks?: Array<{ link: string; path: string }>
-              effectiveModality?: 'text' | 'image' | 'pdf'
-              warning?: string
               url?: string
               title?: string
               loading?: boolean
@@ -3133,19 +2819,15 @@ export async function callLocalFileTool({
             }
         > = []
 
-        // Tool result attachments hoisted to a follow-up user message after
-        // the tool block. Mostly image_url for rendered PDFs/images, but also
-        // `document` for native PDF slices.
+        // Image attachments hoisted to a follow-up user message after the tool block.
         const perFileAttachmentParts: Array<{
           path: string
           parts: ContentPart[]
         }> = []
 
         // Skip image extraction when the active chat model does not accept
-        // vision input; otherwise we'd ship base64 payloads to a text-only
-        // endpoint and get a 400 back (issue #255). Migration 48→49 backfills
-        // `modalities` on every ChatModel, so a missing array here means we
-        // either have no active model or the lookup failed — treat as allow.
+        // vision input; otherwise a text-only endpoint would reject the
+        // base64 payload. If the model cannot be resolved, allow extraction.
         const activeChatModel =
           chatModelId && settings?.chatModels
             ? (settings.chatModels.find((m) => m.id === chatModelId) ?? null)
@@ -3153,11 +2835,6 @@ export async function callLocalFileTool({
         const chatModelAcceptsImages = activeChatModel
           ? chatModelSupportsVision(activeChatModel)
           : true
-        // Conservative: when no active model is known, don't assume PDF support.
-        const chatModelAcceptsPdf = activeChatModel
-          ? chatModelSupportsPdf(activeChatModel)
-          : false
-
         for (const path of paths) {
           if (signal?.aborted) {
             return { status: ToolCallResponseStatus.Aborted }
@@ -3275,451 +2952,6 @@ export async function callLocalFileTool({
           const file = app.vault.getFileByPath(path)
           if (!file) {
             results.push({ path, ok: false, error: 'File not found.' })
-            continue
-          }
-
-          const isPdf = file.extension?.toLowerCase() === 'pdf'
-          if (isPdf) {
-            if (file.stat.size > PDF_INDEX_MAX_BYTES) {
-              results.push({
-                path,
-                ok: false,
-                error: `PDF too large (${file.stat.size} bytes).`,
-              })
-              continue
-            }
-
-            // Resolve the effective modality for this PDF read. The schema
-            // exposed to the model is tailored per capability (see
-            // buildFsReadModalitySchema), so normally the requested modality
-            // is already aligned with what the model can use. The branches
-            // below also handle the "out-of-schema" cases (model somehow
-            // sends image to a PDF-capable model, or pdf to a vision-only
-            // model) — those resolve to the strictly-better alternative
-            // rather than failing.
-            //
-            // Decision table:
-            //   ── PDF-capable model ──
-            //     undefined → pdf
-            //     'pdf'     → pdf
-            //     'text'    → text  (cheap path; respected verbatim)
-            //     'image'   → pdf   (image is redundant when native PDF is
-            //                       available — native PDF is strictly more
-            //                       informative; this branch is a safety net,
-            //                       schema doesn't expose image to these
-            //                       models)
-            //   ── vision-capable (non-PDF) ──
-            //     undefined → text
-            //     'pdf'     → text  (pdf not supported; safety-net downgrade)
-            //     'text'    → text
-            //     'image'   → image if image-read setting enabled, else text
-            //   ── text-only ──
-            //     all paths → text (no other modality is supported)
-            const imageReadingEnabled =
-              settings?.chatOptions?.imageReadingEnabled ?? true
-            const canUseImage = chatModelAcceptsImages && imageReadingEnabled
-            const resolvedModality: 'pdf' | 'image' | 'text' = (() => {
-              if (chatModelAcceptsPdf) {
-                switch (operation.modality) {
-                  case undefined:
-                  case 'pdf':
-                  case 'image':
-                    return 'pdf'
-                  case 'text':
-                    return 'text'
-                }
-              }
-              switch (operation.modality) {
-                case undefined:
-                case 'pdf':
-                case 'text':
-                  return 'text'
-                case 'image':
-                  return canUseImage ? 'image' : 'text'
-              }
-            })()
-
-            // ── Native PDF slice branch ────────────────────────────────────
-            if (resolvedModality === 'pdf') {
-              const reqStart =
-                operation.type === 'lines' ? operation.startLine : 1
-              // lines 模式无 endLine 时语义与 image/text 分支一致：只读单页。
-              // full 模式的 endPage 留空，由 slicePdfPages 自动取到文档末页。
-              const reqEnd =
-                operation.type === 'lines'
-                  ? (operation.endLine ?? operation.startLine)
-                  : undefined
-
-              // Attempt to slice the PDF. slicePdfPages loads the source once
-              // and reports total page count + clamped range; on failure it
-              // throws a tagged PdfSliceError. Caller-side reaction depends on
-              // the kind:
-              //   • 'invalid-range' (e.g. startPage > totalPages) is a hard
-              //     model-facing error — degrading to text would silently hide
-              //     a bad page request.
-              //   • all other kinds (load-failed / too-large / too-many-pages)
-              //     fall through to text extraction with a warning prefix.
-              let sliceResult:
-                | Awaited<ReturnType<typeof slicePdfPages>>
-                | undefined
-              let sliceFallbackWarning: string | undefined
-
-              try {
-                const rawBuf = await app.vault.readBinary(file)
-                const rawBytes = new Uint8Array(rawBuf)
-                sliceResult = await slicePdfPages(rawBytes, {
-                  startPage: reqStart,
-                  endPage: reqEnd,
-                })
-              } catch (err) {
-                if (
-                  err instanceof PdfSliceError &&
-                  err.kind === 'invalid-range'
-                ) {
-                  results.push({
-                    path,
-                    ok: false,
-                    error: err.message,
-                  })
-                  continue
-                }
-                sliceFallbackWarning =
-                  err instanceof Error ? err.message : String(err)
-              }
-
-              if (sliceResult !== undefined) {
-                // Slice succeeded — emit the document part.
-                const {
-                  bytes: slicedBytes,
-                  totalSourcePages,
-                  actualStart,
-                  actualEnd,
-                } = sliceResult
-                const slicePageCount = actualEnd - actualStart + 1
-
-                const base64Data = uint8ArrayToBase64(slicedBytes)
-                const documentPart: ContentPart = {
-                  type: 'document',
-                  mediaType: 'application/pdf',
-                  name: `${file.name} (pages ${actualStart}–${actualEnd})`,
-                  data: base64Data,
-                  pageCount: slicePageCount,
-                }
-
-                const hasMoreBelow =
-                  operation.type === 'lines' && actualEnd < totalSourcePages
-                const nextStartLine = hasMoreBelow ? actualEnd + 1 : null
-
-                results.push({
-                  path,
-                  ok: true,
-                  totalLines: totalSourcePages,
-                  returnedRange:
-                    operation.type === 'lines'
-                      ? { startLine: actualStart, endLine: actualEnd }
-                      : undefined,
-                  hasMoreBelow,
-                  nextStartLine,
-                  // Explain page-number renumbering so the model cites original
-                  // page numbers (actualStart–actualEnd) rather than the
-                  // slice-internal numbers (1–slicePageCount).
-                  content: `Read pages ${actualStart}–${actualEnd} of "${file.name}" (original document has ${totalSourcePages} pages).\nThe attached PDF slice contains those pages renumbered as 1–${slicePageCount} internally, but you should refer to them by their ORIGINAL page numbers (${actualStart}–${actualEnd}) when citing.`,
-                  effectiveModality: 'pdf' as const,
-                })
-                perFileAttachmentParts.push({ path, parts: [documentPart] })
-                continue
-              }
-
-              // Slice failed — fall through to text extraction with a warning prefix.
-              let pdfSliceFallbackPages: { page: number; text: string }[] = []
-              try {
-                const extracted = await extractPdfText(app, file, {
-                  signal,
-                  maxBinaryBytes: PDF_INDEX_MAX_BYTES,
-                  maxPages: PDF_INDEX_MAX_PAGES,
-                  settings,
-                })
-                pdfSliceFallbackPages = extracted.pages
-              } catch (extractErr) {
-                if (
-                  extractErr instanceof DOMException &&
-                  extractErr.name === 'AbortError'
-                ) {
-                  return { status: ToolCallResponseStatus.Aborted }
-                }
-                results.push({
-                  path,
-                  ok: false,
-                  error:
-                    extractErr instanceof Error
-                      ? extractErr.message
-                      : 'Failed to extract PDF text.',
-                })
-                continue
-              }
-
-              const fbTotalPageCount = pdfSliceFallbackPages.length
-              const fbRangeStart = operation.type === 'lines' ? reqStart : 1
-              const fbRangeEnd =
-                operation.type === 'full'
-                  ? fbTotalPageCount
-                  : Math.min(reqEnd ?? fbRangeStart, fbTotalPageCount)
-              const fbSelectedPages = pdfSliceFallbackPages.filter(
-                (p) => p.page >= fbRangeStart && p.page <= fbRangeEnd,
-              )
-              const fbTaggedBody = fbSelectedPages
-                .map((p) => `<page ${p.page}>\n${p.text}\n</page ${p.page}>`)
-                .join('\n')
-              const fbWarningPrefix = `[PDF native slice failed for pages ${fbRangeStart}–${fbRangeEnd}, falling back to text extraction. Reason: ${sliceFallbackWarning ?? 'unknown error'}]\n\n`
-
-              results.push({
-                path,
-                ok: true,
-                totalLines: fbTotalPageCount,
-                returnedRange:
-                  operation.type === 'lines'
-                    ? {
-                        startLine:
-                          fbSelectedPages.length > 0 ? fbRangeStart : null,
-                        endLine: fbSelectedPages.length > 0 ? fbRangeEnd : null,
-                      }
-                    : undefined,
-                hasMoreBelow:
-                  operation.type === 'lines' && fbRangeEnd < fbTotalPageCount,
-                nextStartLine:
-                  operation.type === 'lines' && fbRangeEnd < fbTotalPageCount
-                    ? fbRangeEnd + 1
-                    : null,
-                content: fbWarningPrefix + fbTaggedBody,
-                effectiveModality: 'text' as const,
-                warning: fbWarningPrefix.trim(),
-              })
-              continue
-            }
-
-            // ── Image render branch ────────────────────────────────────────
-            // resolvedModality has already taken vision capability and the
-            // image-reading setting into account; checking it here is enough.
-            if (resolvedModality === 'image') {
-              // Mirror text-mode semantics where it makes sense:
-              //   - `full`  → render every page (matches "full = whole file").
-              //   - `lines` without `endLine` → render only `startLine`. This
-              //     gives the model a cheap peek that returns `totalPages`,
-              //     so it can ask for a precise range on the next call
-              //     instead of guessing.
-              const reqStart =
-                operation.type === 'lines' ? operation.startLine : 1
-              const reqEnd =
-                operation.type === 'lines'
-                  ? (operation.endLine ?? operation.startLine)
-                  : undefined
-
-              let renderResult: Awaited<
-                ReturnType<typeof renderPdfPagesToImages>
-              >
-              try {
-                renderResult = await renderPdfPagesToImages(
-                  app,
-                  file,
-                  reqStart,
-                  reqEnd,
-                  settings,
-                )
-              } catch (error) {
-                results.push({
-                  path,
-                  ok: false,
-                  error:
-                    error instanceof Error
-                      ? error.message
-                      : 'Failed to render PDF pages as images.',
-                })
-                continue
-              }
-
-              const { totalPages, rendered } = renderResult
-              const rangeStartPage = reqStart
-              const rangeEndPageInclusive =
-                reqEnd === undefined ? totalPages : Math.min(reqEnd, totalPages)
-              const returnedCount = rendered.length
-              const returnedStartLine =
-                returnedCount > 0 ? rangeStartPage : null
-              const returnedEndLine =
-                returnedCount > 0 ? rangeEndPageInclusive : null
-              const hasMoreBelow = rangeEndPageInclusive < totalPages
-              const nextStartLine = hasMoreBelow
-                ? rangeEndPageInclusive + 1
-                : null
-
-              results.push({
-                path,
-                ok: true,
-                totalLines: totalPages,
-                returnedRange: {
-                  startLine: returnedStartLine,
-                  endLine: returnedEndLine,
-                },
-                hasMoreBelow,
-                nextStartLine,
-                content: '',
-              })
-
-              if (rendered.length > 0) {
-                perFileAttachmentParts.push({
-                  path,
-                  parts: rendered.map((r) => ({
-                    type: 'image_url' as const,
-                    image_url: {
-                      url: r.dataUrl,
-                      cacheKey: buildPdfPageImageCacheKey(
-                        file.path,
-                        file.stat.mtime,
-                        file.stat.size,
-                        r.page,
-                      ),
-                    },
-                  })),
-                })
-              }
-              continue
-            }
-
-            let pages: { page: number; text: string }[] = []
-            try {
-              const extracted = await extractPdfText(app, file, {
-                signal,
-                maxBinaryBytes: PDF_INDEX_MAX_BYTES,
-                maxPages: PDF_INDEX_MAX_PAGES,
-                settings,
-              })
-              pages = extracted.pages
-            } catch (error) {
-              if (
-                error instanceof DOMException &&
-                error.name === 'AbortError'
-              ) {
-                return { status: ToolCallResponseStatus.Aborted }
-              }
-              results.push({
-                path,
-                ok: false,
-                error:
-                  error instanceof Error
-                    ? error.message
-                    : 'Failed to extract PDF text.',
-              })
-              continue
-            }
-
-            const totalPageCount = pages.length
-            let rangeStartPage = 1
-            let rangeEndPageInclusive = totalPageCount
-            if (operation.type === 'lines') {
-              rangeStartPage = operation.startLine
-              // PDF defaults to a single page when endLine is omitted —
-              // a PDF page carries far more content than a markdown line,
-              // so the markdown-style `maxLines=50` default is too aggressive
-              // here. The model can paginate explicitly when it wants more.
-              rangeEndPageInclusive = Math.min(
-                operation.endLine ?? rangeStartPage,
-                totalPageCount,
-              )
-              if (rangeEndPageInclusive < rangeStartPage) {
-                results.push({
-                  path,
-                  ok: false,
-                  error:
-                    'operation.endLine must be greater than or equal to operation.startLine.',
-                })
-                continue
-              }
-              if (
-                rangeEndPageInclusive - rangeStartPage + 1 >
-                MAX_READ_MAX_LINES
-              ) {
-                results.push({
-                  path,
-                  ok: false,
-                  error: `Requested page range is too large. Maximum ${MAX_READ_MAX_LINES} pages per file.`,
-                })
-                continue
-              }
-            }
-
-            const selectedPages = pages.filter(
-              (p) =>
-                p.page >= rangeStartPage && p.page <= rangeEndPageInclusive,
-            )
-
-            const taggedBody = selectedPages
-              .map((p) => `<page ${p.page}>\n${p.text}\n</page ${p.page}>`)
-              .join('\n')
-            if (taggedBody.length > MAX_FILE_SIZE_BYTES) {
-              results.push({
-                path,
-                ok: false,
-                error: `Extracted PDF text too large (${taggedBody.length} chars). Max allowed is ${MAX_FILE_SIZE_BYTES}.`,
-              })
-              continue
-            }
-
-            // PDF 场景下 line 语义 = 页号。不做 `${index+1}|` 前缀，避免
-            // 与 returnedRange（页号）语义错位，LLM 可直接依赖 <page N> 标签定位。
-            const totalLines = totalPageCount
-            const outputContent = taggedBody
-            const returnedCount = selectedPages.length
-            const returnedStartLine = returnedCount > 0 ? rangeStartPage : null
-            const returnedEndLine =
-              returnedCount > 0 ? rangeEndPageInclusive : null
-            const hasMoreBelow =
-              operation.type === 'lines' &&
-              rangeEndPageInclusive < totalPageCount
-            const nextStartLine = hasMoreBelow
-              ? rangeEndPageInclusive + 1
-              : null
-
-            // When an explicit modality request was silently re-mapped to
-            // text by the resolver, mark `effectiveModality` so callers /
-            // log readers can observe the divergence between requested and
-            // executed mode. Default (undefined) lands here too — but we
-            // only emit the marker when there's an actual divergence.
-            //
-            // Two visible divergences trigger metadata:
-            //   - 'image' on text-only model → text (caller asked for image
-            //     but the model can't do vision). Carries a model-visible
-            //     warning so the model knows its visual request was lost.
-            //   - 'pdf' on non-PDF model → text (caller asked for native
-            //     PDF, model doesn't support it). No warning text — the
-            //     downgrade is the system's choice, not something the model
-            //     should try to "correct" by asking again.
-            const visionDowngraded =
-              operation.modality === 'image' && !chatModelAcceptsImages
-            const pdfDowngraded =
-              operation.modality === 'pdf' && !chatModelAcceptsPdf
-
-            results.push({
-              path,
-              ok: true,
-              totalLines,
-              returnedRange:
-                operation.type === 'lines'
-                  ? {
-                      startLine: returnedStartLine,
-                      endLine: returnedEndLine,
-                    }
-                  : undefined,
-              hasMoreBelow,
-              nextStartLine,
-              content: outputContent,
-              ...(visionDowngraded
-                ? {
-                    effectiveModality: 'text' as const,
-                    warning: '当前模型不支持图像输入，已自动降级为文本读取',
-                  }
-                : pdfDowngraded
-                  ? { effectiveModality: 'text' as const }
-                  : {}),
-            })
             continue
           }
 
@@ -3850,7 +3082,6 @@ export async function callLocalFileTool({
           // downgrade image→text because the model lacks vision capability).
           requestedOperation: {
             type: operation.type,
-            modality: operation.modality,
           },
           results,
         })
@@ -3865,15 +3096,12 @@ export async function callLocalFileTool({
             : undefined
 
         const firstReadableResult = results[0]?.ok ? results[0] : undefined
-        const isPdf =
-          typeof firstReadableResult?.path === 'string' &&
-          firstReadableResult.path.toLowerCase().endsWith('.pdf')
         const fsReadOperation: ToolFsReadOperationSummary | undefined = (() => {
           if (!firstReadableResult) {
             return undefined
           }
           if (operation.type === 'full') {
-            return { type: 'full', isPdf }
+            return { type: 'full' }
           }
           const returnedRange = firstReadableResult.returnedRange
           if (
@@ -3886,7 +3114,6 @@ export async function callLocalFileTool({
             type: 'lines',
             startLine: returnedRange.startLine,
             endLine: returnedRange.endLine,
-            isPdf,
           }
         })()
 
@@ -4161,7 +3388,7 @@ export async function callLocalFileTool({
       }
 
       case 'fs_search': {
-        const requestedMode = getFsSearchMode(args)
+        validateFsSearchMode(args)
         const query = (getOptionalTextArg(args, 'query') ?? '').trim()
         const maxResults = getOptionalIntegerArg({
           args,
@@ -4176,140 +3403,11 @@ export async function callLocalFileTool({
           app,
           getOptionalTextArg(args, 'path'),
         )
-        const ragMinSimilarity = getOptionalBoundedFloatArg(
-          args,
-          'ragMinSimilarity',
-          0,
-          1,
-        )
-        const ragLimitArg = getOptionalBoundedIntegerArg({
-          args,
-          key: 'ragLimit',
-          min: 1,
-          max: RAG_FETCH_LIMIT_MAX,
-        })
-        const semanticUnavailableReason =
-          requestedMode === 'keyword'
-            ? null
-            : getSemanticSearchUnavailableReason({ settings, getRagEngine })
-        const effectiveMode: FsSearchMode =
-          requestedMode === 'hybrid' && semanticUnavailableReason
-            ? 'keyword'
-            : requestedMode
-
-        const applyWorkspaceScopeFilter = <T extends { path: string }>(
-          rows: T[],
-        ): T[] =>
-          workspaceScope?.enabled
-            ? rows.filter((row) =>
-                isPathAllowedByScope(row.path, workspaceScope),
-              )
-            : rows
-
-        if (effectiveMode === 'keyword') {
-          const scope = getOptionalFsSearchScope(args, 'all')
-          const legacy = await collectKeywordFsSearchResults({
-            app,
-            scopeTarget,
-            scope,
-            query,
-            maxResults,
-            caseSensitive,
-            signal,
-          })
-          if (signal?.aborted) {
-            return { status: ToolCallResponseStatus.Aborted }
-          }
-          const results = applyWorkspaceScopeFilter(
-            legacyFsSearchItemsToSuper(legacy, 'keyword'),
-          )
-          return {
-            status: ToolCallResponseStatus.Success,
-            text: formatJsonResult({
-              tool: 'fs_search',
-              requestedMode,
-              effectiveMode,
-              fallbackReason:
-                requestedMode !== effectiveMode
-                  ? semanticUnavailableReason
-                  : undefined,
-              scope,
-              query,
-              path: scopeTarget.normalizedPath,
-              results: annotateAggregatedSearchWithCitations(
-                aggregateSearchResults({ results, maxResults }),
-                runContext,
-              ),
-            }),
-          }
-        }
-
-        if (semanticUnavailableReason) {
-          throw new Error(
-            semanticUnavailableReason.replace(
-              ' Fell back to keyword search.',
-              '',
-            ),
-          )
-        }
-        if (!query) {
-          throw new Error('query is required for rag/hybrid mode.')
-        }
-        if (!getRagEngine || !settings) {
-          throw new Error('Semantic search is not available in this context.')
-        }
-
-        const rawScope = args.scope
-        if (rawScope === 'files' || rawScope === 'dirs') {
-          throw new Error(
-            'rag mode only supports content search. Use keyword or hybrid for file/dir search.',
-          )
-        }
-
-        const ragEngine = await getRagEngine()
-        const ragScope = pathToRagScope(scopeTarget)
-
-        const effectiveRagLimit = Math.min(
-          ragLimitArg ?? settings.ragOptions.limit,
-          RAG_FETCH_LIMIT_MAX,
-        )
-
-        const ragRows = await ragEngine.processQuery({
-          query,
-          scope: ragScope,
-          minSimilarity: ragMinSimilarity,
-          limit: effectiveRagLimit,
-        })
-
-        const ragMapped = applyWorkspaceScopeFilter(
-          mapRagRowsToSuper(ragRows as RagEmbeddingRow[], 'rag'),
-        )
-
-        if (effectiveMode === 'rag') {
-          const effectiveScope: FsSearchScope =
-            rawScope === undefined ? 'content' : (rawScope as FsSearchScope)
-          const results = ragMapped.slice(0, maxResults)
-          return {
-            status: ToolCallResponseStatus.Success,
-            text: formatJsonResult({
-              tool: 'fs_search',
-              requestedMode,
-              effectiveMode: 'rag',
-              scope: effectiveScope,
-              query,
-              path: scopeTarget.normalizedPath,
-              results: annotateAggregatedSearchWithCitations(
-                aggregateSearchResults({ results, maxResults }),
-                runContext,
-              ),
-            }),
-          }
-        }
-
-        const keywordLegacy = await collectKeywordFsSearchResults({
+        const scope = getOptionalFsSearchScope(args, 'all')
+        const matches = await collectKeywordFsSearchResults({
           app,
           scopeTarget,
-          scope: 'content',
+          scope,
           query,
           maxResults,
           caseSensitive,
@@ -4318,58 +3416,20 @@ export async function callLocalFileTool({
         if (signal?.aborted) {
           return { status: ToolCallResponseStatus.Aborted }
         }
-        const keywordSuper = applyWorkspaceScopeFilter(
-          legacyFsSearchItemsToSuper(keywordLegacy, 'keyword'),
-        )
-        const pathLegacyFiles = await collectKeywordFsSearchResults({
-          app,
-          scopeTarget,
-          scope: 'files',
-          query,
-          maxResults,
-          caseSensitive,
-          signal,
-        })
-        if (signal?.aborted) {
-          return { status: ToolCallResponseStatus.Aborted }
-        }
-        const pathLegacyDirs = await collectKeywordFsSearchResults({
-          app,
-          scopeTarget,
-          scope: 'dirs',
-          query,
-          maxResults,
-          caseSensitive,
-          signal,
-        })
-        if (signal?.aborted) {
-          return { status: ToolCallResponseStatus.Aborted }
-        }
-        const pathSuper = applyWorkspaceScopeFilter(
-          legacyFsSearchItemsToSuper(
-            [...pathLegacyFiles, ...pathLegacyDirs],
-            'keyword',
-          ),
-        )
-        const fused = fuseRrfHybrid({
-          pathResults: pathSuper,
-          keywordResults: keywordSuper,
-          ragResults: ragMapped,
-          maxResults,
-        })
+        const results = workspaceScope?.enabled
+          ? matches.filter((item) =>
+              isPathAllowedByScope(item.path, workspaceScope),
+            )
+          : matches
         return {
           status: ToolCallResponseStatus.Success,
           text: formatJsonResult({
             tool: 'fs_search',
-            requestedMode,
-            effectiveMode: 'hybrid',
-            scope: 'content',
+            mode: 'keyword',
+            scope,
             query,
             path: scopeTarget.normalizedPath,
-            results: annotateAggregatedSearchWithCitations(
-              aggregateSearchResults({ results: fused, maxResults }),
-              runContext,
-            ),
+            results,
           }),
         }
       }
@@ -4437,7 +3497,6 @@ export async function callLocalFileTool({
         const proxyHandlers = buildJsSandboxProxyHandlers(
           app,
           jsSandboxSettings,
-          getRagEngine,
         )
         return callJsSandboxTool({
           app,
@@ -4928,7 +3987,6 @@ const MIME_TYPES_BY_EXT: Record<string, string> = {
   svg: 'image/svg+xml',
   avif: 'image/avif',
   ico: 'image/x-icon',
-  pdf: 'application/pdf',
   mp3: 'audio/mpeg',
   wav: 'audio/wav',
   ogg: 'audio/ogg',
@@ -5038,11 +4096,10 @@ function assertJsSandboxFetchAllowed(
 export function buildJsSandboxProxyHandlers(
   app: App,
   config: JsSandboxSettings,
-  getRagEngine?: () => Promise<RAGEngine>,
 ): JsSandboxProxyHandlers {
   const handlers: JsSandboxProxyHandlers = {}
 
-  if (config.allowVaultRead || config.allowDbQuery) {
+  if (config.allowVaultRead) {
     const configuredVaultKb =
       typeof config.vaultReadMaxKb === 'number' &&
       Number.isFinite(config.vaultReadMaxKb)
@@ -5249,43 +4306,6 @@ export function buildJsSandboxProxyHandlers(
         body: response.arrayBuffer,
         byteLength: bytes.byteLength,
       }
-    }
-  }
-
-  if (config.allowDbQuery && getRagEngine) {
-    const configuredLimit =
-      typeof config.dbQueryMaxLimit === 'number' &&
-      Number.isFinite(config.dbQueryMaxLimit) &&
-      config.dbQueryMaxLimit > 0
-        ? Math.min(
-            JS_SANDBOX_DB_QUERY_HARD_MAX_LIMIT,
-            Math.floor(config.dbQueryMaxLimit),
-          )
-        : JS_SANDBOX_DB_QUERY_DEFAULT_MAX_LIMIT
-
-    const clampLimit = (raw: unknown): number => {
-      if (typeof raw !== 'number' || !Number.isFinite(raw) || raw <= 0) {
-        return Math.min(
-          JS_SANDBOX_DB_QUERY_DEFAULT_REQUEST_LIMIT,
-          configuredLimit,
-        )
-      }
-      return Math.min(configuredLimit, Math.floor(raw))
-    }
-
-    handlers.dbQuery = async (
-      method: 'search',
-      params: Record<string, unknown>,
-    ) => {
-      if (method === 'search') {
-        const engine = await getRagEngine()
-        const query = typeof params.query === 'string' ? params.query : ''
-        const limit = clampLimit(params.limit)
-        const results = await engine.processQuery({ query, limit })
-        return results
-      }
-
-      throw new Error(`unknown db method: ${method}`)
     }
   }
 

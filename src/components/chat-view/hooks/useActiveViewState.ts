@@ -25,9 +25,6 @@ function shallowEqualViewState(
       a.totalLines === b.totalLines
     )
   }
-  if (a.kind === 'pdf' && b.kind === 'pdf') {
-    return a.currentPage === b.currentPage && a.totalPages === b.totalPages
-  }
   // kind === 'other'
   if (a.kind === 'other' && b.kind === 'other') {
     return a.totalLines === b.totalLines
@@ -38,7 +35,6 @@ function shallowEqualViewState(
 /**
  * Collects the current active view state: file + viewport-aware position info.
  * - MarkdownView edit mode: visible line range + cursor line
- * - PDFView: current page + total pages
  * - Other views: kind='other' with optional totalLines
  */
 export function useActiveViewState(): ActiveViewState {
@@ -49,7 +45,7 @@ export function useActiveViewState(): ActiveViewState {
     viewState: undefined,
   }))
 
-  // Holds cleanup for CM6 / PDF listeners attached to the current view
+  // Holds cleanup for listeners attached to the current view
   const viewCleanupRef = useRef<(() => void) | null>(null)
   const throttleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -206,89 +202,6 @@ export function useActiveViewState(): ActiveViewState {
       applyViewState({ kind: 'other', totalLines })
       viewCleanupRef.current = null
       return
-    }
-
-    // Check for PDF view — use getLeavesOfType to avoid deprecated activeLeaf
-    const pdfLeaves = app.workspace.getLeavesOfType('pdf')
-    const pdfLeafForCurrentFile = pdfLeaves.find((leaf) => {
-      try {
-        const leafFile = (leaf.view as { file?: TFile } | undefined)?.file
-        return leafFile?.path === newFile?.path
-      } catch {
-        return false
-      }
-    })
-    if (pdfLeafForCurrentFile) {
-      const view = pdfLeafForCurrentFile.view
-      if (view.getViewType() === 'pdf') {
-        try {
-          const pdfViewer = (view as any)?.viewer?.child?.pdfViewer
-          if (pdfViewer) {
-            // Obsidian's PDF viewer (PDF.js wrapped) uses `pv.page` for the
-            // current page number, not the standard `currentPageNumber` getter.
-            // The 'pagechanging' event payload carries `pageNumber`.
-            const buildPdfState = (
-              currentPage: unknown,
-              totalPages: unknown,
-            ): CurrentFileViewState => {
-              if (
-                typeof currentPage === 'number' &&
-                typeof totalPages === 'number' &&
-                Number.isFinite(currentPage) &&
-                Number.isFinite(totalPages) &&
-                totalPages > 0 &&
-                currentPage >= 1 &&
-                currentPage <= totalPages
-              ) {
-                return { kind: 'pdf', currentPage, totalPages }
-              }
-              return { kind: 'other' }
-            }
-
-            const readPdfState = (): CurrentFileViewState => {
-              try {
-                const v = (view as any).viewer?.child?.pdfViewer
-                return buildPdfState(v?.page, v?.pagesCount)
-              } catch {
-                return { kind: 'other' }
-              }
-            }
-
-            applyViewState(readPdfState())
-
-            const handler = (evt: unknown) => {
-              const payload = evt as { pageNumber?: unknown } | undefined
-              try {
-                const v = (view as any).viewer?.child?.pdfViewer
-                applyViewState(
-                  buildPdfState(payload?.pageNumber ?? v?.page, v?.pagesCount),
-                )
-              } catch {
-                applyViewState({ kind: 'other' })
-              }
-            }
-            try {
-              pdfViewer.eventBus.on('pagechanging', handler)
-              viewCleanupRef.current = () => {
-                try {
-                  pdfViewer.eventBus.off('pagechanging', handler)
-                } catch {
-                  // ignore
-                }
-              }
-            } catch {
-              applyViewState({ kind: 'other' })
-              viewCleanupRef.current = null
-            }
-            return
-          }
-        } catch {
-          // PDF internal API inaccessible
-        }
-        applyViewState({ kind: 'other' })
-        viewCleanupRef.current = null
-        return
-      }
     }
 
     // Other view types

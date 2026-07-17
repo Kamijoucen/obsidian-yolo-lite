@@ -17,11 +17,8 @@ const isBackgroundResultBridgeMessage = (
   message: ChatMessage,
 ): message is Extract<
   ChatMessage,
-  | { role: 'external_agent_result' }
-  | { role: 'subagent_result' }
-  | { role: 'terminal_command_result' }
+  { role: 'subagent_result' } | { role: 'terminal_command_result' }
 > =>
-  message.role === 'external_agent_result' ||
   message.role === 'subagent_result' ||
   message.role === 'terminal_command_result'
 

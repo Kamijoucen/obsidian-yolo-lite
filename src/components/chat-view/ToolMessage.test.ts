@@ -178,7 +178,6 @@ describe('ToolMessage rendering', () => {
                       type: 'lines',
                       startLine: 1,
                       endLine: 10,
-                      isPdf: false,
                     },
                   },
                 },
@@ -338,8 +337,8 @@ describe('ToolMessage headline helpers', () => {
       move: 'Move path',
     },
     readFull: '全文',
-    readLineRange: (startLine: number, endLine: number, isPdf: boolean) =>
-      `${startLine}-${endLine}${isPdf ? '页' : '行'}`,
+    readLineRange: (startLine: number, endLine: number) =>
+      `${startLine}-${endLine}行`,
     target: 'Target',
     scope: 'Scope',
     query: 'Query',
@@ -459,7 +458,7 @@ describe('ToolMessage headline helpers', () => {
               results: [],
             }),
             metadata: {
-              fsReadOperation: { type: 'full', isPdf: false },
+              fsReadOperation: { type: 'full' },
             },
           },
         },
@@ -486,7 +485,7 @@ describe('ToolMessage headline helpers', () => {
             type: 'text',
             text: '',
             metadata: {
-              fsReadOperation: { type: 'full', isPdf: false },
+              fsReadOperation: { type: 'full' },
             },
           },
         },
@@ -519,7 +518,7 @@ describe('ToolMessage headline helpers', () => {
             type: 'text',
             text: '',
             metadata: {
-              fsReadOperation: { type: 'full', isPdf: false },
+              fsReadOperation: { type: 'full' },
             },
           },
         },
@@ -566,7 +565,6 @@ describe('ToolMessage headline helpers', () => {
                 type: 'lines',
                 startLine: 12,
                 endLine: 61,
-                isPdf: false,
               },
             },
           },
@@ -574,54 +572,6 @@ describe('ToolMessage headline helpers', () => {
         labels,
       }).summaryText,
     ).toBe('docs/plan.md | 12-61行')
-  })
-
-  it('uses 页 suffix and single-page range for PDF fs_read headlines', () => {
-    expect(
-      getHeadlineDisplayInfo({
-        request: {
-          name: 'yolo_local__fs_read',
-          arguments: createCompleteToolCallArguments({
-            value: {
-              paths: ['docs/paper.pdf'],
-              operation: {
-                type: 'lines',
-                startLine: 1,
-              },
-            },
-          }),
-        },
-        response: {
-          status: ToolCallResponseStatus.Success,
-          data: {
-            type: 'text',
-            text: JSON.stringify({
-              requestedOperation: { type: 'lines', modality: 'text' },
-              results: [
-                {
-                  path: 'docs/paper.pdf',
-                  ok: true,
-                  totalLines: 7,
-                  returnedRange: { startLine: 1, endLine: 1 },
-                  hasMoreBelow: true,
-                  nextStartLine: 2,
-                  content: '',
-                },
-              ],
-            }),
-            metadata: {
-              fsReadOperation: {
-                type: 'lines',
-                startLine: 1,
-                endLine: 1,
-                isPdf: true,
-              },
-            },
-          },
-        },
-        labels,
-      }).summaryText,
-    ).toBe('docs/paper.pdf | 1-1页')
   })
 
   it('does not parse fs_read response text for legacy headlines without metadata', () => {

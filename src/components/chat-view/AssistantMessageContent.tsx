@@ -2,7 +2,6 @@ import { Loader2 } from 'lucide-react'
 import React, { useCallback, useMemo } from 'react'
 
 import { useLanguage } from '../../contexts/language-context'
-import { CitationSource } from '../../core/agent/citationRegistry'
 import { ChatAssistantMessage } from '../../types/chat'
 import { injectAnnotationMarkers } from '../../utils/chat/inject-annotation-markers'
 import {
@@ -30,7 +29,6 @@ function hasRenderableAssistantContent(blocks: ParsedTagContent[]): boolean {
 export default function AssistantMessageContent({
   content,
   annotations,
-  sources,
   handleApply,
   isApplying,
   activeApplyRequestKey,
@@ -44,7 +42,6 @@ export default function AssistantMessageContent({
 }: {
   content: ChatAssistantMessage['content']
   annotations?: ChatAssistantMessage['annotations']
-  sources?: CitationSource[]
   handleApply: (
     blockToApply: string,
     applyRequestKey: string,
@@ -92,7 +89,6 @@ export default function AssistantMessageContent({
       conversationId={conversationId}
       onQuote={onQuote}
       enableSelectionQuote={enableSelectionQuote}
-      sources={sources}
     >
       {annotatedContent}
     </AssistantTextRenderer>
@@ -110,7 +106,6 @@ const AssistantTextRenderer = React.memo(function AssistantTextRenderer({
   conversationId,
   onQuote,
   enableSelectionQuote,
-  sources,
   children,
 }: {
   onApply: (
@@ -132,7 +127,6 @@ const AssistantTextRenderer = React.memo(function AssistantTextRenderer({
     content: string
   }) => void
   enableSelectionQuote: boolean
-  sources?: CitationSource[]
 }) {
   const { t } = useLanguage()
 
@@ -175,7 +169,6 @@ const AssistantTextRenderer = React.memo(function AssistantTextRenderer({
               content={block.content}
               scale="sm"
               generationState={generationState}
-              citationSources={sources}
             />
           </div>
         ) : block.type === 'think' ? (
@@ -191,11 +184,6 @@ const AssistantTextRenderer = React.memo(function AssistantTextRenderer({
             filename={block.filename}
             startLine={block.startLine}
             endLine={block.endLine}
-            previewContent={
-              block.filename.toLowerCase().endsWith('.pdf')
-                ? block.content
-                : undefined
-            }
           />
         ) : (
           <MarkdownCodeComponent

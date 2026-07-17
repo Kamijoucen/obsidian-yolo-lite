@@ -75,7 +75,7 @@ export function resolveOpenAICompatibleHostCapabilities(
 
   return {
     host,
-    disableStreamOptions: host === 'api.mistral.ai',
+    disableStreamOptions: false,
     reasoningMode: 'openai',
   }
 }
@@ -91,10 +91,6 @@ export function applyOpenAICompatibleCapabilities(params: {
 
   if (capabilities.disableStreamOptions) {
     request.stream_options = undefined
-  }
-
-  if (capabilities.host === 'api.mistral.ai') {
-    return
   }
 
   if (!reasoningLevel || !reasoningType || reasoningType === 'none') {

@@ -75,7 +75,7 @@ const cyrb53 = (str: string, seed = 0): string => {
  * naturally invalidates the cache; no manual fingerprint list needed.
  *
  * Reuses the token estimator's `normalizeJsonValue` so:
- *   - Base64 PDFs / images are reduced to short markers (a multi-MB conversation
+ *   - Base64 images are reduced to short markers (a multi-MB conversation
  *     would otherwise stringify and hash the entire blob on every popover click).
  *   - Object key order is canonical, preventing false cache misses when two
  *     logically-identical payloads differ only in property iteration order. */
@@ -161,7 +161,6 @@ export const estimateContextBreakdown = async ({
   const availableTools = enableTools
     ? await mcpManager.listAvailableTools({
         includeBuiltinTools,
-        chatModelModalities: model.modalities,
       })
     : []
   const {

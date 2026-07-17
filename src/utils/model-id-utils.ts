@@ -4,9 +4,9 @@
 
 /**
  * Generate a model ID with provider prefix
- * @param providerId - The provider ID (e.g., 'oneapi', 'gemini')
- * @param modelName - The model name (e.g., 'gemini-2.5-flash')
- * @returns The prefixed model ID (e.g., 'oneapi/gemini-2.5-flash')
+ * @param providerId - The provider ID (e.g., 'openai', 'deepseek')
+ * @param modelName - The model name (e.g., 'gpt-5-mini')
+ * @returns The prefixed model ID (e.g., 'openai/gpt-5-mini')
  */
 export function generateModelId(providerId: string, modelName: string): string {
   // If modelName already contains a slash, it might already be prefixed
@@ -18,7 +18,7 @@ export function generateModelId(providerId: string, modelName: string): string {
 
 /**
  * Parse a model ID to extract provider prefix and model name
- * @param modelId - The model ID (e.g., 'oneapi/gemini-2.5-flash' or 'gpt-4')
+ * @param modelId - The model ID (e.g., 'openai/gpt-5-mini' or 'gpt-4.1')
  * @returns Object containing providerId and modelName
  */
 export function parseModelId(modelId: string): {
@@ -69,44 +69,14 @@ export function getModelDisplayNameWithProvider(
 }
 
 /**
- * Check if a model ID has a provider prefix
- * @param modelId - The model ID to check
- * @returns True if the model ID has a provider prefix
- */
-export function hasProviderPrefix(modelId: string): boolean {
-  return modelId.includes('/')
-}
-
-/**
- * Migrate old model ID to new format with provider prefix
- * @param oldModelId - The old model ID without prefix
- * @param providerId - The provider ID to use as prefix
- * @returns The new model ID with prefix
- */
-export function migrateModelId(oldModelId: string, providerId: string): string {
-  // If already has prefix, return as is
-  if (hasProviderPrefix(oldModelId)) {
-    return oldModelId
-  }
-  return generateModelId(providerId, oldModelId)
-}
-
-/**
  * Detect reasoning type based on model id keywords.
- * Returns 'openai' when the id looks like GPT/o-series or DeepSeek V4; 'gemini' when it contains 'gemini';
- * 'anthropic' when it contains 'claude'; otherwise 'none' (ambiguous ids need explicit `reasoningType`).
+ * Returns 'openai' for known OpenAI-style reasoning models; otherwise 'none'.
  */
 export function detectReasoningTypeFromModelId(
   modelIdOrName: string,
-): 'openai' | 'gemini' | 'anthropic' | 'none' {
+): 'openai' | 'none' {
   const s = (modelIdOrName || '').toLowerCase()
   if (!s) return 'none'
-
-  // Prefer explicit gemini match
-  if (s.includes('gemini')) return 'gemini'
-
-  // Claude / Anthropic
-  if (s.includes('claude')) return 'anthropic'
 
   // Common OpenAI patterns: gpt*, o1/o3/o4 (including variants like o4mini), gpt5
   if (
@@ -129,7 +99,7 @@ export function detectReasoningTypeFromModelId(
 
 /**
  * Ensure a unique model internal id among existing ids by appending a short numeric suffix.
- * Example: base "prov/gemini-2.5-flash" -> "prov/gemini-2.5-flash-2", "...-3", ...
+ * Example: base "openai/gpt-5" -> "openai/gpt-5-2", "...-3", ...
  */
 export function ensureUniqueModelId(
   existingIds: string[],

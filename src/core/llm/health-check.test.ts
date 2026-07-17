@@ -1,12 +1,7 @@
 import { LLMModelNotFoundException } from './exception'
-import {
-  HealthCheckAbortedError,
-  testChatModelHealth,
-  testEmbeddingModelHealth,
-} from './health-check'
+import { HealthCheckAbortedError, testChatModelHealth } from './health-check'
 
 const mockStreamResponse = jest.fn()
-const mockGetEmbedding = jest.fn()
 
 jest.mock('./manager', () => ({
   getProviderClient: jest.fn(() => ({
@@ -14,21 +9,9 @@ jest.mock('./manager', () => ({
   })),
 }))
 
-jest.mock('../rag/embedding', () => ({
-  getEmbeddingModelClient: jest.fn(() => ({
-    getEmbedding: mockGetEmbedding,
-  })),
-}))
-
 const settings: any = { providers: [{ id: 'p' }] }
 
 const chatModel: any = { id: 'p/m', providerId: 'p', model: 'm-call' }
-const embeddingModel: any = {
-  id: 'p/e',
-  providerId: 'p',
-  model: 'e-call',
-  dimension: 3072,
-}
 
 const contentChunk = (text: string) => ({
   choices: [{ delta: { content: text } }],
@@ -43,7 +26,6 @@ const usageChunk = (completionTokens: number) => ({
 
 beforeEach(() => {
   mockStreamResponse.mockReset()
-  mockGetEmbedding.mockReset()
 })
 
 describe('testChatModelHealth', () => {
@@ -188,30 +170,5 @@ describe('testChatModelHealth', () => {
     setTimeout(() => controller.abort(), 10)
 
     await expect(promise).rejects.toBeInstanceOf(HealthCheckAbortedError)
-  })
-})
-
-describe('testEmbeddingModelHealth', () => {
-  it('returns ok with the returned vector dimension', async () => {
-    mockGetEmbedding.mockResolvedValue(new Array(3072).fill(0))
-
-    const result = await testEmbeddingModelHealth(settings, embeddingModel, {
-      signal: new AbortController().signal,
-    })
-
-    expect(result).toMatchObject({ status: 'ok', dimension: 3072 })
-  })
-
-  it('returns a failure when the embedding call rejects (e.g. dimension mismatch)', async () => {
-    mockGetEmbedding.mockRejectedValue(new Error('dimension mismatch'))
-
-    const result = await testEmbeddingModelHealth(settings, embeddingModel, {
-      signal: new AbortController().signal,
-    })
-
-    expect(result).toMatchObject({ status: 'fail' })
-    if (result.status === 'fail') {
-      expect(result.message).toContain('dimension mismatch')
-    }
   })
 })

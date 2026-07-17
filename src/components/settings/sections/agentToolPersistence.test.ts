@@ -1,10 +1,7 @@
 import { getLocalFileToolServerName } from '../../../core/mcp/localFileTools'
 import { getToolName } from '../../../core/mcp/tool-name-utils'
 
-import {
-  normalizeToolPreferencesForPersistence,
-  normalizeToolSelectionForPersistence,
-} from './agentToolPersistence'
+import { normalizeToolPreferencesForPersistence } from './agentToolPersistence'
 
 describe('agentToolPersistence', () => {
   const builtinToolName = getToolName(getLocalFileToolServerName(), 'fs_read')
@@ -56,14 +53,5 @@ describe('agentToolPersistence', () => {
         approvalMode: 'require_approval',
       },
     })
-  })
-
-  it('keeps remote enabled tool selections when the MCP server is temporarily unavailable', () => {
-    expect(
-      normalizeToolSelectionForPersistence(
-        [builtinToolName, remoteToolName, unknownBuiltinToolName],
-        [{ name: builtinToolName } as never],
-      ),
-    ).toEqual([builtinToolName, remoteToolName])
   })
 })

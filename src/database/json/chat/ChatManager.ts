@@ -65,35 +65,7 @@ export class ChatManager extends AbstractJsonRepository<
       }
     }
 
-    const legacyRegex = new RegExp(
-      `^v${CHAT_SCHEMA_VERSION}_(.+)_(\\d+)_([0-9a-f-]+)\\.json$`,
-    )
-    const legacyMatch = fileName.match(legacyRegex)
-    if (!legacyMatch) return null
-
-    const title = this.decodeTitle(legacyMatch[1])
-    const updatedAt = parseInt(legacyMatch[2], 10)
-    const id = legacyMatch[3]
-
-    return {
-      id,
-      schemaVersion: CHAT_SCHEMA_VERSION,
-      title,
-      updatedAt,
-      origin: 'user',
-    }
-  }
-
-  private decodeTitle(encodedTitle: string): string {
-    let candidate = encodedTitle
-    for (let i = 0; i < 3; i += 1) {
-      try {
-        return decodeURIComponent(candidate)
-      } catch (_error) {
-        candidate = candidate.slice(0, -1)
-      }
-    }
-    return encodedTitle
+    return null
   }
 
   public async createChat(
@@ -106,7 +78,7 @@ export class ChatManager extends AbstractJsonRepository<
     const now = Date.now()
     const newChat: ChatConversation = {
       id: uuidv4(),
-      title: 'New chat',
+      title: '',
       messages: [],
       createdAt: now,
       updatedAt: now,
@@ -190,8 +162,7 @@ export class ChatManager extends AbstractJsonRepository<
     const cachedList = this.normalizeIndex((await this.readIndex()) ?? [])
     const cachedById = new Map(cachedList.map((entry) => [entry.id, entry]))
 
-    // normalizeIndex dedups by id (a conversation may briefly have both a
-    // stable and a legacy filename), matching the previous rebuild behavior.
+    // normalizeIndex deduplicates entries by conversation id.
     const reconciled = this.normalizeIndex(
       await Promise.all(
         onDisk.map(async (meta) => {

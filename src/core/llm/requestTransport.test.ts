@@ -4,7 +4,6 @@ import {
   resolveRequestTransportMode,
   runWithRequestTransport,
   runWithRequestTransportForStream,
-  shouldRetryWithObsidianTransport,
 } from './requestTransport'
 
 const collectStream = async <T>(stream: AsyncIterable<T>): Promise<T[]> => {
@@ -30,7 +29,6 @@ describe('requestTransport', () => {
               mobile: 'browser',
             },
           },
-          hasCustomBaseUrl: false,
         }),
       ).toBe('node')
       ;(Platform as { isDesktop: boolean }).isDesktop = false
@@ -43,47 +41,6 @@ describe('requestTransport', () => {
               mobile: 'browser',
             },
           },
-          hasCustomBaseUrl: false,
-        }),
-      ).toBe('browser')
-    })
-
-    it('maps legacy string values without cross-platform node leakage', () => {
-      expect(
-        resolveRequestTransportMode({
-          additionalSettings: {
-            requestTransportMode: 'node',
-          },
-          hasCustomBaseUrl: true,
-        }),
-      ).toBe('node')
-      ;(Platform as { isDesktop: boolean }).isDesktop = false
-
-      expect(
-        resolveRequestTransportMode({
-          additionalSettings: {
-            requestTransportMode: 'node',
-          },
-          hasCustomBaseUrl: true,
-        }),
-      ).toBe('browser')
-    })
-
-    it('maps legacy useObsidianRequestUrl setting', () => {
-      expect(
-        resolveRequestTransportMode({
-          additionalSettings: {
-            useObsidianRequestUrl: true,
-          },
-          hasCustomBaseUrl: false,
-        }),
-      ).toBe('obsidian')
-      expect(
-        resolveRequestTransportMode({
-          additionalSettings: {
-            useObsidianRequestUrl: false,
-          },
-          hasCustomBaseUrl: true,
         }),
       ).toBe('browser')
     })
@@ -92,7 +49,6 @@ describe('requestTransport', () => {
       expect(
         resolveRequestTransportMode({
           additionalSettings: undefined,
-          hasCustomBaseUrl: true,
         }),
       ).toBe('node')
       ;(Platform as { isDesktop: boolean }).isDesktop = false
@@ -100,23 +56,8 @@ describe('requestTransport', () => {
       expect(
         resolveRequestTransportMode({
           additionalSettings: undefined,
-          hasCustomBaseUrl: true,
         }),
       ).toBe('browser')
-    })
-  })
-
-  describe('shouldRetryWithObsidianTransport', () => {
-    it('detects CORS/network errors from nested causes', () => {
-      const error = new Error('Connection error') as Error & { cause?: unknown }
-      error.cause = new TypeError('Failed to fetch')
-      expect(shouldRetryWithObsidianTransport(error)).toBe(true)
-    })
-
-    it('does not retry unrelated errors', () => {
-      expect(
-        shouldRetryWithObsidianTransport(new Error('401 unauthorized')),
-      ).toBe(false)
     })
   })
 

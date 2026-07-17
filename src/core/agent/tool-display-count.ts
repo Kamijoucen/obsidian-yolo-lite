@@ -20,10 +20,7 @@ const BUILTIN_TOOL_GROUPS: ReadonlyArray<ReadonlySet<string>> = [
 
 /** Counts enabled tools using the same grouped, currently-visible units as the agent editor. */
 export function countEnabledVisibleAssistantTools(
-  assistant: Pick<
-    Assistant,
-    'toolPreferences' | 'enabledToolNames' | 'includeBuiltinTools'
-  > | null,
+  assistant: Pick<Assistant, 'toolPreferences' | 'includeBuiltinTools'> | null,
   availableTools: readonly McpTool[],
 ): number {
   const enabledToolNames = new Set(getEnabledAssistantToolNames(assistant))

@@ -3,7 +3,7 @@ import type { Annotation } from '../../types/llm/response'
 /**
  * Inject `[N](sourceUrl)` inline citation markers into assistant content
  * based on the `end_index` offsets carried on `url_citation` annotations
- * (returned by OpenAI's hosted web search and OpenRouter's `openrouter:web_search`).
+ * (returned by OpenAI's hosted web search).
  *
  * Design choices:
  * - Real markdown link to the source URL — gives free link styling

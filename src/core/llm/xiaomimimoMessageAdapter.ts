@@ -11,10 +11,8 @@ import { OpenAIMessageAdapter } from './openaiMessageAdapter'
  * that includes tool_calls (see
  * https://platform.xiaomimimo.com/docs/zh-CN/usage-guide/passing-back-reasoning_content).
  *
- * Response parsing is delegated to the OpenAI base adapter, which already
- * extracts `reasoning_content` (and legacy `reasoning` / `reasoning_details`)
- * plus normalizes tool-call / function-call shapes — re-implementing it here
- * would silently drop those compatibility paths.
+ * Response parsing is delegated to the OpenAI base adapter, which extracts
+ * supported reasoning fields and normalizes tool-call response shapes.
  *
  * `typeof === 'string'` (not truthy) so empty-string reasoning is preserved
  * verbatim: stripping it would change the message shape the server already

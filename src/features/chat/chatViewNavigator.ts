@@ -1,20 +1,9 @@
-import {
-  Editor,
-  MarkdownView,
-  Platform,
-  TFile,
-  TFolder,
-  WorkspaceLeaf,
-} from 'obsidian'
+import { Platform, TFile, TFolder, WorkspaceLeaf } from 'obsidian'
 
 import { ChatView } from '../../ChatView'
 import { CHAT_VIEW_TYPE } from '../../constants'
 import type YoloPlugin from '../../main'
-import type {
-  MentionableBlockData,
-  MentionableImage,
-} from '../../types/mentionable'
-import { getMentionableBlockData } from '../../utils/obsidian'
+import type { MentionableImage } from '../../types/mentionable'
 
 import {
   ChatLeafPlacement,
@@ -28,7 +17,6 @@ type ChatViewNavigatorDeps = {
 type OpenChatViewOptions = {
   placement?: ChatLeafPlacement
   openNewChat?: boolean
-  selectedBlock?: MentionableBlockData
   initialConversationId?: string
   prefillText?: string
   forceNewLeaf?: boolean
@@ -47,24 +35,7 @@ export class ChatViewNavigator {
     this.plugin = deps.plugin
   }
 
-  private toPinnedSelectionBlock(
-    selectedBlock: MentionableBlockData,
-  ): MentionableBlockData {
-    return {
-      ...selectedBlock,
-      source: 'selection-pinned',
-    }
-  }
-
   async openChatView(options: OpenChatViewOptions = {}) {
-    const view = this.plugin.app.workspace.getActiveViewOfType(MarkdownView)
-    const editor = view?.editor
-    const selectedBlock =
-      options.selectedBlock ??
-      (view && editor
-        ? (getMentionableBlockData(editor, view) ?? undefined)
-        : undefined)
-
     const existingLeaf = this.resolveTargetChatLeaf({
       placement: options.placement,
       forceNewLeaf: options.forceNewLeaf,
@@ -72,7 +43,6 @@ export class ChatViewNavigator {
     const targetLeaf =
       existingLeaf ??
       (await this.createChatLeaf(options.placement ?? 'sidebar', {
-        selectedBlock,
         initialConversationId: options.initialConversationId,
         prefillText: options.prefillText,
       }))
@@ -100,7 +70,7 @@ export class ChatViewNavigator {
 
     if (options.openNewChat) {
       await this.activateChatLeaf(targetLeaf)
-      targetLeaf.view.openNewChat(selectedBlock)
+      targetLeaf.view.openNewChat()
       if (options.prefillText) {
         targetLeaf.view.insertTextToInput(options.prefillText)
       }
@@ -175,93 +145,6 @@ export class ChatViewNavigator {
     await this.openChatView({
       placement: 'sidebar',
       openNewChat: true,
-    })
-  }
-
-  async addSelectionToChat(editor: Editor, view: MarkdownView) {
-    const data = getMentionableBlockData(editor, view)
-    if (!data) return
-
-    await this.addSelectionBlockToChat(data)
-  }
-
-  async addSelectionBlockToChat(selectedBlock: MentionableBlockData) {
-    const data: MentionableBlockData = {
-      ...selectedBlock,
-      source: 'selection-pinned',
-    }
-
-    const existingLeaf = this.resolveTargetChatLeaf()
-    const targetLeaf =
-      existingLeaf ??
-      (await this.createChatLeaf('sidebar', {
-        selectedBlock: data,
-      }))
-    if (!targetLeaf || !(targetLeaf.view instanceof ChatView)) {
-      return
-    }
-
-    await this.activateChatLeaf(targetLeaf)
-    if (!existingLeaf) {
-      return
-    }
-    targetLeaf.view.addSelectionToChat(data)
-    targetLeaf.view.focusMessage()
-  }
-
-  async openChatWithSelectionAndPrefill(
-    selectedBlock: MentionableBlockData,
-    text: string,
-    assistantId?: string,
-  ) {
-    const pinnedSelection = this.toPinnedSelectionBlock(selectedBlock)
-    const existingLeaf = this.resolveTargetChatLeaf()
-    const targetLeaf =
-      existingLeaf ??
-      (await this.createChatLeaf('sidebar', {
-        selectedBlock: pinnedSelection,
-        prefillText: text,
-        assistantId,
-      }))
-    if (!targetLeaf || !(targetLeaf.view instanceof ChatView)) {
-      return
-    }
-
-    await this.activateChatLeaf(targetLeaf)
-    if (!existingLeaf) {
-      return
-    }
-    targetLeaf.view.applySelectionToMainInput(pinnedSelection, text, {
-      assistantId,
-    })
-  }
-
-  async openChatWithSelectionAndSend(
-    selectedBlock: MentionableBlockData,
-    text: string,
-    assistantId?: string,
-  ) {
-    const pinnedSelection = this.toPinnedSelectionBlock(selectedBlock)
-    const existingLeaf = this.resolveTargetChatLeaf()
-    const targetLeaf =
-      existingLeaf ??
-      (await this.createChatLeaf('sidebar', {
-        selectedBlock: pinnedSelection,
-        prefillText: text,
-        autoSend: true,
-        assistantId,
-      }))
-    if (!targetLeaf || !(targetLeaf.view instanceof ChatView)) {
-      return
-    }
-
-    await this.activateChatLeaf(targetLeaf)
-    if (!existingLeaf) {
-      return
-    }
-    targetLeaf.view.applySelectionToMainInput(pinnedSelection, text, {
-      submit: true,
-      assistantId,
     })
   }
 

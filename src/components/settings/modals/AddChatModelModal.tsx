@@ -1,24 +1,12 @@
-import { GoogleGenAI } from '@google/genai'
-import {
-  Check,
-  FileText,
-  Image as ImageIcon,
-  Layers,
-  Square,
-  Type,
-} from 'lucide-react'
+import { Check, Image as ImageIcon, Layers, Square, Type } from 'lucide-react'
 import { App, Notice, requestUrl } from 'obsidian'
 import { type CSSProperties, useEffect, useMemo, useRef, useState } from 'react'
 
 import { DEFAULT_CHAT_MODELS } from '../../../constants'
 import { BAKED_PLUGIN_VERSION } from '../../../constants/bakedVersion'
 import { useLanguage } from '../../../contexts/language-context'
-import { listBedrockChatModelIds } from '../../../core/llm/bedrockCatalog'
 import { listChatGPTOAuthModels } from '../../../core/llm/chatgptOAuthModelCatalog'
-import {
-  collectModelIdentifiers,
-  extractModelIdentifier,
-} from '../../../core/llm/modelCatalogIdentifiers'
+import { collectModelIdentifiers } from '../../../core/llm/modelCatalogIdentifiers'
 import YoloPlugin from '../../../main'
 import {
   ChatModel,
@@ -61,32 +49,12 @@ type CustomParameterFormEntry = CustomParameter & {
   uid: string
 }
 
-const REASONING_TYPES = ['none', 'openai', 'gemini', 'anthropic'] as const
+const REASONING_TYPES = ['none', 'openai'] as const
 type ReasoningType = (typeof REASONING_TYPES)[number]
 
-const BUILTIN_TOOL_PROVIDERS = [
-  'none',
-  'gemini',
-  'gpt',
-  'openrouter',
-  'grok',
-] as const
+const BUILTIN_TOOL_PROVIDERS = ['none', 'gpt'] as const
 type BuiltinToolProvider = (typeof BUILTIN_TOOL_PROVIDERS)[number]
 
-const OPENROUTER_WEB_SEARCH_ENGINES = [
-  'auto',
-  'native',
-  'exa',
-  'firecrawl',
-  'parallel',
-] as const
-type OpenRouterWebSearchEngine = (typeof OPENROUTER_WEB_SEARCH_ENGINES)[number]
-const isOpenRouterWebSearchEngine = (
-  value: string,
-): value is OpenRouterWebSearchEngine =>
-  (OPENROUTER_WEB_SEARCH_ENGINES as readonly string[]).includes(value)
-const OPENROUTER_MAX_RESULTS_MIN = 1
-const OPENROUTER_MAX_RESULTS_MAX = 25
 const CUSTOM_PARAMETER_TYPES = ['text', 'number', 'boolean', 'json'] as const
 const RESERVED_CUSTOM_PARAMETER_KEYS = new Set([
   'temperature',
@@ -120,19 +88,6 @@ const clampMaxContextTokens = (value: number): number =>
 const clampMaxOutputTokens = (value: number): number =>
   Math.max(1, Math.floor(value))
 
-const normalizeGeminiBaseUrl = (raw?: string): string | undefined => {
-  if (!raw) return undefined
-  const trimmed = raw.replace(/\/+$/, '')
-  try {
-    const url = new URL(trimmed)
-    // Strip trailing version segments to avoid double-appending by SDK
-    url.pathname = url.pathname.replace(/\/?(v1beta|v1alpha1|v1)(\/)?$/, '')
-    return url.toString().replace(/\/+$/, '')
-  } catch {
-    return trimmed.replace(/\/?(v1beta|v1alpha1|v1)(\/)?$/, '')
-  }
-}
-
 const CHATGPT_OAUTH_DEFAULT_MODELS = Array.from(
   new Set([
     ...DEFAULT_CHAT_MODELS.filter((model) =>
@@ -142,18 +97,6 @@ const CHATGPT_OAUTH_DEFAULT_MODELS = Array.from(
     'gpt-5.4',
     'gpt-5.4-mini',
     'gpt-5.3-codex-spark',
-  ]),
-)
-
-const GEMINI_OAUTH_DEFAULT_MODELS = Array.from(
-  new Set([
-    ...DEFAULT_CHAT_MODELS.filter((model) =>
-      model.providerId.startsWith('gemini-oauth'),
-    ).map((model) => model.model),
-    'gemini-2.5-pro',
-    'gemini-2.5-flash',
-    'gemini-2.5-flash-lite',
-    'gemini-2.0-flash',
   ]),
 )
 
@@ -175,17 +118,6 @@ const isReasoningTypeCompatible = (
       return (
         provider.apiType === 'openai-responses' ||
         provider.apiType === 'openai-compatible'
-      )
-    case 'gemini':
-      return (
-        provider.apiType === 'gemini' ||
-        provider.apiType === 'openai-compatible'
-      )
-    case 'anthropic':
-      return (
-        provider.apiType === 'anthropic' ||
-        provider.apiType === 'openai-compatible' ||
-        provider.apiType === 'amazon-bedrock'
       )
   }
 }
@@ -244,15 +176,6 @@ function AddChatModelModalComponent({
   const [autoDetectReasoning, setAutoDetectReasoning] = useState<boolean>(true)
   const [builtinToolProvider, setBuiltinToolProvider] =
     useState<BuiltinToolProvider>('none')
-  useEffect(() => {
-    if (
-      selectedProvider?.presetType === 'openrouter' &&
-      builtinToolProvider !== 'none' &&
-      builtinToolProvider !== 'openrouter'
-    ) {
-      setBuiltinToolProvider('none')
-    }
-  }, [selectedProvider?.presetType, builtinToolProvider])
   const [modalities, setModalities] = useState<ChatModelModality[]>(() =>
     resolveDefaultChatModelModalities(selectedProvider),
   )
@@ -273,20 +196,6 @@ function AddChatModelModalComponent({
     })
   }
   const [gptWebSearchEnabled, setGptWebSearchEnabled] = useState<boolean>(false)
-  const [openRouterWebSearchEnabled, setOpenRouterWebSearchEnabled] =
-    useState<boolean>(false)
-  const [openRouterWebSearchEngine, setOpenRouterWebSearchEngine] =
-    useState<OpenRouterWebSearchEngine>('auto')
-  const [
-    openRouterWebSearchMaxResultsInput,
-    setOpenRouterWebSearchMaxResultsInput,
-  ] = useState<string>('')
-  const [grokWebSearchEnabled, setGrokWebSearchEnabled] =
-    useState<boolean>(false)
-  const [geminiWebSearchEnabled, setGeminiWebSearchEnabled] =
-    useState<boolean>(false)
-  const [geminiUrlContextEnabled, setGeminiUrlContextEnabled] =
-    useState<boolean>(false)
   const [modelParamCache, setModelParamCache] = useState<{
     temperature: number
     topP: number
@@ -325,10 +234,7 @@ function AddChatModelModalComponent({
       }
 
       // Check cache first
-      const cachedModels = plugin.getCachedModelList(
-        selectedProvider.id,
-        'chat',
-      )
+      const cachedModels = plugin.getCachedModelList(selectedProvider.id)
       if (cachedModels) {
         setAvailableModels(cachedModels)
         setLoadingModels(false)
@@ -354,7 +260,7 @@ function AddChatModelModalComponent({
               new Set(CHATGPT_OAUTH_DEFAULT_MODELS),
             ).sort()
             setAvailableModels(fallback)
-            plugin.setCachedModelList(selectedProvider.id, fallback, 'chat')
+            plugin.setCachedModelList(selectedProvider.id, fallback)
             return
           }
 
@@ -370,7 +276,7 @@ function AddChatModelModalComponent({
               new Set([...models, ...CHATGPT_OAUTH_DEFAULT_MODELS]),
             ).sort()
             setAvailableModels(unique)
-            plugin.setCachedModelList(selectedProvider.id, unique, 'chat')
+            plugin.setCachedModelList(selectedProvider.id, unique)
           } catch (error) {
             console.warn(
               '[YOLO] Failed to fetch ChatGPT OAuth models, fallback to defaults.',
@@ -380,55 +286,8 @@ function AddChatModelModalComponent({
               new Set(CHATGPT_OAUTH_DEFAULT_MODELS),
             ).sort()
             setAvailableModels(fallback)
-            plugin.setCachedModelList(selectedProvider.id, fallback, 'chat')
+            plugin.setCachedModelList(selectedProvider.id, fallback)
           }
-          return
-        }
-
-        if (selectedProvider.presetType === 'gemini-oauth') {
-          const service = plugin.getGeminiOAuthService(selectedProvider.id)
-          const credential = await service.getUsableCredential()
-
-          if (!credential) {
-            const fallback = Array.from(
-              new Set(GEMINI_OAUTH_DEFAULT_MODELS),
-            ).sort()
-            setAvailableModels(fallback)
-            plugin.setCachedModelList(selectedProvider.id, fallback, 'chat')
-            return
-          }
-
-          try {
-            const configuredProjectId =
-              typeof selectedProvider.additionalSettings?.projectId === 'string'
-                ? selectedProvider.additionalSettings.projectId
-                : undefined
-            const models =
-              await service.listAvailableModels(configuredProjectId)
-            const unique = Array.from(
-              new Set([...(models ?? []), ...GEMINI_OAUTH_DEFAULT_MODELS]),
-            ).sort()
-            setAvailableModels(unique)
-            plugin.setCachedModelList(selectedProvider.id, unique, 'chat')
-            return
-          } catch (error) {
-            console.warn(
-              '[YOLO] Failed to fetch Gemini OAuth models, fallback to defaults.',
-              error,
-            )
-            const fallback = Array.from(
-              new Set(GEMINI_OAUTH_DEFAULT_MODELS),
-            ).sort()
-            setAvailableModels(fallback)
-            plugin.setCachedModelList(selectedProvider.id, fallback, 'chat')
-            return
-          }
-        }
-
-        if (selectedProvider.apiType === 'amazon-bedrock') {
-          const unique = await listBedrockChatModelIds(selectedProvider)
-          setAvailableModels(unique)
-          plugin.setCachedModelList(selectedProvider.id, unique, 'chat')
           return
         }
 
@@ -488,7 +347,7 @@ function AddChatModelModalComponent({
                 const unique = Array.from(new Set(buckets)).sort()
                 setAvailableModels(unique)
                 // Cache the result
-                plugin.setCachedModelList(selectedProvider.id, unique, 'chat')
+                plugin.setCachedModelList(selectedProvider.id, unique)
                 fetched = true
                 break
               } catch (error) {
@@ -502,36 +361,6 @@ function AddChatModelModalComponent({
             }
             throw new Error('Failed to fetch models from all endpoints')
           }
-        }
-
-        if (selectedProvider.apiType === 'gemini') {
-          const baseUrl = normalizeGeminiBaseUrl(selectedProvider.baseUrl)
-          const ai = new GoogleGenAI({
-            apiKey: selectedProvider.apiKey ?? '',
-            httpOptions:
-              baseUrl || providerHeaders
-                ? {
-                    ...(baseUrl ? { baseUrl } : {}),
-                    ...(providerHeaders ? { headers: providerHeaders } : {}),
-                  }
-                : undefined,
-          })
-          const pager = await ai.models.list()
-          const names: string[] = []
-          for await (const entry of pager) {
-            const raw = extractModelIdentifier(entry) ?? ''
-            if (!raw) continue
-            // Normalize like "models/gemini-2.5-pro" -> "gemini-2.5-pro"
-            const norm = raw.includes('/') ? raw.split('/').pop()! : raw
-            // Only keep gemini text/chat models
-            if (norm.toLowerCase().includes('gemini')) names.push(norm)
-          }
-          // De-dup and sort for UX
-          const unique = Array.from(new Set(names)).sort()
-          setAvailableModels(unique)
-          // Cache the result
-          plugin.setCachedModelList(selectedProvider.id, unique, 'chat')
-          return
         }
       } catch (err: unknown) {
         console.error('Failed to auto fetch models', err)
@@ -663,31 +492,6 @@ function AddChatModelModalComponent({
       builtinToolProvider,
       builtinTools: {
         gpt: { webSearch: { enabled: gptWebSearchEnabled } },
-        openrouter: {
-          webSearch: {
-            enabled: openRouterWebSearchEnabled,
-            ...(openRouterWebSearchEngine !== 'auto'
-              ? { engine: openRouterWebSearchEngine }
-              : {}),
-            ...((): { maxResults?: number } => {
-              const trimmed = openRouterWebSearchMaxResultsInput.trim()
-              if (trimmed.length === 0) return {}
-              const parsed = Number(trimmed)
-              if (!Number.isFinite(parsed)) return {}
-              return {
-                maxResults: Math.min(
-                  OPENROUTER_MAX_RESULTS_MAX,
-                  Math.max(OPENROUTER_MAX_RESULTS_MIN, Math.floor(parsed)),
-                ),
-              }
-            })(),
-          },
-        },
-        grok: { webSearch: { enabled: grokWebSearchEnabled } },
-        gemini: {
-          webSearch: { enabled: geminiWebSearchEnabled },
-          urlContext: { enabled: geminiUrlContextEnabled },
-        },
       },
       ...(sanitizedCustomParameters.length > 0
         ? { customParameters: sanitizedCustomParameters }
@@ -828,7 +632,8 @@ function AddChatModelModalComponent({
       )
       existingIds.push(uniqueId)
 
-      const detectedReasoning = detectReasoningTypeFromModelId(model)
+      const detectedReasoning =
+        detectReasoningTypeFromModelId(model) === 'openai' ? 'openai' : 'none'
       const reasoning = isReasoningTypeCompatible(
         selectedProvider,
         detectedReasoning,
@@ -1074,7 +879,11 @@ function AddChatModelModalComponent({
               name: value, // Always update display name with the selected model
             }))
             if (autoDetectReasoning) {
-              setReasoningType(detectReasoningTypeFromModelId(value))
+              setReasoningType(
+                detectReasoningTypeFromModelId(value) === 'openai'
+                  ? 'openai'
+                  : 'none',
+              )
             }
           }}
           disabled={loadingModels || availableModels.length === 0}
@@ -1095,7 +904,11 @@ function AddChatModelModalComponent({
           onChange={(value: string) => {
             setFormData((prev) => ({ ...prev, model: value }))
             if (autoDetectReasoning) {
-              setReasoningType(detectReasoningTypeFromModelId(value))
+              setReasoningType(
+                detectReasoningTypeFromModelId(value) === 'openai'
+                  ? 'openai'
+                  : 'none',
+              )
             }
           }}
         />
@@ -1119,8 +932,6 @@ function AddChatModelModalComponent({
           options={{
             none: t('settings.models.reasoningTypeNone'),
             openai: t('settings.models.reasoningTypeOpenAI'),
-            gemini: t('settings.models.reasoningTypeGemini'),
-            anthropic: t('settings.models.reasoningTypeAnthropic'),
           }}
           onChange={(value: string) => {
             setReasoningType(
@@ -1169,20 +980,6 @@ function AddChatModelModalComponent({
             </span>
             <span className="yolo-modality-chip-sub">Vision</span>
           </button>
-          <button
-            type="button"
-            className={`yolo-modality-chip${
-              modalities.includes('pdf') ? ' is-active' : ''
-            }`}
-            data-tooltip={t('settings.models.inputModalityPdfTooltip')}
-            onClick={() => toggleModality('pdf')}
-          >
-            <FileText size={14} />
-            <span className="yolo-modality-chip-label">
-              {t('settings.models.inputModalityPdf')}
-            </span>
-            <span className="yolo-modality-chip-sub">PDF</span>
-          </button>
         </div>
       </div>
 
@@ -1193,24 +990,10 @@ function AddChatModelModalComponent({
       >
         <ObsidianDropdown
           value={builtinToolProvider}
-          options={
-            selectedProvider?.presetType === 'openrouter'
-              ? {
-                  none: t('settings.models.builtinToolProviderNone'),
-                  openrouter: t(
-                    'settings.models.builtinToolProviderOpenRouter',
-                  ),
-                }
-              : {
-                  none: t('settings.models.builtinToolProviderNone'),
-                  gemini: t('settings.models.builtinToolProviderGemini'),
-                  gpt: t('settings.models.builtinToolProviderGpt'),
-                  openrouter: t(
-                    'settings.models.builtinToolProviderOpenRouter',
-                  ),
-                  grok: t('settings.models.builtinToolProviderGrok'),
-                }
-          }
+          options={{
+            none: t('settings.models.builtinToolProviderNone'),
+            gpt: t('settings.models.builtinToolProviderGpt'),
+          }}
           onChange={(value: string) =>
             setBuiltinToolProvider(
               isBuiltinToolProvider(value) ? value : BUILTIN_TOOL_PROVIDERS[0],
@@ -1242,189 +1025,6 @@ function AddChatModelModalComponent({
                   <ObsidianToggle
                     value={gptWebSearchEnabled}
                     onChange={setGptWebSearchEnabled}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {builtinToolProvider === 'openrouter' && (
-        <div className="yolo-agent-tools-panel yolo-agent-model-panel">
-          <div className="yolo-agent-tools-panel-head yolo-agent-model-panel-head">
-            <div className="yolo-agent-tools-panel-title">
-              {t('settings.models.builtinToolsOpenRouter')}
-            </div>
-          </div>
-
-          <div className="yolo-agent-model-controls">
-            <div className="yolo-agent-model-control">
-              <div className="yolo-agent-model-control-top">
-                <div className="yolo-agent-model-control-meta">
-                  <div className="yolo-agent-model-control-label">
-                    {t('settings.models.builtinToolWebSearch')}
-                  </div>
-                  <div className="yolo-agent-model-control-desc">
-                    {t('settings.models.builtinToolWebSearchDesc')}
-                  </div>
-                </div>
-                <div className="yolo-agent-model-control-actions">
-                  <ObsidianToggle
-                    value={openRouterWebSearchEnabled}
-                    onChange={setOpenRouterWebSearchEnabled}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {openRouterWebSearchEnabled && (
-              <>
-                <div className="yolo-agent-model-control">
-                  <div className="yolo-agent-model-control-top">
-                    <div className="yolo-agent-model-control-meta">
-                      <div className="yolo-agent-model-control-label">
-                        {t('settings.models.openRouterWebSearchEngine')}
-                      </div>
-                      <div className="yolo-agent-model-control-desc">
-                        {t('settings.models.openRouterWebSearchEngineDesc')}
-                      </div>
-                    </div>
-                    <div className="yolo-agent-model-control-actions">
-                      <ObsidianDropdown
-                        value={openRouterWebSearchEngine}
-                        options={{
-                          auto: t(
-                            'settings.models.openRouterWebSearchEngineAuto',
-                          ),
-                          native: t(
-                            'settings.models.openRouterWebSearchEngineNative',
-                          ),
-                          exa: t(
-                            'settings.models.openRouterWebSearchEngineExa',
-                          ),
-                          firecrawl: t(
-                            'settings.models.openRouterWebSearchEngineFirecrawl',
-                          ),
-                          parallel: t(
-                            'settings.models.openRouterWebSearchEngineParallel',
-                          ),
-                        }}
-                        onChange={(v: string) =>
-                          setOpenRouterWebSearchEngine(
-                            isOpenRouterWebSearchEngine(v) ? v : 'auto',
-                          )
-                        }
-                      />
-                    </div>
-                  </div>
-                </div>
-                <div className="yolo-agent-model-control">
-                  <div className="yolo-agent-model-control-top">
-                    <div className="yolo-agent-model-control-meta">
-                      <div className="yolo-agent-model-control-label">
-                        {t('settings.models.openRouterWebSearchMaxResults')}
-                      </div>
-                      <div className="yolo-agent-model-control-desc">
-                        {t('settings.models.openRouterWebSearchMaxResultsDesc')}
-                      </div>
-                    </div>
-                    <div className="yolo-agent-model-control-actions">
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        className="yolo-agent-model-number"
-                        placeholder={t(
-                          'settings.models.openRouterWebSearchMaxResultsPlaceholder',
-                        )}
-                        value={openRouterWebSearchMaxResultsInput}
-                        onChange={(event) => {
-                          const next = event.currentTarget.value
-                          if (!/^\d*$/.test(next)) return
-                          setOpenRouterWebSearchMaxResultsInput(next)
-                        }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      )}
-
-      {builtinToolProvider === 'grok' && (
-        <div className="yolo-agent-tools-panel yolo-agent-model-panel">
-          <div className="yolo-agent-tools-panel-head yolo-agent-model-panel-head">
-            <div className="yolo-agent-tools-panel-title">
-              {t('settings.models.builtinToolsGrok')}
-            </div>
-          </div>
-
-          <div className="yolo-agent-model-controls">
-            <div className="yolo-agent-model-control">
-              <div className="yolo-agent-model-control-top">
-                <div className="yolo-agent-model-control-meta">
-                  <div className="yolo-agent-model-control-label">
-                    {t('settings.models.builtinToolWebSearch')}
-                  </div>
-                  <div className="yolo-agent-model-control-desc">
-                    {t('settings.models.builtinToolWebSearchDesc')}
-                  </div>
-                </div>
-                <div className="yolo-agent-model-control-actions">
-                  <ObsidianToggle
-                    value={grokWebSearchEnabled}
-                    onChange={setGrokWebSearchEnabled}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {builtinToolProvider === 'gemini' && (
-        <div className="yolo-agent-tools-panel yolo-agent-model-panel">
-          <div className="yolo-agent-tools-panel-head yolo-agent-model-panel-head">
-            <div className="yolo-agent-tools-panel-title">
-              {t('settings.models.builtinToolsGemini')}
-            </div>
-          </div>
-
-          <div className="yolo-agent-model-controls">
-            <div className="yolo-agent-model-control">
-              <div className="yolo-agent-model-control-top">
-                <div className="yolo-agent-model-control-meta">
-                  <div className="yolo-agent-model-control-label">
-                    {t('settings.models.builtinToolWebSearch')}
-                  </div>
-                  <div className="yolo-agent-model-control-desc">
-                    {t('settings.models.builtinToolWebSearchDesc')}
-                  </div>
-                </div>
-                <div className="yolo-agent-model-control-actions">
-                  <ObsidianToggle
-                    value={geminiWebSearchEnabled}
-                    onChange={setGeminiWebSearchEnabled}
-                  />
-                </div>
-              </div>
-            </div>
-            <div className="yolo-agent-model-control">
-              <div className="yolo-agent-model-control-top">
-                <div className="yolo-agent-model-control-meta">
-                  <div className="yolo-agent-model-control-label">
-                    {t('settings.models.builtinToolUrlContext')}
-                  </div>
-                  <div className="yolo-agent-model-control-desc">
-                    {t('settings.models.builtinToolUrlContextDesc')}
-                  </div>
-                </div>
-                <div className="yolo-agent-model-control-actions">
-                  <ObsidianToggle
-                    value={geminiUrlContextEnabled}
-                    onChange={setGeminiUrlContextEnabled}
                   />
                 </div>
               </div>

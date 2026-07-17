@@ -77,16 +77,6 @@ export async function renderCurrentFilePointerInjection(
       `Visible: lines ${viewState.visibleStartLine}-${viewState.visibleEndLine}`,
       `Cursor: line ${viewState.cursorLine}`,
     )
-  } else {
-    // pdf
-    lines.push(
-      '# Current Context (auto-attached, content NOT included)',
-      'The user is currently viewing this PDF. Use read_file if you need its content.',
-      '',
-      `File: ${file.path}`,
-      `Total: ${viewState.totalPages} pages`,
-      `Currently on: page ${viewState.currentPage}`,
-    )
   }
 
   return {

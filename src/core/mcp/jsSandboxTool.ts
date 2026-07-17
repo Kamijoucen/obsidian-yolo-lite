@@ -54,9 +54,6 @@ export const JS_SANDBOX_VAULT_LIST_MAX_ENTRIES = 100_000
 export const JS_SANDBOX_BROWSER_READ_DEFAULT_MAX_KB = 10 * 1024
 export const JS_SANDBOX_BROWSER_READ_HARD_MAX_KB = 1024 * 1024
 export const JS_SANDBOX_BROWSER_READ_MIN_KB = 1
-export const JS_SANDBOX_DB_QUERY_DEFAULT_MAX_LIMIT = 20
-export const JS_SANDBOX_DB_QUERY_HARD_MAX_LIMIT = 100
-export const JS_SANDBOX_DB_QUERY_DEFAULT_REQUEST_LIMIT = 10
 
 type JsonRecord = Record<string, unknown>
 
@@ -113,10 +110,6 @@ export type JsSandboxProxyHandlers = {
     maxConcurrent: number
     maxResponseKb: number
   }
-  dbQuery?: (
-    method: 'search',
-    params: Record<string, unknown>,
-  ) => Promise<unknown>
   browserReadHtml?: (
     pageId: string,
   ) => Promise<JsSandboxBrowserReadHtmlResult | null>
@@ -125,7 +118,6 @@ export type JsSandboxProxyHandlers = {
 type JsSandboxCaps = {
   allowFetch: boolean
   allowVaultRead: boolean
-  allowDbQuery: boolean
   allowExternalScripts: boolean
   allowBrowserRead: boolean
 }
@@ -674,7 +666,7 @@ function buildScope(rawVars) {
       list: caps.allowVaultRead
         ? (path, options) => proxyCall('vault_list', { path, options })
         : undefined,
-      readText: (caps.allowVaultRead || caps.allowDbQuery)
+      readText: caps.allowVaultRead
         ? (path) => proxyCall('vault_read_text', { path })
         : undefined,
       readBinary: caps.allowVaultRead
@@ -684,9 +676,6 @@ function buildScope(rawVars) {
     $links: Array.isArray(rawVars && rawVars.$links) ? rawVars.$links : [],
     $tags: Array.isArray(rawVars && rawVars.$tags) ? rawVars.$tags : [],
     $utils: htmlUtilsAllowed ? SANDBOX_UTILS_WITH_HTML : SANDBOX_UTILS,
-    $db: caps.allowDbQuery ? {
-      search: (query, limit) => proxyCall('db_query', { method: 'search', query, limit })
-    } : undefined,
     $browser: browserReadAllowed ? {
       readHtml: (pageId) => proxyCall('browser_read_html', { pageId })
     } : undefined,
@@ -1594,7 +1583,6 @@ async function buildJsSandboxVariables(
   const _caps: JsSandboxCaps = {
     allowFetch: config?.allowFetch ?? false,
     allowVaultRead: config?.allowVaultRead ?? false,
-    allowDbQuery: config?.allowDbQuery ?? false,
     allowExternalScripts: config?.allowExternalScripts ?? false,
     allowBrowserRead: config?.allowBrowserRead ?? false,
   }
@@ -2053,22 +2041,6 @@ class JsSandboxRunner {
             quota.activeCount--
           }
         }
-        return
-      }
-
-      if (cap === 'db_query') {
-        if (!handlers?.dbQuery) {
-          this.sendProxyResponse(
-            reqId,
-            proxyId,
-            undefined,
-            '$db is not enabled',
-          )
-          return
-        }
-        const method = payload.method as 'search'
-        const result = await handlers.dbQuery(method, payload)
-        this.sendProxyResponse(reqId, proxyId, result)
         return
       }
 

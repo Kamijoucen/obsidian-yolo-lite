@@ -265,7 +265,7 @@ const ChatUserInput = forwardRef<ChatUserInputRef, ChatUserInputProps>(
         return []
       }
 
-      const disabledSkillNames = settings.skills?.disabledSkillIds ?? []
+      const disabledSkillNames = settings.skills?.disabledSkillNames ?? []
       return allSkillEntries.filter((skill) =>
         isSkillEnabledForAssistant({
           assistant: currentAssistant,

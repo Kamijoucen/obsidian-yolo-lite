@@ -20,11 +20,9 @@ import { resolveProviderBaseUrl } from '../../utils/llm/provider-base-url'
 import { toProviderHeadersRecord } from '../../utils/llm/provider-headers'
 
 import { BaseLLMProvider } from './base'
-import { extractEmbeddingVector } from './embedding-utils'
 import {
   LLMAPIKeyInvalidException,
   LLMAPIKeyNotSetException,
-  LLMRateLimitExceededException,
 } from './exception'
 import { OpenAIMessageAdapter } from './openaiMessageAdapter'
 import { createBrowserFetch } from './sdkFetch'
@@ -150,34 +148,6 @@ export class OpenAIAuthenticatedProvider extends BaseLLMProvider<LLMProvider> {
         throw new LLMAPIKeyInvalidException(
           'OpenAI API key is invalid. Please update it in settings menu.',
           error,
-        )
-      }
-      throw error
-    }
-  }
-
-  async getEmbedding(
-    model: string,
-    text: string,
-    options?: { dimensions?: number },
-  ): Promise<number[]> {
-    if (!this.client.apiKey) {
-      throw new LLMAPIKeyNotSetException(
-        `Provider ${this.provider.id} API key is missing. Please set it in settings menu.`,
-      )
-    }
-
-    try {
-      const embedding = await this.client.embeddings.create({
-        model: model,
-        input: text,
-        ...(options?.dimensions ? { dimensions: options.dimensions } : {}),
-      })
-      return extractEmbeddingVector(embedding)
-    } catch (error) {
-      if (error.status === 429) {
-        throw new LLMRateLimitExceededException(
-          'OpenAI API rate limit exceeded. Please try again later.',
         )
       }
       throw error

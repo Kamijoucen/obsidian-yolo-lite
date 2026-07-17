@@ -35,10 +35,8 @@ import AssistantGroupEditor from './AssistantGroupEditor'
 import AssistantMessageAnnotations from './AssistantMessageAnnotations'
 import AssistantMessageContent from './AssistantMessageContent'
 import AssistantMessageReasoning from './AssistantMessageReasoning'
-import AssistantMessageSources from './AssistantMessageSources'
 import AssistantToolMessageGroupActions from './AssistantToolMessageGroupActions'
 import LLMResponseInlineInfo from './LLMResponseInlineInfo'
-import { buildSynthToolMessageFromResult } from './tool-cards/externalAgentResultAdapter'
 import ToolMessage from './ToolMessage'
 
 const getBranchStateLabel = (
@@ -94,7 +92,6 @@ const getBranchTabState = (
 ): 'streaming' | 'waiting-approval' | 'completed' | 'aborted' | 'error' => {
   const latestMessage = messages.at(-1)
   const latestMetadata =
-    latestMessage?.role !== 'external_agent_result' &&
     latestMessage?.role !== 'subagent_result' &&
     latestMessage?.role !== 'terminal_command_result'
       ? latestMessage?.metadata
@@ -134,7 +131,6 @@ const getMessageGroupRunState = ({
 }): 'streaming' | 'waiting-approval' | 'completed' | 'aborted' | 'error' => {
   const latestMessage = messages.at(-1)
   const latestMetadata =
-    latestMessage?.role !== 'external_agent_result' &&
     latestMessage?.role !== 'subagent_result' &&
     latestMessage?.role !== 'terminal_command_result'
       ? latestMessage?.metadata
@@ -321,7 +317,6 @@ function AssistantToolMessageGroupItem({
         return
       }
       const branchLabel =
-        message.role !== 'external_agent_result' &&
         message.role !== 'subagent_result' &&
         message.role !== 'terminal_command_result'
           ? message.metadata?.branchLabel
@@ -719,7 +714,6 @@ function AssistantToolMessageGroupItem({
                     conversationId={effectiveConversationId}
                     content={message.content}
                     annotations={message.annotations}
-                    sources={message.metadata?.sources}
                     handleApply={onApply}
                     isApplying={isApplying}
                     activeApplyRequestKey={activeApplyRequestKey}
@@ -734,12 +728,6 @@ function AssistantToolMessageGroupItem({
                       annotations={message.annotations}
                     />
                   )}
-                  {message.metadata?.sources &&
-                    message.metadata.sources.length > 0 && (
-                      <AssistantMessageSources
-                        sources={message.metadata.sources}
-                      />
-                    )}
                   {message.metadata?.generationState === 'error' &&
                     message.metadata.errorMessage && (
                       <AssistantErrorCard
@@ -755,19 +743,6 @@ function AssistantToolMessageGroupItem({
                     )}
                 </div>
               ) : null
-            ) : message.role === 'external_agent_result' ? (
-              <div key={message.id}>
-                <ToolMessage
-                  message={buildSynthToolMessageFromResult(message)}
-                  conversationId={effectiveConversationId}
-                  showRunningFooter={false}
-                  onMessageUpdate={() => {
-                    // 异步派遣结果是终态消息，UI 内部不会触发 update；
-                    // 万一调到这里也不持久化（result message 有自己的存储路径）。
-                  }}
-                  onRecoverAnswerUserQuestion={onRecoverAnswerUserQuestion}
-                />
-              </div>
             ) : message.role === 'subagent_result' ||
               message.role === 'terminal_command_result' ? null : (
               <div key={message.id}>

@@ -14,8 +14,8 @@ export const YOLO_SKILLS_INDEX_TEMPLATE = `# YOLO Skills
 Store your skill files here.
 
 - Supported formats:
-  - Legacy: \`YOLO/skills/*.md\` (exclude \`Skills.md\`)
-  - Claude-style: \`YOLO/skills/**/SKILL.md\`
+  - Standalone: \`YOLO/skills/*.md\` (exclude \`Skills.md\`)
+  - Directory package: \`YOLO/skills/**/SKILL.md\`
 - Required frontmatter: \`name\` (required, kebab-case unique identifier), \`description\` (optional); \`mode\` (\`lazy\` | \`always\`, optional)
 `
 
@@ -116,7 +116,7 @@ Every YOLO skill is a single \`.md\` file stored in the vault's \`YOLO/skills/\`
 YOLO/skills/
 ├── skill-creator.md
 ├── meeting-notes.md
-├── pdf-editor.md
+├── document-editor.md
 └── ...
 ~~~
 

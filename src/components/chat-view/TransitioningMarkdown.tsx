@@ -1,7 +1,5 @@
 import { memo, useRef } from 'react'
 
-import { CitationSource } from '../../core/agent/citationRegistry'
-
 import { ObsidianMarkdown } from './ObsidianMarkdown'
 import StreamingMarkdown from './StreamingMarkdown'
 
@@ -11,12 +9,10 @@ const TransitioningMarkdown = memo(function TransitioningMarkdown({
   content,
   scale = 'base',
   generationState,
-  citationSources,
 }: {
   content: string
   scale?: 'xs' | 'sm' | 'base'
   generationState?: GenerationState
-  citationSources?: CitationSource[]
 }) {
   const hasStreamed = useRef(false)
   const isStreaming = generationState === 'streaming'
@@ -28,24 +24,18 @@ const TransitioningMarkdown = memo(function TransitioningMarkdown({
         content={content}
         scale={scale}
         animateIncrementalText
-        citationSources={citationSources}
       />
     )
   }
 
   const initialFallback = hasStreamed.current ? (
-    <StreamingMarkdown
-      content={content}
-      scale={scale}
-      citationSources={citationSources}
-    />
+    <StreamingMarkdown content={content} scale={scale} />
   ) : undefined
 
   return (
     <ObsidianMarkdown
       content={content}
       scale={scale}
-      citationSources={citationSources}
       initialFallback={initialFallback}
     />
   )

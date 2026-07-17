@@ -8,8 +8,6 @@ import {
 const JSON_CODE_FENCE = '```json'
 const TEXT_CODE_FENCE = '```text'
 const COST_KEY_PATTERN = /cost|price|fee|spend|spent|charge|billing/i
-const EMBEDDING_TEXT_EDGE_CHARS = 100
-const EMBEDDING_ARRAY_EDGE_ITEMS = 12
 
 type CostEntry = {
   label: string
@@ -806,139 +804,10 @@ function getRequestRecord(
   return parsed.ok && isRecord(parsed.value) ? parsed.value : null
 }
 
-function abbreviateEmbeddingText(text: string): string {
-  if (text.length <= EMBEDDING_TEXT_EDGE_CHARS * 2) {
-    return text
-  }
-
-  const omittedChars = text.length - EMBEDDING_TEXT_EDGE_CHARS * 2
-  return `${text.slice(0, EMBEDDING_TEXT_EDGE_CHARS)}[OMITTED embedding input string: ${omittedChars} chars]${text.slice(-EMBEDDING_TEXT_EDGE_CHARS)}`
-}
-
-function formatEmbeddingArrayEdge(value: unknown): string {
-  if (typeof value === 'number' && Number.isFinite(value)) {
-    return String(Number(value.toPrecision(6)))
-  }
-  if (typeof value === 'string') {
-    return value
-  }
-  return JSON.stringify(value) ?? String(value)
-}
-
-function abbreviateEmbeddingArray(values: unknown[]): unknown {
-  if (values.length <= EMBEDDING_ARRAY_EDGE_ITEMS * 2) {
-    return values.map((item) => abbreviateEmbeddingInputValue(item))
-  }
-
-  const prefix = values
-    .slice(0, EMBEDDING_ARRAY_EDGE_ITEMS)
-    .map(formatEmbeddingArrayEdge)
-    .join(', ')
-  const suffix = values
-    .slice(-EMBEDDING_ARRAY_EDGE_ITEMS)
-    .map(formatEmbeddingArrayEdge)
-    .join(', ')
-  return `${prefix}, [OMITTED ...], ${suffix}`
-}
-
-function abbreviateEmbeddingInputValue(value: unknown): unknown {
-  if (typeof value === 'string') {
-    return abbreviateEmbeddingText(value)
-  }
-  if (Array.isArray(value)) {
-    return value.map((item) => abbreviateEmbeddingInputValue(item))
-  }
-  if (!isRecord(value)) {
-    return value
-  }
-
-  return Object.fromEntries(
-    Object.entries(value).map(([key, child]) => [
-      key,
-      abbreviateEmbeddingInputValue(child),
-    ]),
-  )
-}
-
-function abbreviateEmbeddingPayload(value: unknown): unknown {
-  if (Array.isArray(value)) {
-    return value.map((item) => abbreviateEmbeddingPayload(item))
-  }
-  if (!isRecord(value)) {
-    return value
-  }
-
-  return Object.fromEntries(
-    Object.entries(value).map(([key, child]) => {
-      const normalizedKey = key.toLowerCase()
-      if (normalizedKey === 'input') {
-        return [key, abbreviateEmbeddingInputValue(child)]
-      }
-      if (normalizedKey === 'embedding') {
-        return [
-          key,
-          Array.isArray(child)
-            ? abbreviateEmbeddingArray(child)
-            : abbreviateEmbeddingInputValue(child),
-        ]
-      }
-      return [key, abbreviateEmbeddingPayload(child)]
-    }),
-  )
-}
-
-function abbreviateEmbeddingBody(body: string | undefined): string | null {
-  if (!body) {
-    return null
-  }
-
-  const parsed = tryParseJson(body)
-  if (!parsed.ok || !isRecord(parsed.value)) {
-    return null
-  }
-
-  // Keep embedding inputs short so saving this debug note does not trigger
-  // another large embedding pass over the captured source text.
-  const abbreviated = abbreviateEmbeddingPayload(parsed.value)
-  return JSON.stringify(
-    omitBase64DebugData(redactJsonLike(abbreviated)),
-    null,
-    2,
-  )
-}
-
 function getRequestModel(exchange: LLMDebugHttpExchange): string | null {
   const requestRecord = getRequestRecord(exchange)
   const model = requestRecord?.model
   return typeof model === 'string' && model.trim() ? model.trim() : null
-}
-
-function isEmbeddingExchange(
-  trace: LLMDebugTrace,
-  exchange: LLMDebugHttpExchange,
-): boolean {
-  if (trace.summary.requestKind === 'embedding') {
-    return true
-  }
-
-  const url = exchange.request.url.toLowerCase()
-  if (/(^|[/_-])(embeddings?|embed|embd)(?:[/?#_-]|$)/i.test(url)) {
-    return true
-  }
-
-  const requestRecord = getRequestRecord(exchange)
-  const model =
-    typeof requestRecord?.model === 'string' ? requestRecord.model : ''
-  if (/embed|embedding|embd/i.test(model)) {
-    return true
-  }
-
-  return (
-    Boolean(requestRecord) &&
-    Array.isArray(requestRecord?.input) &&
-    !Array.isArray(requestRecord?.messages) &&
-    /embed|embedding|embd/i.test(exchange.request.body ?? '')
-  )
 }
 
 function isTitleGenerationTrace(trace: LLMDebugTrace): boolean {
@@ -946,20 +815,14 @@ function isTitleGenerationTrace(trace: LLMDebugTrace): boolean {
 }
 
 function isOtherRequestTrace(trace: LLMDebugTrace): boolean {
-  return (
-    isTitleGenerationTrace(trace) || trace.summary.requestKind === 'embedding'
-  )
+  return isTitleGenerationTrace(trace)
 }
 
 function isUnrelatedConversationExchange(
   trace: LLMDebugTrace,
   exchange: LLMDebugHttpExchange,
 ): boolean {
-  return (
-    isEmbeddingExchange(trace, exchange) ||
-    isTitleGenerationTrace(trace) ||
-    isTitleGenerationRequest(exchange)
-  )
+  return isTitleGenerationTrace(trace) || isTitleGenerationRequest(exchange)
 }
 
 function formatStreamingBody(body: string): string {
@@ -991,12 +854,10 @@ function formatBody({
   body,
   contentType,
   streaming,
-  embeddingRequest,
 }: {
   body: string | undefined
   contentType?: string
   streaming?: boolean
-  embeddingRequest?: boolean
 }): {
   content: string
   language: 'json' | 'text'
@@ -1006,18 +867,6 @@ function formatBody({
 } {
   if (!body) {
     return { content: '(empty)', language: 'text', formatted: false }
-  }
-
-  if (embeddingRequest) {
-    const abbreviated = abbreviateEmbeddingBody(body)
-    if (abbreviated) {
-      return {
-        content: abbreviated,
-        language: 'json',
-        formatted: true,
-        formatNote: '(pretty-printed)',
-      }
-    }
   }
 
   if (streaming || isProbablyStreamingBody(body, contentType)) {
@@ -1167,9 +1016,6 @@ function getExchangeCategory(
   trace: LLMDebugTrace,
   exchange: LLMDebugHttpExchange,
 ): string {
-  if (isEmbeddingExchange(trace, exchange)) {
-    return 'Embedding request'
-  }
   if (isTitleGenerationTrace(trace)) {
     return 'Title generation request'
   }
@@ -1211,12 +1057,6 @@ function formatAttemptProviderLines(
 ): string[] {
   if (isLlmTransportExchange(exchange)) {
     const requestModel = getRequestModel(exchange)
-    if (isEmbeddingExchange(trace, exchange) && endpointProvider) {
-      return [
-        `- Provider: ${endpointProvider}`,
-        `- Model: ${requestModel ?? formatTraceModel(trace)}`,
-      ]
-    }
     return [
       `- Provider: ${trace.summary.providerId ?? 'unknown'}`,
       `- Model: ${requestModel ?? formatTraceModel(trace)}`,
@@ -1246,12 +1086,6 @@ function getEndpointProvider(exchange: LLMDebugHttpExchange): string | null {
     const host = new URL(exchange.request.url).host
     if (!host) {
       return null
-    }
-    if (/generativelanguage\.googleapis\.com/i.test(host)) {
-      return `Google Gemini (${host})`
-    }
-    if (/api\.x\.ai/i.test(host)) {
-      return `xAI Grok (${host})`
     }
     if (/api\.tavily\.com/i.test(host)) {
       return `Tavily (${host})`
@@ -1291,15 +1125,12 @@ function formatExchange(
   exchange: LLMDebugHttpExchange,
   index: number,
 ): string {
-  const isEmbedding = isEmbeddingExchange(trace, exchange)
   const requestBody = formatBody({
     body: exchange.request.body,
-    embeddingRequest: isEmbedding,
   })
   const responseBody = formatBody({
     body: exchange.response?.body,
     contentType: exchange.response?.contentType,
-    embeddingRequest: isEmbedding,
     streaming: exchange.response?.contentType
       ?.toLowerCase()
       .includes('text/event-stream'),
@@ -1329,12 +1160,6 @@ function formatExchange(
 
   return [
     `### #${index + 1} ${category}`,
-    ...(isEmbedding
-      ? [
-          '',
-          'Note: This embedding request was captured during the turn, but it was not initiated by the chat response itself.',
-        ]
-      : []),
     '',
     `- Category: ${category}`,
     `- Streaming: ${isStreamingExchange(exchange) ? 'true' : 'false'}`,
@@ -1443,9 +1268,6 @@ function formatExchange(
 function getTraceOnlyOtherRequestCategory(trace: LLMDebugTrace): string {
   if (isTitleGenerationTrace(trace)) {
     return 'Title generation request'
-  }
-  if (trace.summary.requestKind === 'embedding') {
-    return 'Embedding request'
   }
   return 'Other request'
 }

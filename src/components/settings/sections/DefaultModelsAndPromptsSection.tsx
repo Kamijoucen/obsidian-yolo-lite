@@ -108,9 +108,9 @@ export function DefaultModelsAndPromptsSection({
   const defaultTitlePrompt =
     DEFAULT_CHAT_TITLE_PROMPT[language] ?? DEFAULT_CHAT_TITLE_PROMPT.en
   const streamFallbackRecoveryEnabled =
-    settings.continuationOptions.streamFallbackRecoveryEnabled ?? true
+    settings.requestPolicy.streamFallbackRecoveryEnabled ?? true
   const primaryRequestTimeoutMs =
-    settings.continuationOptions.primaryRequestTimeoutMs ??
+    settings.requestPolicy.primaryRequestTimeoutMs ??
     DEFAULT_MODEL_REQUEST_TIMEOUT_MS
   const maxPrimaryRequestTimeoutSeconds = Math.floor(
     MAX_MODEL_REQUEST_TIMEOUT_MS / 1000,
@@ -193,8 +193,8 @@ export function DefaultModelsAndPromptsSection({
               onChange={(value) => {
                 commitSettingsUpdate(
                   {
-                    continuationOptions: {
-                      ...settings.continuationOptions,
+                    requestPolicy: {
+                      ...settings.requestPolicy,
                       streamFallbackRecoveryEnabled: value,
                     },
                   },
@@ -222,8 +222,8 @@ export function DefaultModelsAndPromptsSection({
                 )
                 commitSettingsUpdate(
                   {
-                    continuationOptions: {
-                      ...settings.continuationOptions,
+                    requestPolicy: {
+                      ...settings.requestPolicy,
                       primaryRequestTimeoutMs: clampedSeconds * 1000,
                     },
                   },
@@ -245,8 +245,8 @@ export function DefaultModelsAndPromptsSection({
                 if (nextSeconds * 1000 !== primaryRequestTimeoutMs) {
                   commitSettingsUpdate(
                     {
-                      continuationOptions: {
-                        ...settings.continuationOptions,
+                      requestPolicy: {
+                        ...settings.requestPolicy,
                         primaryRequestTimeoutMs: nextSeconds * 1000,
                       },
                     },

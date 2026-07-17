@@ -20,8 +20,6 @@ import { BaseLLMProvider } from './base'
 import { LLMAPIKeyNotSetException } from './exception'
 import { ModelRequestPolicy, resolveSdkMaxRetries } from './requestPolicy'
 import {
-  AutoPromotedTransportMode,
-  createRequestTransportMemoryKey,
   resolveRequestTransportMode,
   runWithRequestTransport,
   runWithRequestTransportForStream,
@@ -36,39 +34,18 @@ export class XiaomimimoProvider extends BaseLLMProvider<LLMProvider> {
   private obsidianClient: OpenAI
   private nodeClient: OpenAI
   private requestTransportMode: RequestTransportMode
-  private requestTransportMemoryKey: string
-  private onAutoPromoteTransportMode?: (mode: AutoPromotedTransportMode) => void
-
-  private promoteTransportMode = (mode: AutoPromotedTransportMode) => {
-    if (this.requestTransportMode === mode) return
-    this.provider.additionalSettings = {
-      ...(this.provider.additionalSettings ?? {}),
-      requestTransportMode: mode,
-    }
-    this.requestTransportMode = mode
-    this.onAutoPromoteTransportMode?.(mode)
-  }
 
   constructor(
     provider: LLMProvider,
     options?: {
-      onAutoPromoteTransportMode?: (mode: AutoPromotedTransportMode) => void
       requestPolicy?: ModelRequestPolicy
     },
   ) {
     super(provider)
     this.adapter = new XiaomimimoMessageAdapter()
-    this.onAutoPromoteTransportMode = options?.onAutoPromoteTransportMode
     const defaultHeaders = toProviderHeadersRecord(provider.customHeaders)
-    this.requestTransportMemoryKey = createRequestTransportMemoryKey({
-      providerType: provider.presetType,
-      providerId: provider.id,
-      baseUrl: provider.baseUrl,
-    })
     this.requestTransportMode = resolveRequestTransportMode({
       additionalSettings: provider.additionalSettings,
-      hasCustomBaseUrl: !!provider.baseUrl,
-      memoryKey: this.requestTransportMemoryKey,
     })
     const clientOptions = {
       apiKey: provider.apiKey ?? '',
@@ -122,8 +99,6 @@ export class XiaomimimoProvider extends BaseLLMProvider<LLMProvider> {
 
     return runWithRequestTransport({
       mode: this.requestTransportMode,
-      memoryKey: this.requestTransportMemoryKey,
-      onAutoPromoteTransportMode: this.promoteTransportMode,
       runBrowser: () =>
         this.adapter.generateResponse(
           this.browserClient,
@@ -174,8 +149,6 @@ export class XiaomimimoProvider extends BaseLLMProvider<LLMProvider> {
 
     return runWithRequestTransportForStream({
       mode: this.requestTransportMode,
-      memoryKey: this.requestTransportMemoryKey,
-      onAutoPromoteTransportMode: this.promoteTransportMode,
       signal: options?.signal,
       createBrowserStream: (signal) =>
         this.adapter.streamResponse(this.browserClient, formattedRequest, {
@@ -193,17 +166,5 @@ export class XiaomimimoProvider extends BaseLLMProvider<LLMProvider> {
           signal: signal ?? options?.signal,
         }),
     })
-  }
-
-  getEmbedding(
-    _model: string,
-    _text: string,
-    _options?: { dimensions?: number },
-  ): Promise<number[]> {
-    return Promise.reject(
-      new Error(
-        `Provider ${this.provider.id} does not support embeddings. Please use a different provider.`,
-      ),
-    )
   }
 }

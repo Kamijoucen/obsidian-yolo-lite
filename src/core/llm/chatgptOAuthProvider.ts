@@ -30,7 +30,6 @@ import { LLMProviderNotConfiguredException } from './exception'
 import { NoStainlessOpenAI } from './NoStainlessOpenAI'
 import { ModelRequestPolicy, resolveSdkMaxRetries } from './requestPolicy'
 import {
-  createRequestTransportMemoryKey,
   resolveRequestTransportMode,
   runWithRequestTransport,
   runWithRequestTransportForStream,
@@ -40,7 +39,7 @@ import { createTransportClients } from './transportClients'
 /**
  * Forward only the OpenAI-shaped hosted `web_search` family on this ChatGPT
  * OAuth transport — the adapter remaps it to `web_search_preview`. Other
- * built-in families (OpenRouter / Grok / Gemini) target different endpoints
+ * other provider-specific built-in tool families target different endpoints
  * and silently no-op here so a stale cross-provider config never changes
  * user intent.
  */
@@ -71,7 +70,6 @@ export class ChatGPTOAuthProvider extends BaseLLMProvider<LLMProvider> {
   private readonly browserClient: OpenAI
   private readonly obsidianClient: OpenAI
   private readonly nodeClient: OpenAI
-  private readonly requestTransportMemoryKey: string
   private readonly requestTransportMode: RequestTransportMode
 
   constructor(
@@ -81,15 +79,8 @@ export class ChatGPTOAuthProvider extends BaseLLMProvider<LLMProvider> {
     },
   ) {
     super(provider)
-    this.requestTransportMemoryKey = createRequestTransportMemoryKey({
-      providerType: provider.presetType,
-      providerId: provider.id,
-      baseUrl: CODEX_BASE_URL,
-    })
     this.requestTransportMode = resolveRequestTransportMode({
       additionalSettings: provider.additionalSettings,
-      hasCustomBaseUrl: false,
-      memoryKey: this.requestTransportMemoryKey,
     })
 
     const defaultHeaders = toProviderHeadersRecord(provider.customHeaders)
@@ -142,7 +133,6 @@ export class ChatGPTOAuthProvider extends BaseLLMProvider<LLMProvider> {
 
     return runWithRequestTransport({
       mode: this.requestTransportMode,
-      memoryKey: this.requestTransportMemoryKey,
       runBrowser: async () =>
         this.generateResponseFromResponsesStream(
           this.browserClient,
@@ -190,7 +180,6 @@ export class ChatGPTOAuthProvider extends BaseLLMProvider<LLMProvider> {
 
     return runWithRequestTransportForStream({
       mode: this.requestTransportMode,
-      memoryKey: this.requestTransportMemoryKey,
       signal: options?.signal,
       createBrowserStream: async (signal) =>
         this.createResponsesStream(this.browserClient, body, {
@@ -208,16 +197,6 @@ export class ChatGPTOAuthProvider extends BaseLLMProvider<LLMProvider> {
           signal: signal ?? options?.signal,
         }),
     })
-  }
-
-  async getEmbedding(
-    _model: string,
-    _text: string,
-    _options?: { dimensions?: number },
-  ): Promise<number[]> {
-    throw new LLMProviderNotConfiguredException(
-      'ChatGPT OAuth provider does not support embeddings.',
-    )
   }
 
   private createAuthorizedFetch(baseFetch: typeof fetch): typeof fetch {

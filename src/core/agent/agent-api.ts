@@ -57,7 +57,7 @@ export type YoloAgentRunRequest = {
   assistantId?: string
   /** Override the assistant model for this run. */
   modelId?: string
-  mode?: 'ask' | 'agent' | 'agent-full'
+  mode?: 'ask' | 'agent'
   /** Auto-approve tool calls (YOLO). Only effective in Agent mode. */
   yolo?: boolean
   context?: YoloAgentContext[]
@@ -339,12 +339,10 @@ export async function resolveAgentApiRunInput({
     (candidate) => candidate.id === resolvedClient.model.providerId,
   )
   const assistantEnabledToolNames = getEnabledAssistantToolNames(assistant)
-  const requestedMode = request.mode ?? 'ask'
-  const mode = requestedMode === 'agent-full' ? 'agent' : requestedMode
+  const mode = request.mode ?? 'ask'
   const chatModeRuntime = resolveChatModeRuntime({
     mode,
-    yoloEnabled:
-      requestedMode === 'agent-full' ? true : (request.yolo ?? false),
+    yoloEnabled: request.yolo ?? false,
     assistant,
     assistantEnabledToolNames,
   })
@@ -443,10 +441,9 @@ export async function resolveAgentApiRunInput({
       allowedSkillPaths,
       requestParams: {
         deliveryMode: 'incremental',
-        primaryRequestTimeoutMs:
-          settings.continuationOptions.primaryRequestTimeoutMs,
+        primaryRequestTimeoutMs: settings.requestPolicy.primaryRequestTimeoutMs,
         streamFallbackRecoveryEnabled:
-          settings.continuationOptions.streamFallbackRecoveryEnabled,
+          settings.requestPolicy.streamFallbackRecoveryEnabled,
       },
     },
   }
@@ -746,7 +743,7 @@ async function resolveAllowedSkillPaths({
     return []
   }
 
-  const disabledSkillNames = settings.skills?.disabledSkillIds ?? []
+  const disabledSkillNames = settings.skills?.disabledSkillNames ?? []
   const skillEntries = await listLiteSkillEntries(app, { settings })
   return skillEntries
     .filter((skill) =>

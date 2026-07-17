@@ -6,12 +6,12 @@ export type StagedReference = {
 }
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024
-const ALLOWED_EXTENSIONS = ['.pdf', '.docx', '.doc', '.md', '.markdown', '.txt']
+const ALLOWED_EXTENSIONS = ['.docx', '.doc', '.md', '.markdown', '.txt']
 
 export function validateReferenceFile(file: File): string | null {
   const ext = file.name.toLowerCase().match(/\.[^.]+$/)?.[0] ?? ''
   if (!ALLOWED_EXTENSIONS.includes(ext)) {
-    return `不支持的文件类型：${ext}（支持 PDF、Word、Markdown、文本）`
+    return `不支持的文件类型：${ext}（支持 Word、Markdown、文本）`
   }
   if (file.size > MAX_FILE_SIZE) {
     return `文件过大：${(file.size / 1024 / 1024).toFixed(1)}MB（上限 20MB）`

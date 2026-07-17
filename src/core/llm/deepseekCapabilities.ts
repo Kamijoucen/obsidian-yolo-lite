@@ -14,8 +14,8 @@ type DeepSeekRequestRecord = Record<string, unknown>
  * top-level `thinking: { type }` field; unsupported levels are passed through so
  * the API reports the mismatch instead of silently changing the user's choice.
  *
- * Legacy `deepseek-reasoner` encodes thinking in the model alias itself and is
- * scheduled for retirement on 2026-07-24; skip it to preserve alias semantics.
+ * `deepseek-reasoner` encodes thinking in the model alias itself, so skip the
+ * explicit thinking fields for that endpoint.
  */
 export function applyDeepSeekCapabilities(params: {
   request: DeepSeekRequestRecord

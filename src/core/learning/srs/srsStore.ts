@@ -139,7 +139,7 @@ export class LearningSrsStore {
       const validated = this.parseProjectState(
         structuredClone(state),
         `${projectSlug}.json`,
-      ).state
+      )
       await this.writeProjectState(projectSlug, validated)
       if (options.activateCache !== false)
         this.cache.set(projectSlug, validated)
@@ -528,9 +528,7 @@ export class LearningSrsStore {
     } catch {
       throw new Error(`SRS 文件损坏：${filePath}`)
     }
-    const { state, migrated } = this.parseProjectState(parsed, filePath)
-    if (migrated) await this.writeProjectState(projectSlug, state)
-    return state
+    return this.parseProjectState(parsed, filePath)
   }
 
   private async writeProjectState(
@@ -573,18 +571,11 @@ export class LearningSrsStore {
     return dir
   }
 
-  private parseProjectState(
-    value: unknown,
-    filePath: string,
-  ): { state: SrsProjectState; migrated: boolean } {
+  private parseProjectState(value: unknown, filePath: string): SrsProjectState {
     if (!this.isRecord(value)) {
       throw new Error(`SRS 文件格式无效：${filePath}`)
     }
-    if (
-      value.version !== 1 &&
-      value.version !== 2 &&
-      value.version !== SRS_SCHEMA_VERSION
-    ) {
+    if (value.version !== SRS_SCHEMA_VERSION) {
       throw new Error(`SRS 文件版本不受支持，需要迁移：${filePath}`)
     }
     if (!this.isRecord(value.cards)) {
@@ -596,42 +587,34 @@ export class LearningSrsStore {
       this.validateCardUuid(uuid, filePath)
       cards[uuid] = this.parseCardState(card, filePath, uuid)
     }
-    let suspended: string[] = []
-    if (value.version === 2 || value.version === SRS_SCHEMA_VERSION) {
-      if (!Array.isArray(value.suspended)) {
-        throw new Error(`SRS 暂停卡片数据格式无效：${filePath}`)
-      }
-      const unique = new Set<string>()
-      for (const uuid of value.suspended) {
-        if (typeof uuid !== 'string') {
-          throw new Error(`SRS 暂停卡片 UUID 无效：${filePath}`)
-        }
-        this.validateCardUuid(uuid, filePath)
-        unique.add(uuid)
-      }
-      suspended = [...unique].sort()
+    if (!Array.isArray(value.suspended)) {
+      throw new Error(`SRS 暂停卡片数据格式无效：${filePath}`)
     }
-    const pausedAt =
-      value.version === SRS_SCHEMA_VERSION
-        ? this.parseNullableProjectDate(value.pausedAt, 'pausedAt', filePath)
-        : null
-    const lastStudiedAt =
-      value.version === SRS_SCHEMA_VERSION
-        ? this.parseNullableProjectDate(
-            value.lastStudiedAt,
-            'lastStudiedAt',
-            filePath,
-          )
-        : this.deriveLastStudiedAt(cards)
+    const unique = new Set<string>()
+    for (const uuid of value.suspended) {
+      if (typeof uuid !== 'string') {
+        throw new Error(`SRS 暂停卡片 UUID 无效：${filePath}`)
+      }
+      this.validateCardUuid(uuid, filePath)
+      unique.add(uuid)
+    }
+    const suspended = [...unique].sort()
+    const pausedAt = this.parseNullableProjectDate(
+      value.pausedAt,
+      'pausedAt',
+      filePath,
+    )
+    const lastStudiedAt = this.parseNullableProjectDate(
+      value.lastStudiedAt,
+      'lastStudiedAt',
+      filePath,
+    )
     return {
-      state: {
-        version: SRS_SCHEMA_VERSION,
-        cards,
-        suspended,
-        pausedAt,
-        lastStudiedAt,
-      },
-      migrated: value.version !== SRS_SCHEMA_VERSION,
+      version: SRS_SCHEMA_VERSION,
+      cards,
+      suspended,
+      pausedAt,
+      lastStudiedAt,
     }
   }
 
@@ -817,18 +800,6 @@ export class LearningSrsStore {
 
   private shiftIsoDate(value: string, durationMs: number): string {
     return new Date(new Date(value).getTime() + durationMs).toISOString()
-  }
-
-  private deriveLastStudiedAt(
-    cards: Record<string, SrsCardState>,
-  ): string | null {
-    let latest: string | null = null
-    for (const card of Object.values(cards)) {
-      if (card.lastReview && (latest === null || card.lastReview > latest)) {
-        latest = card.lastReview
-      }
-    }
-    return latest
   }
 
   private latestTimestamp(current: string | null, candidate: string): string {

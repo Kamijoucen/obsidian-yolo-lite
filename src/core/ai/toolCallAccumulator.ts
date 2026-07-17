@@ -15,9 +15,6 @@ export type CanonicalToolEvent =
       provider: string
       receivedAt: number
       id?: string
-      metadata?: {
-        thoughtSignature?: string
-      }
     }
   | {
       type: 'call.name.set'
@@ -58,9 +55,6 @@ type ToolCallRecord = {
   index: number
   provider: string
   id?: string
-  metadata?: {
-    thoughtSignature?: string
-  }
   toolName?: string
   assemblyKind: AssemblyKind
   rawArgsText: string
@@ -79,9 +73,6 @@ type ToolCallRecord = {
 export type AccumulatedToolCallSnapshot = {
   index: number
   id?: string
-  metadata?: {
-    thoughtSignature?: string
-  }
   function?: {
     name?: string
     arguments?: ToolCallArguments
@@ -115,7 +106,6 @@ const createRecord = (
   index: event.index,
   provider: event.provider,
   id: event.id,
-  metadata: event.metadata,
   assemblyKind: 'none',
   rawArgsText: '',
   streamState: 'open',
@@ -186,7 +176,6 @@ export class ToolCallAccumulator {
         return
       }
       existing.id ??= event.id
-      existing.metadata ??= event.metadata
       existing.updatedAt = event.receivedAt
       return
     }
@@ -268,7 +257,6 @@ export class ToolCallAccumulator {
       .map((record) => ({
         index: record.index,
         id: record.id,
-        metadata: record.metadata,
         function:
           record.toolName || record.rawArgsText
             ? {
@@ -341,7 +329,6 @@ export const createCanonicalToolEventsFromDeltas = ({
       index: delta.index,
       provider,
       id: delta.id,
-      metadata: delta.metadata,
       receivedAt,
     })
 

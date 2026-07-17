@@ -1,30 +1,35 @@
 import { ChatModel } from '../../types/chat-model.types'
 
-import {
-  applyLightweightRequestPolicy,
-  stripHeavyProviderFeatures,
-  stripHostedToolOptions,
-} from './lightweight-request-policy'
+import { stripHeavyProviderFeatures } from './lightweight-request-policy'
 
 const baseModel: ChatModel = {
-  providerId: 'openrouter',
-  id: 'openrouter/google/gemini-3-flash-preview',
-  model: 'google/gemini-3-flash-preview',
+  providerId: 'openai',
+  id: 'openai/gpt-4.1-mini',
+  model: 'gpt-4.1-mini',
 }
+
+const parameter = (
+  key: string,
+  value: string,
+): NonNullable<ChatModel['customParameters']>[number] => ({
+  key,
+  value,
+  type: 'text',
+})
 
 describe('lightweight request policy', () => {
   it('keeps reasoningType while clearing builtin tool configuration', () => {
     const stripped = stripHeavyProviderFeatures({
       ...baseModel,
-      reasoningType: 'gemini',
-      builtinToolProvider: 'openrouter',
+      reasoningType: 'openai',
+      builtinToolProvider: 'gpt',
       builtinTools: {
-        openrouter: { webSearch: { enabled: true, engine: 'native' } },
+        gpt: { webSearch: { enabled: true } },
       },
       web_search_options: { search_context_size: 'medium' },
     })
 
-    expect(stripped.reasoningType).toBe('gemini')
+    expect(stripped.reasoningType).toBe('openai')
     expect(stripped.builtinToolProvider).toBe('none')
     expect(stripped.builtinTools).toBeUndefined()
     expect(stripped.web_search_options).toBeUndefined()
@@ -34,24 +39,19 @@ describe('lightweight request policy', () => {
     const stripped = stripHeavyProviderFeatures({
       ...baseModel,
       customParameters: [
-        // hosted tools / search re-injection
-        { key: 'tools', value: '[{"type":"openrouter:web_search"}]' },
-        { key: 'tool_choice', value: '"auto"' },
-        { key: 'plugins', value: '[{"id":"web"}]' },
-        { key: 'search_parameters', value: '{"mode":"auto"}' },
-        { key: 'web_search_options', value: '{"search_context_size":"low"}' },
-        // reasoning families
-        { key: 'reasoning', value: '{"enabled":true}' },
-        { key: 'reasoning_effort', value: '"high"' },
-        { key: 'thinking', value: '{"type":"enabled"}' },
-        { key: 'enable_thinking', value: 'true' },
-        { key: 'thinking_budget', value: '4096' },
-        { key: 'thinkingConfig', value: '{"thinkingBudget":4096}' },
-        // gemini-native container fields that would smuggle features in
-        { key: 'extra_body', value: '{"tools":[{"type":"web_search"}]}' },
-        { key: 'config', value: '{"tools":[{"googleSearch":{}}]}' },
-        { key: 'generationConfig', value: '{"thinkingConfig":{}}' },
-      ],
+        'tools',
+        'tool_choice',
+        'plugins',
+        'search_parameters',
+        'web_search_options',
+        'reasoning',
+        'reasoning_effort',
+        'thinking',
+        'enable_thinking',
+        'thinking_budget',
+        'extra_body',
+        'config',
+      ].map((key) => parameter(key, 'value')),
     })
 
     expect(stripped.customParameters).toEqual([])
@@ -59,16 +59,16 @@ describe('lightweight request policy', () => {
 
   it('preserves common sampling / output-shape parameters', () => {
     const allowed = [
-      { key: 'temperature', value: '0.3' },
-      { key: 'top_p', value: '0.9' },
-      { key: 'top_k', value: '40' },
-      { key: 'max_tokens', value: '256' },
-      { key: 'max_output_tokens', value: '256' },
-      { key: 'frequency_penalty', value: '0' },
-      { key: 'presence_penalty', value: '0' },
-      { key: 'stop', value: '["\\n"]' },
-      { key: 'seed', value: '42' },
-      { key: 'response_format', value: '{"type":"text"}' },
+      parameter('temperature', '0.3'),
+      parameter('top_p', '0.9'),
+      parameter('top_k', '40'),
+      parameter('max_tokens', '256'),
+      parameter('max_output_tokens', '256'),
+      parameter('frequency_penalty', '0'),
+      parameter('presence_penalty', '0'),
+      parameter('stop', '["\\n"]'),
+      parameter('seed', '42'),
+      parameter('response_format', '{"type":"text"}'),
     ]
     const stripped = stripHeavyProviderFeatures({
       ...baseModel,
@@ -90,34 +90,5 @@ describe('lightweight request policy', () => {
   it('returns an empty customParameters list when input is undefined', () => {
     const stripped = stripHeavyProviderFeatures(baseModel)
     expect(stripped.customParameters).toEqual([])
-  })
-
-  it('clears call-level hosted tool options', () => {
-    expect(
-      stripHostedToolOptions({
-        signal: new AbortController().signal,
-        debugTraceId: 'trace-1',
-        geminiTools: { useWebSearch: true, useUrlContext: true },
-      }),
-    ).toMatchObject({
-      debugTraceId: 'trace-1',
-      geminiTools: undefined,
-    })
-  })
-
-  it('applies model and call-level lightweight policy together', () => {
-    const result = applyLightweightRequestPolicy({
-      model: {
-        ...baseModel,
-        reasoningType: 'openai',
-        builtinToolProvider: 'gpt',
-        builtinTools: { gpt: { webSearch: { enabled: true } } },
-      },
-      options: { geminiTools: { useWebSearch: true } },
-    })
-
-    expect(result.model.reasoningType).toBe('openai')
-    expect(result.model.builtinToolProvider).toBe('none')
-    expect(result.options.geminiTools).toBeUndefined()
   })
 })

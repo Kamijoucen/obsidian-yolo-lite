@@ -5,9 +5,6 @@ import type {
 
 import {
   JS_SANDBOX_BROWSER_READ_DEFAULT_MAX_KB,
-  JS_SANDBOX_DB_QUERY_DEFAULT_MAX_LIMIT,
-  JS_SANDBOX_DB_QUERY_DEFAULT_REQUEST_LIMIT,
-  JS_SANDBOX_DB_QUERY_HARD_MAX_LIMIT,
   JS_SANDBOX_FETCH_DEFAULT_MAX_CONCURRENT,
   JS_SANDBOX_FETCH_DEFAULT_MAX_RESPONSE_KB,
   JS_SANDBOX_FETCH_HARD_MAX_CONCURRENT,
@@ -19,7 +16,7 @@ import {
 export const JS_SANDBOX_BASE_DESCRIPTION =
   'Execute JavaScript in an isolated classic Worker and return JSON. Each call uses a fresh Worker; re-import/recreate state inside the same call. Single expressions are auto-returned; multi-statement code needs an explicit return. No DOM/document/Image; use Worker APIs (Blob, Response, Request, OffscreenCanvas, createImageBitmap, etc.).' +
   ' Errors: every await can reject — do NOT convert failed awaits to null via `.catch(() => null)` or empty catch blocks. Let exceptions propagate so the host returns `{ error, stack }`.' +
-  ' Injected variables: $now (Date object), $isoDate ("YYYY-MM-DD" string), $note ({path:string,basename:string,frontmatter:Record}|null — null in Quick Ask or when no note is open), $content (string|null — full text of the active note), $selection (string|null — user\'s current text selection), $vault ({name:string, adapter:{basePath:string|null}}), $links (string[] — outgoing wiki-link targets from current note), $tags (string[] — tags from current note).' +
+  ' Injected variables: $now (Date object), $isoDate ("YYYY-MM-DD" string), $note ({path:string,basename:string,frontmatter:Record}|null — null when no note is open), $content (string|null — full text of the active note), $selection (string|null — user\'s current text selection), $vault ({name:string, adapter:{basePath:string|null}}), $links (string[] — outgoing wiki-link targets from current note), $tags (string[] — tags from current note).' +
   ' $utils helpers — json: flatten(v), groupBy(items,key), countBy(items,key); text: markdownHeadings(md)->[{level,text,line}], tasks(md)->[{checked,status,text,indent,line}], wikilinks(md)->[{target,alias}]; stats: sum/mean/median/percentile(vals,p)/stdev(vals,sample?); matrix: identity(n)/multiply(a,b)/pow(m,exp); date: addDays(isoDate,days), diffDays(a,b), today().'
 
 export type { JsSandboxSettings } from '../../settings/schema/setting.types'
@@ -30,9 +27,7 @@ export type { JsSandboxSettings } from '../../settings/schema/setting.types'
  * through this helper so the model's view of `js_eval` cannot drift from what
  * the host actually executes.
  *
- * Always returns a normalized view (see normalizeJsSandboxConfig) so any
- * legacy persisted state — e.g. `allowExternalScripts=true` saved before
- * fetch was implicit — is reconciled before downstream code reads it.
+ * Always returns a normalized view (see normalizeJsSandboxConfig).
  */
 export function getJsSandboxSettings(
   settings: Pick<YoloSettings, 'jsSandbox'> | null | undefined,
@@ -74,7 +69,7 @@ function describeHtmlParsingUtils(): string {
 
 /**
  * Build the LLM-facing description. The base section only describes what's
- * always available; every conditional API (vault read, network, $db,
+ * always available; every conditional API (vault read, network,
  * external scripts) — including its existence, signature, caps, and
  * error semantics — is added only when its capability is enabled. When
  * everything is off (the default), the model has no reason to try APIs
@@ -125,32 +120,6 @@ export function buildJsSandboxToolDescription(s: JsSandboxSettings): string {
     enabled.push(describeHtmlParsingUtils())
   }
 
-  if (s.allowDbQuery) {
-    const dbLimit =
-      typeof s.dbQueryMaxLimit === 'number' &&
-      Number.isFinite(s.dbQueryMaxLimit) &&
-      s.dbQueryMaxLimit > 0
-        ? Math.min(
-            JS_SANDBOX_DB_QUERY_HARD_MAX_LIMIT,
-            Math.floor(s.dbQueryMaxLimit),
-          )
-        : JS_SANDBOX_DB_QUERY_DEFAULT_MAX_LIMIT
-    const dbDefaultLimit = Math.min(
-      JS_SANDBOX_DB_QUERY_DEFAULT_REQUEST_LIMIT,
-      dbLimit,
-    )
-    const vaultCapKb = resolveVaultReadDescriptionMaxKb(s)
-    const textReadHint = s.allowVaultRead
-      ? 'For full content of a known result path, use the vault text reader described above.'
-      : `${describeVaultReadText(vaultCapKb)} (available for full Markdown/text reads by known result path).`
-    const binaryHint = s.allowVaultRead
-      ? 'Do not use $db for images/PDF/audio/binary; use $vault.readBinary(path) for those.'
-      : 'Do not use $db for images/PDF/audio/binary — those are out of scope.'
-    enabled.push(
-      `Text only, markdown-focused. await $db.search(query, limit?) -> [{path,content,similarity,...}] (knowledge-base RAG semantic/vector search; \`content\` is the matched chunk excerpt, not the full file; default ${dbDefaultLimit} results, requested limit is clamped to ${dbLimit}; throws when the vault has no index). ${textReadHint} ${binaryHint}`,
-    )
-  }
-
   if (s.allowExternalScripts) {
     // importScripts and nested Worker remain reachable at the JS API level
     // when this capability is on — this is not a lockdown, it is guidance.
@@ -171,18 +140,9 @@ export function buildJsSandboxToolDescription(s: JsSandboxSettings): string {
   const enabledLine =
     enabled.length > 0 ? ` Capabilities enabled: ${enabled.join('; ')}.` : ''
 
-  // When both $vault and $db are on, the model needs picker logic — otherwise
-  // it tends to default to $db (lossy excerpts) even for tasks that demand
-  // exact bytes (path-keyed reads, line-aligned diffs, missing-file checks,
-  // exhaustive scans over a known date/path set).
-  const vaultVsDbLine =
-    s.allowVaultRead && s.allowDbQuery
-      ? ' $vault vs $db: use the vault APIs for exact path-based scans (raw text, missing-file checks, exhaustive scans); use $db.search to discover files by similarity.'
-      : ''
-
   const outputCapBytes = resolveJsSandboxOutputMaxBytes(s.outputMaxKb)
   const outputCapKb = Math.floor(outputCapBytes / 1024)
   const returnLine = ` Output is JSON and truncated above ~${outputCapKb} KB; return aggregates + small samples, not raw collected data.`
 
-  return `${JS_SANDBOX_BASE_DESCRIPTION}${enabledLine}${vaultVsDbLine}${returnLine}`
+  return `${JS_SANDBOX_BASE_DESCRIPTION}${enabledLine}${returnLine}`
 }

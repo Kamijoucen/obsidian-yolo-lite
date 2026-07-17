@@ -1,86 +1,11 @@
-import { EmbeddingModel } from '../../types/embedding-model.types'
-import { LLMProvider } from '../../types/provider.types'
-
 import {
+  getRequestTransportModeValue,
   getResponseStreamingMode,
-  reconcileEmbeddingModelsForProviderUpdate,
 } from './provider-config'
 
-const createEmbeddingModels = (): EmbeddingModel[] => [
-  {
-    id: 'embed-1',
-    providerId: 'bedrock',
-    model: 'amazon.titan-embed-text-v2:0',
-    dimension: 1024,
-  },
-  {
-    id: 'embed-2',
-    providerId: 'other',
-    model: 'text-embedding-3-large',
-    dimension: 3072,
-  },
-]
-
-const createProvider = (overrides: Partial<LLMProvider> = {}): LLMProvider => ({
-  id: 'bedrock',
-  presetType: 'amazon-bedrock',
-  apiType: 'amazon-bedrock',
-  apiKey: 'token',
-  additionalSettings: {
-    awsRegion: 'us-east-1',
-  },
-  ...overrides,
-})
-
-describe('reconcileEmbeddingModelsForProviderUpdate', () => {
-  it('drops embedding models when the updated provider no longer supports embeddings', () => {
-    expect(
-      reconcileEmbeddingModelsForProviderUpdate({
-        embeddingModels: createEmbeddingModels(),
-        previousProvider: createProvider(),
-        nextProvider: createProvider({
-          apiType: 'openai-compatible',
-        }),
-      }),
-    ).toEqual([
-      {
-        id: 'embed-2',
-        providerId: 'other',
-        model: 'text-embedding-3-large',
-        dimension: 3072,
-      },
-    ])
-  })
-
-  it('remaps embedding models when a supported provider id changes', () => {
-    expect(
-      reconcileEmbeddingModelsForProviderUpdate({
-        embeddingModels: createEmbeddingModels(),
-        previousProvider: createProvider(),
-        nextProvider: createProvider({
-          id: 'bedrock-renamed',
-        }),
-      }),
-    ).toEqual([
-      {
-        id: 'embed-1',
-        providerId: 'bedrock-renamed',
-        model: 'amazon.titan-embed-text-v2:0',
-        dimension: 1024,
-      },
-      {
-        id: 'embed-2',
-        providerId: 'other',
-        model: 'text-embedding-3-large',
-        dimension: 3072,
-      },
-    ])
-  })
-})
-
-describe('getResponseStreamingMode', () => {
+describe('provider configuration', () => {
   it.each(['auto', 'streaming', 'non-streaming'] as const)(
-    'returns valid response streaming mode %s',
+    'accepts response streaming mode %s',
     (mode) => {
       expect(getResponseStreamingMode({ responseStreamingMode: mode })).toBe(
         mode,
@@ -88,10 +13,19 @@ describe('getResponseStreamingMode', () => {
     },
   )
 
-  it.each([undefined, {}, { responseStreamingMode: 'invalid' }] as const)(
-    'defaults missing or invalid response streaming mode to auto',
-    (additionalSettings) => {
-      expect(getResponseStreamingMode(additionalSettings)).toBe('auto')
-    },
-  )
+  it('uses safe platform transport defaults', () => {
+    expect(getRequestTransportModeValue(undefined, true)).toBe('node')
+    expect(getRequestTransportModeValue(undefined, false)).toBe('browser')
+    expect(
+      getRequestTransportModeValue(
+        {
+          requestTransportMode: {
+            desktop: 'obsidian',
+            mobile: 'browser',
+          },
+        },
+        true,
+      ),
+    ).toBe('obsidian')
+  })
 })

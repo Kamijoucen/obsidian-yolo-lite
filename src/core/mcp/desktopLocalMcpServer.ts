@@ -7,7 +7,6 @@ import type { YoloSettings } from '../../settings/schema/setting.types'
 import { ToolCallResponseStatus } from '../../types/tool-call.types'
 import { loadDesktopNodeModule } from '../../utils/platform/desktopNodeModule'
 import type { AgentService } from '../agent/service'
-import type { RAGEngine } from '../rag/ragEngine'
 
 import {
   type ExternalAgentTask,
@@ -44,7 +43,6 @@ type DesktopLocalMcpServerOptions = {
   getSettings: () => YoloSettings
   getAgentService: () => Promise<AgentService>
   getMcpManager: () => Promise<McpManager>
-  getRagEngine: () => Promise<RAGEngine>
   openConversation: (conversationId: string) => Promise<void>
 }
 
@@ -53,14 +51,11 @@ const MAX_SESSIONS = 16
 const SESSION_IDLE_TTL_MS = 30 * 60 * 1000
 
 const searchInputSchema = {
-  mode: z
-    .enum(['keyword', 'rag', 'hybrid'])
-    .optional()
-    .describe('Search mode. Defaults to hybrid.'),
+  mode: z.literal('keyword').optional().describe('Keyword search mode.'),
   scope: z
     .enum(['files', 'dirs', 'content', 'all'])
     .optional()
-    .describe('Search scope. RAG and hybrid support content or all.'),
+    .describe('Search scope.'),
   query: z.string().optional().describe('Search query.'),
   path: z
     .string()
@@ -68,8 +63,6 @@ const searchInputSchema = {
     .describe('Optional vault-relative file or folder path.'),
   maxResults: z.number().int().min(1).max(300).optional(),
   caseSensitive: z.boolean().optional(),
-  ragMinSimilarity: z.number().min(0).max(1).optional(),
-  ragLimit: z.number().int().min(1).max(300).optional(),
 }
 
 const taskIdInputSchema = {
@@ -504,7 +497,7 @@ export class DesktopLocalMcpServer implements LocalMcpServerRuntime {
       'vault_search',
       {
         description:
-          'Search the Obsidian vault using YOLO keyword, semantic RAG, or hybrid retrieval. Results are grouped by file with relevant snippets.',
+          'Search the Obsidian vault by file name, folder, or text content.',
         inputSchema: searchInputSchema,
         annotations: { readOnlyHint: true },
       },
@@ -512,7 +505,6 @@ export class DesktopLocalMcpServer implements LocalMcpServerRuntime {
         const result = await callLocalFileTool({
           app: this.options.app,
           settings: this.options.getSettings(),
-          getRagEngine: this.options.getRagEngine,
           toolName: 'fs_search',
           args,
           signal: extra.signal,

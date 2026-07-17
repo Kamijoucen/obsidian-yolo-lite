@@ -14,10 +14,8 @@ function fakeFile(
 }
 
 describe('classifyUploadFiles', () => {
-  it('classifies images, PDFs, Office docs, text attachments, and unsupported files', () => {
+  it('classifies images, Office docs, text attachments, and unsupported files', () => {
     const image = fakeFile('image.png', 'image/png')
-    const typedPdf = fakeFile('doc.pdf', 'application/pdf')
-    const extensionPdf = fakeFile('scanned.PDF', '')
     const docx = fakeFile('report.docx', '')
     const pptx = fakeFile('slides.PPTX', '')
     const xlsx = fakeFile('budget.xlsx', '')
@@ -30,8 +28,6 @@ describe('classifyUploadFiles', () => {
     expect(
       classifyUploadFiles([
         image,
-        typedPdf,
-        extensionPdf,
         docx,
         pptx,
         xlsx,
@@ -43,7 +39,6 @@ describe('classifyUploadFiles', () => {
       ]),
     ).toEqual({
       imageFiles: [image],
-      pdfFiles: [typedPdf, extensionPdf],
       officeFiles: [docx, pptx, xlsx],
       textAttachmentFiles: [txt, md, csv, yaml],
       unsupportedFiles: [unsupported],
@@ -74,12 +69,12 @@ describe('getFilesFromClipboardData', () => {
 
   it('falls back to clipboard files when items do not expose files', () => {
     const image = fakeFile('image.png', 'image/png')
-    const pdf = fakeFile('doc.pdf', 'application/pdf')
+    const text = fakeFile('note.txt', 'text/plain')
     const clipboardData = {
       items: [{ kind: 'string', getAsFile: () => null }],
-      files: [image, pdf],
+      files: [image, text],
     } as unknown as DataTransfer
 
-    expect(getFilesFromClipboardData(clipboardData)).toEqual([image, pdf])
+    expect(getFilesFromClipboardData(clipboardData)).toEqual([image, text])
   })
 })

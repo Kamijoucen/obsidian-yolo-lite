@@ -8,7 +8,7 @@ export type ConfigExportFile = {
   $schema: 'yolo-config-export'
   /** 导出文件格式版本（未来格式变更时递增） */
   formatVersion: number
-  /** 导出时的 SETTINGS_SCHEMA_VERSION，导入时用于驱动迁移链 */
+  /** 导出时的 SETTINGS_SCHEMA_VERSION，导入时必须完全一致 */
   settingsVersion: number
   /** 导出时间 ISO 字符串 */
   exportedAt: string
@@ -49,14 +49,14 @@ export type ImportErrorKey =
   | 'errorNotExportFile'
   | 'errorInvalidFormatVersion'
   | 'errorInvalidSettingsVersion'
-  | 'errorFileFromNewerVersion'
+  | 'errorSettingsVersionMismatch'
   | 'errorEmptyKeys'
   | 'errorMissingData'
   | 'errorTampered'
   | 'errorChecksumMismatch'
   | 'errorVaultParseFailed'
   | 'errorVaultMissingVersion'
-  | 'errorVaultFromNewerVersion'
+  | 'errorVaultVersionMismatch'
   | 'errorVaultEmpty'
   | 'errorApplyVersionMismatch'
   | 'errorApplySchema'

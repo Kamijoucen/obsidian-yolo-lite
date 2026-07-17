@@ -23,13 +23,13 @@ export const DEFAULT_MODEL_REQUEST_POLICY: ModelRequestPolicy = {
 }
 
 export const resolveModelRequestPolicy = (
-  settings: Pick<YoloSettings, 'continuationOptions'>,
+  settings: Pick<YoloSettings, 'requestPolicy'>,
 ): ModelRequestPolicy => {
   const timeoutMs = Math.min(
     MAX_MODEL_REQUEST_TIMEOUT_MS,
     Math.max(
       1000,
-      settings.continuationOptions?.primaryRequestTimeoutMs ??
+      settings.requestPolicy?.primaryRequestTimeoutMs ??
         DEFAULT_MODEL_REQUEST_TIMEOUT_MS,
     ),
   )

@@ -21,8 +21,6 @@ import {
   updateLLMDebugTrace,
 } from '../core/llm/debugCapture'
 import { getChatModelClient } from '../core/llm/manager'
-import type { AutoPromotedTransportMode } from '../core/llm/requestTransport'
-import { promoteProviderTransportModeToObsidian } from '../core/llm/transportModePromotion'
 import { batchLookupImageCache } from '../database/json/chat/imageCacheStore'
 import { compactConversationMessagesForStorage } from '../database/json/chat/promptSnapshotStore'
 import { ChatConversationMetadata } from '../database/json/chat/types'
@@ -136,7 +134,7 @@ type UseChatHistory = {
 export function useChatHistory(): UseChatHistory {
   const app = useApp()
   const plugin = usePlugin()
-  const { settings, setSettings } = useSettings()
+  const { settings } = useSettings()
   const { language } = useLanguage()
   const chatManager = useChatManager()
   const [chatList, setChatList] = useState<ChatConversationMetadata[]>([])
@@ -147,18 +145,6 @@ export function useChatHistory(): UseChatHistory {
   useEffect(() => {
     settingsRef.current = settings
   }, [settings])
-
-  const handleAutoPromoteTransportMode = useCallback(
-    (providerId: string, mode: AutoPromotedTransportMode) => {
-      void promoteProviderTransportModeToObsidian({
-        getSettings: () => settingsRef.current,
-        setSettings,
-        providerId,
-        mode,
-      })
-    },
-    [setSettings],
-  )
 
   const fetchChatList = useCallback(async () => {
     const list = await chatManager.listChats()
@@ -603,7 +589,6 @@ export function useChatHistory(): UseChatHistory {
             const { providerClient, model } = getChatModelClient({
               settings,
               modelId: settings.chatTitleModelId,
-              onAutoPromoteTransportMode: handleAutoPromoteTransportMode,
             })
 
             const defaultTitlePrompt =
@@ -736,14 +721,7 @@ export function useChatHistory(): UseChatHistory {
         titleGenerationInFlightRef.current.delete(id)
       }
     },
-    [
-      chatManager,
-      fetchChatList,
-      handleAutoPromoteTransportMode,
-      language,
-      settings,
-      emitChatHistoryUpdated,
-    ],
+    [chatManager, fetchChatList, language, settings, emitChatHistoryUpdated],
   )
 
   return {
@@ -791,7 +769,6 @@ const serializeChatMessage = (message: ChatMessage): SerializedChatMessage => {
         id: message.id,
         metadata: message.metadata,
       }
-    case 'external_agent_result':
     case 'subagent_result':
     case 'terminal_command_result':
       return message
@@ -836,7 +813,6 @@ const deserializeChatMessage = (
         id: message.id,
         metadata: message.metadata,
       }
-    case 'external_agent_result':
     case 'subagent_result':
     case 'terminal_command_result':
       return message

@@ -45,7 +45,6 @@ import {
   getAssistantToolPreferences,
   getDefaultApprovalModeForTool,
   getEnabledAssistantToolNames,
-  getExplicitlyEnabledAssistantToolNames,
   isAssistantToolEnabled,
   resolveDefaultDisclosureModeForServer,
 } from '../../../core/agent/tool-preferences'
@@ -94,10 +93,7 @@ import { ObsidianToggle } from '../../common/ObsidianToggle'
 import { SimpleSelect } from '../../common/SimpleSelect'
 import { openIconPicker } from '../assistants/AssistantIconPicker'
 
-import {
-  normalizeToolPreferencesForPersistence,
-  normalizeToolSelectionForPersistence,
-} from './agentToolPersistence'
+import { normalizeToolPreferencesForPersistence } from './agentToolPersistence'
 import { AgentWorkspaceScopeEditor } from './AgentWorkspaceScopeEditor'
 
 type AgentsSectionContentProps = {
@@ -287,10 +283,8 @@ function createNewAgent(defaultModelId: string): Assistant {
     modelId: defaultModelId,
     enableTools: true,
     includeBuiltinTools: true,
-    enabledToolNames: [],
     toolPreferences: buildDefaultBuiltinToolPreferences(),
     toolServerPreferences: {},
-    enabledSkills: [],
     skillPreferences: {},
     includeCurrentFileContent: true,
     timeContextEnabled: true,
@@ -307,10 +301,8 @@ function toDraftAgent(
     ...assistant,
     persona: assistant.persona ?? DEFAULT_PERSONA,
     modelId: assistant.modelId ?? fallbackModelId,
-    enabledToolNames: getExplicitlyEnabledAssistantToolNames(assistant),
     toolPreferences: getAssistantToolPreferences(assistant),
     toolServerPreferences: assistant.toolServerPreferences ?? {},
-    enabledSkills: assistant.enabledSkills ?? [],
     skillPreferences: assistant.skillPreferences ?? {},
     enableTools: assistant.enableTools ?? true,
     includeBuiltinTools: assistant.includeBuiltinTools ?? true,
@@ -329,15 +321,9 @@ function updateDraftToolPreferences(
     ...getAssistantToolPreferences(assistant),
   }
   const nextToolPreferences = updater(current)
-  const nextEnabledToolNames = getExplicitlyEnabledAssistantToolNames({
-    ...assistant,
-    toolPreferences: nextToolPreferences,
-  })
-
   return {
     ...assistant,
     toolPreferences: nextToolPreferences,
-    enabledToolNames: nextEnabledToolNames,
   }
 }
 
@@ -530,10 +516,6 @@ export function AgentsSectionContent({
         availableTools,
       ),
       toolServerPreferences: draftAgent.toolServerPreferences ?? {},
-      enabledToolNames: normalizeToolSelectionForPersistence(
-        getExplicitlyEnabledAssistantToolNames(draftAgent),
-        availableTools,
-      ),
       updatedAt: Date.now(),
     }
 
@@ -550,7 +532,6 @@ export function AgentsSectionContent({
       ...settings,
       assistants: nextAssistants,
       currentAssistantId: settings.currentAssistantId ?? normalized.id,
-      quickAskAssistantId: settings.quickAskAssistantId ?? normalized.id,
     })
     if (isDirectEntry) {
       onClose()
@@ -691,15 +672,8 @@ export function AgentsSectionContent({
     if (!draftAgent) {
       return
     }
-    const current = new Set(draftAgent.enabledSkills ?? [])
     const nextPreferences = {
       ...(draftAgent.skillPreferences ?? {}),
-    }
-
-    if (enabled) {
-      current.add(skillName)
-    } else {
-      current.delete(skillName)
     }
 
     nextPreferences[skillName] = {
@@ -709,7 +683,6 @@ export function AgentsSectionContent({
 
     setDraftAgent({
       ...draftAgent,
-      enabledSkills: [...current],
       skillPreferences: nextPreferences,
     })
   }
@@ -726,10 +699,7 @@ export function AgentsSectionContent({
       ...(draftAgent.skillPreferences ?? {}),
       [skillName]: {
         ...(draftAgent.skillPreferences?.[skillName] ?? {}),
-        enabled:
-          draftAgent.skillPreferences?.[skillName]?.enabled ??
-          draftAgent.enabledSkills?.includes(skillName) ??
-          true,
+        enabled: draftAgent.skillPreferences?.[skillName]?.enabled ?? true,
         loadMode,
       },
     }
@@ -1084,14 +1054,14 @@ export function AgentsSectionContent({
 
   const skillEntries = useLiteSkillEntries(app, { settings })
 
-  const disabledSkillIds = useMemo(
-    () => settings.skills?.disabledSkillIds ?? [],
-    [settings.skills?.disabledSkillIds],
+  const disabledSkillNames = useMemo(
+    () => settings.skills?.disabledSkillNames ?? [],
+    [settings.skills?.disabledSkillNames],
   )
   const skillsDir = getYoloSkillsDir(settings)
   const disabledSkillNameSet = useMemo(
-    () => getDisabledSkillNameSet(disabledSkillIds),
-    [disabledSkillIds],
+    () => getDisabledSkillNameSet(disabledSkillNames),
+    [disabledSkillNames],
   )
 
   const skillRows = useMemo(() => {

@@ -213,7 +213,7 @@ describe('createConversationCompactionSummary', () => {
   })
 
   it('accepts a non-empty summary even when stray tool calls are returned', async () => {
-    // Providers that ignore tool_choice:'none' (Gemini, etc.) may still emit a
+    // Providers that ignore tool_choice:'none' may still emit a
     // tool call; as long as summary text exists we accept it without retrying.
     mockedExecuteSingleTurn.mockResolvedValueOnce(
       stubSingleTurnResult('<summary>kept</summary>', [

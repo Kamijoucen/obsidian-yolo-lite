@@ -1,11 +1,10 @@
-import { App, Notice, Platform, normalizePath } from 'obsidian'
+import { App, Notice, normalizePath } from 'obsidian'
 import { useCallback, useEffect, useState } from 'react'
 
 import {
   DEFAULT_CHAT_MODELS,
   DEFAULT_CHAT_MODEL_ID,
   DEFAULT_CHAT_TITLE_MODEL_ID,
-  DEFAULT_EMBEDDING_MODELS,
   DEFAULT_PROVIDERS,
 } from '../../../constants'
 import { useLanguage } from '../../../contexts/language-context'
@@ -14,16 +13,11 @@ import { ensureJsonDbRootDir } from '../../../core/paths/yoloManagedData'
 import { ChatManager } from '../../../database/json/chat/ChatManager'
 import { clearAllEditReviewSnapshotStores } from '../../../database/json/chat/editReviewSnapshotStore'
 import { clearImageCache } from '../../../database/json/chat/imageCacheStore'
-import { clearPdfTextCache } from '../../../database/json/chat/pdfTextCacheStore'
 import { clearAllPromptSnapshotStores } from '../../../database/json/chat/promptSnapshotStore'
 import { clearAllTimelineHeightCacheStores } from '../../../database/json/chat/timelineHeightCacheStore'
 import { CHAT_DIR } from '../../../database/json/constants'
 import YoloPlugin from '../../../main'
 import { yoloSettingsSchema } from '../../../settings/schema/setting.types'
-import {
-  folderPathsToIncludePatterns,
-  includePatternsToFolderPaths,
-} from '../../../utils/rag-utils'
 import { ObsidianButton } from '../../common/ObsidianButton'
 import { ObsidianSetting } from '../../common/ObsidianSetting'
 import { ObsidianTextInput } from '../../common/ObsidianTextInput'
@@ -45,23 +39,6 @@ const CHAT_SNAPSHOT_DIR = 'chat_snapshots'
 const EDIT_REVIEW_SNAPSHOT_DIR = 'edit_review_snapshots'
 const TIMELINE_HEIGHT_CACHE_DIR = 'timeline_height_cache'
 const IMAGE_CACHE_DIR = 'image_cache'
-const PDF_CACHE_DIR = 'pdf_cache'
-const DEBUG_LOGS_DIR = 'YOLO/logs'
-/** Legacy cache dir from removed delegate_external_agent tool. */
-const LEGACY_EXTERNAL_AGENT_PROGRESS_DIR = 'external_agent_progress'
-
-const clearLegacyExternalAgentProgressDir = async (
-  app: App,
-  settings: Parameters<typeof ensureJsonDbRootDir>[1],
-): Promise<void> => {
-  const rootDir = await ensureJsonDbRootDir(app, settings)
-  const path = normalizePath(
-    `${rootDir}/${CHAT_DIR}/${LEGACY_EXTERNAL_AGENT_PROGRESS_DIR}`,
-  )
-  if (await app.vault.adapter.exists(path)) {
-    await app.vault.adapter.rmdir(path, true)
-  }
-}
 
 const formatBytes = (bytes: number): string => {
   if (bytes < 1024) {
@@ -120,28 +97,19 @@ const loadStorageUsage = async (
     editReviewSnapshotBytes,
     timelineHeightCacheBytes,
     imageCacheBytes,
-    pdfCacheBytes,
-    agentProgressBytes,
   ] = await Promise.all([
     getPathSize(app, chatDir),
     getPathSize(app, normalizePath(`${chatDir}/${CHAT_SNAPSHOT_DIR}`)),
     getPathSize(app, normalizePath(`${chatDir}/${EDIT_REVIEW_SNAPSHOT_DIR}`)),
     getPathSize(app, normalizePath(`${chatDir}/${TIMELINE_HEIGHT_CACHE_DIR}`)),
     getPathSize(app, normalizePath(`${chatDir}/${IMAGE_CACHE_DIR}`)),
-    getPathSize(app, normalizePath(`${chatDir}/${PDF_CACHE_DIR}`)),
-    getPathSize(
-      app,
-      normalizePath(`${chatDir}/${LEGACY_EXTERNAL_AGENT_PROGRESS_DIR}`),
-    ),
   ])
 
   const snapshotAndCacheBytes =
     promptSnapshotBytes +
     editReviewSnapshotBytes +
     timelineHeightCacheBytes +
-    imageCacheBytes +
-    pdfCacheBytes +
-    agentProgressBytes
+    imageCacheBytes
 
   return {
     chatHistoryBytes: Math.max(0, chatHistoryBytes - snapshotAndCacheBytes),
@@ -162,7 +130,6 @@ const StorageBadge = ({ value }: { value: number | null }) => {
 export function EtcSection({ app, plugin, className }: EtcSectionProps) {
   const { settings, setSettings } = useSettings()
   const { t } = useLanguage()
-  const canSelfUpdate = plugin.canSelfUpdatePlugin()
   const yoloBaseDir = settings.yolo?.baseDir ?? 'YOLO'
   const [storageUsage, setStorageUsage] = useState<StorageUsage>({
     chatHistoryBytes: null,
@@ -214,60 +181,8 @@ export function EtcSection({ app, plugin, className }: EtcSectionProps) {
     })
   }
 
-  const isDebugLogsExcludedFromKnowledgeBase = (): boolean => {
-    return includePatternsToFolderPaths(
-      settings.ragOptions.excludePatterns,
-    ).includes(DEBUG_LOGS_DIR)
-  }
-
-  const excludeDebugLogsFromKnowledgeBase = async () => {
-    const currentSettings = plugin.settings
-    const excludeFolders = includePatternsToFolderPaths(
-      currentSettings.ragOptions.excludePatterns,
-    )
-    if (excludeFolders.includes(DEBUG_LOGS_DIR)) {
-      return
-    }
-
-    await setSettings({
-      ...currentSettings,
-      debug: {
-        ...currentSettings.debug,
-        captureRawRequestDebug: true,
-      },
-      ragOptions: {
-        ...currentSettings.ragOptions,
-        excludePatterns: folderPathsToIncludePatterns([
-          ...excludeFolders,
-          DEBUG_LOGS_DIR,
-        ]),
-      },
-    })
-    new Notice(
-      t('settings.etc.captureRawRequestDebugExcludeLogsSuccess').replace(
-        '{{path}}',
-        DEBUG_LOGS_DIR,
-      ),
-    )
-  }
-
-  const handlePluginAutoUpdateChange = (value: boolean) => {
-    void (async () => {
-      try {
-        await setSettings({
-          ...settings,
-          pluginUpdateAutoDownloadEnabled: value,
-        })
-      } catch (error: unknown) {
-        console.error('Failed to update plugin auto-update setting', error)
-      }
-    })()
-  }
-
   const handleCaptureRawRequestDebugChange = (value: boolean) => {
-    const shouldPromptExcludeLogs =
-      value && !isDebugLogsExcludedFromKnowledgeBase()
-    const updateDebugSettingPromise = Promise.resolve(
+    void Promise.resolve(
       setSettings({
         ...settings,
         debug: {
@@ -275,32 +190,7 @@ export function EtcSection({ app, plugin, className }: EtcSectionProps) {
           captureRawRequestDebug: value,
         },
       }),
-    )
-
-    if (shouldPromptExcludeLogs) {
-      new ConfirmModal(app, {
-        title: t('settings.etc.captureRawRequestDebugExcludeLogsTitle'),
-        message: t(
-          'settings.etc.captureRawRequestDebugExcludeLogsMessage',
-        ).replace('{{path}}', DEBUG_LOGS_DIR),
-        ctaText: t('settings.etc.captureRawRequestDebugExcludeLogsCta'),
-        cancelText: t('common.cancel', 'Cancel'),
-        onConfirm: () => {
-          void (async () => {
-            await updateDebugSettingPromise
-            await excludeDebugLogsFromKnowledgeBase()
-          })().catch((error: unknown) => {
-            console.error(
-              'Failed to exclude debug logs from knowledge base',
-              error,
-            )
-            new Notice(t('common.error'))
-          })
-        },
-      }).open()
-    }
-
-    void updateDebugSettingPromise.catch((error: unknown) => {
+    ).catch((error: unknown) => {
       console.error('Failed to update raw request debug setting', error)
       new Notice(t('common.error'))
     })
@@ -366,16 +256,12 @@ export function EtcSection({ app, plugin, className }: EtcSectionProps) {
             DEFAULT_CHAT_MODELS.find(
               (v) => v.id === DEFAULT_CHAT_TITLE_MODEL_ID,
             )?.id ?? DEFAULT_CHAT_MODELS[0].id
-          const defaultEmbeddingModelId = DEFAULT_EMBEDDING_MODELS[0].id
-
           await setSettings({
             ...settings,
             providers: [...DEFAULT_PROVIDERS],
             chatModels: [...DEFAULT_CHAT_MODELS],
-            embeddingModels: [...DEFAULT_EMBEDDING_MODELS],
             chatModelId: defaultChatModelId,
             chatTitleModelId: defaultChatTitleModelId,
-            embeddingModelId: defaultEmbeddingModelId,
           })
           new Notice(t('settings.etc.resetProvidersSuccess'))
         })().catch((error: unknown) => {
@@ -397,8 +283,6 @@ export function EtcSection({ app, plugin, className }: EtcSectionProps) {
           await clearAllEditReviewSnapshotStores(app, settings)
           await clearAllTimelineHeightCacheStores(app, settings)
           await clearImageCache(app, settings)
-          await clearPdfTextCache(app, settings)
-          await clearLegacyExternalAgentProgressDir(app, settings)
           const nextUsage = await loadStorageUsage(app, settings)
           setStorageUsage(nextUsage)
           new Notice(t('settings.etc.clearChatSnapshotsSuccess'))
@@ -421,7 +305,6 @@ export function EtcSection({ app, plugin, className }: EtcSectionProps) {
             ...settings,
             assistants: [],
             currentAssistantId: undefined,
-            quickAskAssistantId: undefined,
           })
           new Notice(t('settings.etc.resetAgentsSuccess'))
         })().catch((error: unknown) => {
@@ -446,28 +329,6 @@ export function EtcSection({ app, plugin, className }: EtcSectionProps) {
         </div>
 
         <div className="yolo-settings-block-content">
-          <ObsidianSetting
-            name={t('settings.etc.pluginAutoUpdate', '自动下载更新')}
-            desc={
-              Platform.isDesktop && canSelfUpdate
-                ? t(
-                    'settings.etc.pluginAutoUpdateDesc',
-                    '开启后检测到新版本会自动在后台加载。',
-                  )
-                : t(
-                    'settings.etc.pluginAutoUpdateDescUnavailable',
-                    '一键安装仅在桌面端且插件目录可写时可用；当前设备请通过社区插件或 GitHub 手动更新。',
-                  )
-            }
-            className="yolo-settings-card"
-          >
-            <ObsidianToggle
-              value={settings.pluginUpdateAutoDownloadEnabled ?? true}
-              onChange={handlePluginAutoUpdateChange}
-              disabled={!Platform.isDesktop || !canSelfUpdate}
-            />
-          </ObsidianSetting>
-
           <ObsidianSetting
             name={t('settings.etc.exportConfig', '导出配置')}
             desc={t(

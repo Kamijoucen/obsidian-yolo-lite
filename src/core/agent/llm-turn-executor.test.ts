@@ -68,10 +68,6 @@ class MockProvider extends BaseLLMProvider<LLMProvider> {
   ): Promise<AsyncIterable<LLMResponseStreaming>> {
     return this.streamResponseMock(model, request, options)
   }
-
-  getEmbedding(): Promise<number[]> {
-    return Promise.resolve([])
-  }
 }
 
 const TEST_MODEL: ChatModel = {
@@ -99,7 +95,6 @@ describe('AgentLlmTurnExecutor', () => {
       reasoning: undefined,
       annotations: undefined,
       usage: undefined,
-      providerMetadata: undefined,
       toolCalls: [],
     })
 

@@ -150,7 +150,6 @@ export class NativeAgentRuntime implements AgentRuntime {
       workspaceScope: input.workspaceScope,
       allowedSkillPaths: input.allowedSkillPaths,
       apiType: input.apiType,
-      runContext: input.runContext,
       subagentParentContext: input.systemPromptOverride
         ? undefined
         : buildSubagentParentContext(input, this.loopConfig),
@@ -269,7 +268,6 @@ export class NativeAgentRuntime implements AgentRuntime {
                         ]
                       : undefined,
                   resumeAssistantMessage: resumedMessageForTurn,
-                  geminiTools: input.geminiTools,
                   systemPromptOverride: input.systemPromptOverride,
                   onAssistantMessage: (assistantMessage) => {
                     this.upsertAssistantMessage(assistantMessage)
@@ -605,7 +603,6 @@ export class NativeAgentRuntime implements AgentRuntime {
       requestParams: input.requestParams,
       contextualInjections: input.contextualInjections,
       toolCapabilityMode: input.toolCapabilityMode,
-      geminiTools: input.geminiTools,
       systemPromptOverride: input.systemPromptOverride,
       transientRequestMessages: resumeAssistantMessage
         ? [

@@ -225,7 +225,7 @@ describe('collectLLMResponseInfo', () => {
   })
 
   it('summed total_tokens is recomputed from prompt+completion', () => {
-    // Mismatched upstream total_tokens (e.g. anthropic cache quirks) must
+    // Mismatched upstream total_tokens must
     // not leak into the displayed total.
     const info = collectLLMResponseInfo([
       {

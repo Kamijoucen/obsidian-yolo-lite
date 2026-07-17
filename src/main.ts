@@ -1,4 +1,3 @@
-import { type Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import {
   Editor,
@@ -22,9 +21,7 @@ import {
   mountActionToast,
 } from './components/ActionToast'
 import { AcknowledgementModal } from './components/modals/AcknowledgementModal'
-import { mountUpdateToast } from './components/UpdateToast'
 import { CHAT_VIEW_TYPE, LEARNING_VIEW_TYPE } from './constants'
-import { BAKED_PLUGIN_VERSION } from './constants/bakedVersion'
 import type { YoloAgentApi, YoloAgentApiService } from './core/agent/agent-api'
 import type {
   AgentConversationRunSummary,
@@ -36,18 +33,12 @@ import {
   initializeChatGPTOAuthRuntime,
 } from './core/auth/chatgptOAuthRuntime'
 import {
-  clearGeminiOAuthService,
-  getGeminiOAuthService as getGeminiOAuthServiceRuntime,
-  initializeGeminiOAuthRuntime,
-} from './core/auth/geminiOAuthRuntime'
-import {
   BackgroundActivity,
   BackgroundActivityAction,
   BackgroundActivityRegistry,
 } from './core/background/backgroundActivityRegistry'
 import { buildBackgroundStatusModel } from './core/background/backgroundStatusModel'
 import { noteWebviewLeafFocus } from './core/browser/activeWebviewProbe'
-import { WebviewSelectionBridge } from './core/browser/webviewSelectionBridge'
 import type {
   LearningNavigationHandler,
   LearningNavigationTarget,
@@ -60,7 +51,6 @@ import type { LearningStatsSnapshot } from './core/learning/learningStatsService
 import type { ProjectEventBus } from './core/learning/projectEventBus'
 import { LearningSrsStore } from './core/learning/srs/srsStore'
 import { setLLMDebugCaptureEnabled } from './core/llm/debugCapture'
-import { clearRequestTransportMemory } from './core/llm/requestTransport'
 import type {
   LocalMcpServerRuntime,
   LocalMcpServerState,
@@ -72,55 +62,12 @@ import { NotificationService } from './core/notifications/notificationService'
 import {
   type YoloDataMeta,
   extractYoloDataMeta,
-  readVaultDataJson,
   relocateYoloManagedData,
-  removeVaultDataJson,
   stampYoloDataMeta,
 } from './core/paths/yoloManagedData'
 import { getYoloLearningDir } from './core/paths/yoloPaths'
-import { RagAutoUpdateService } from './core/rag/ragAutoUpdateService'
-import { RagCoordinator } from './core/rag/ragCoordinator'
-import type { RAGEngine } from './core/rag/ragEngine'
-import {
-  RagIndexBusyError,
-  RagIndexRunSnapshot,
-  RagIndexService,
-} from './core/rag/ragIndexService'
-import { migrateVaultSkillFrontmatter } from './core/skills/liteSkills'
-import {
-  type InstallationIncompleteDetail,
-  type ReleaseFileName,
-  checkInstallationIntegrityLayer1And2,
-} from './core/update/installationIntegrity'
-import {
-  type PluginUpdateState,
-  applyRepairFiles,
-  applyStagedUpdate,
-  canSelfUpdate,
-  downloadReleaseToStaging,
-  downloadRepairFilesToStaging,
-  getRepairStagingStatus,
-  getStagingDir,
-  getStagingStatus,
-} from './core/update/pluginUpdater'
-import {
-  type ReleaseAssets,
-  type UpdateCheckResult,
-  buildReleaseAssets,
-  checkForUpdate,
-  normalizePluginVersion,
-} from './core/update/updateChecker'
-import type { DatabaseManager } from './database/DatabaseManager'
-import { PGLiteAbortedException } from './database/exception'
 import { ChatManager } from './database/json/chat/ChatManager'
 import { pruneImageCache } from './database/json/chat/imageCacheStore'
-import { prunePdfTextCache } from './database/json/chat/pdfTextCacheStore'
-import type {
-  ReconcileResult,
-  VectorManager,
-} from './database/modules/vector/VectorManager'
-import type { PGliteRuntimeManager } from './database/runtime/PGliteRuntimeManager'
-import { PGLITE_RUNTIME_VERSION } from './database/runtime/pgliteRuntimeMetadata'
 import {
   ChatLeafPlacement,
   ChatLeafSessionManager,
@@ -132,21 +79,6 @@ import {
   buildFullReviewBlocks,
   countModifiedBlocks,
 } from './features/editor/diff-review/review-model'
-import type { InlineSuggestionGhostPayload } from './features/editor/inline-suggestion/inlineSuggestion'
-import { InlineSuggestionController } from './features/editor/inline-suggestion/inlineSuggestionController'
-import type { QuickAskSelectionScope } from './features/editor/quick-ask/quickAsk.types'
-import type { QuickAskLaunchMode } from './features/editor/quick-ask/quickAsk.types'
-import { QuickAskController } from './features/editor/quick-ask/quickAskController'
-import { resolveSelectionChatActions } from './features/editor/selection-chat/resolveSelectionChatActions'
-import { SelectionChatController } from './features/editor/selection-chat/selectionChatController'
-import { selectionHighlightController } from './features/editor/selection-highlight/selectionHighlightController'
-import {
-  SmartSpaceController,
-  SmartSpaceDraftState,
-} from './features/editor/smart-space/smartSpaceController'
-import { TabCompletionController } from './features/editor/tab-completion/tabCompletionController'
-import { WriteAssistController } from './features/editor/write-assist/writeAssistController'
-import { enablePdfScreenshotFeature } from './features/pdf-screenshot'
 import { type Language, createTranslationFunction, loadLocale } from './i18n'
 import { LearningView } from './LearningView'
 import {
@@ -159,17 +91,9 @@ import {
 } from './settings/schema/settings'
 import { YoloSettingTab } from './settings/SettingTab'
 import type { ApplyViewState } from './types/apply-view.types'
-import { ConversationOverrideSettings } from './types/conversation-settings.types'
-import type {
-  Mentionable,
-  MentionableBlockData,
-  MentionableImage,
-} from './types/mentionable'
-import { MentionableFile, MentionableFolder } from './types/mentionable'
 import { isUntitledConversationTitle } from './utils/chat/conversationTitle'
 import { stableStringify } from './utils/json/stableStringify'
 import { applyKnownMaxContextTokensToChatModels } from './utils/llm/model-capability-registry'
-import { getMentionableBlockData } from './utils/obsidian'
 import { ensureBufferByteLengthCompat } from './utils/runtime/ensureBufferByteLengthCompat'
 import { YOLO_ICON_ID, YOLO_ICON_SVG } from './yoloIcon'
 
@@ -181,9 +105,6 @@ export type {
   YoloAgentRunResult,
 } from './core/agent/agent-api'
 
-export type { PluginUpdateState } from './core/update/pluginUpdater'
-
-const STARTUP_GRACE_MS = 30 * 1000
 type TranslateFn = (keyPath: string, fallback?: string) => string
 type BackgroundStatusPanelAction =
   | BackgroundActivityAction
@@ -194,50 +115,17 @@ export default class YoloPlugin extends Plugin {
   settingsChangeListeners: ((newSettings: YoloSettings) => void)[] = []
   private deviceId: string | null = null
   private currentSettingsMeta: YoloDataMeta | null = null
-  updateCheckResult: UpdateCheckResult | null = null
-  private hasCheckedForUpdate = false
-  private updateCheckListeners: (() => void)[] = []
-  pluginUpdateState: PluginUpdateState = { status: 'idle' }
-  private pluginUpdateListeners: (() => void)[] = []
-  private pluginUpdateDownloadPromise: Promise<void> | null = null
-  private updateToastCleanup: (() => void) | null = null
   private actionToastController: ActionToastController | null = null
-  installationIncompleteDetail: InstallationIncompleteDetail | null = null
-  private installationIncompleteBannerDismissed = false
-  private installationIncompleteListeners: (() => void)[] = []
-  private installationIntegrityCheckStarted = false
   mcpManager: McpManager | null = null
-  dbManager: DatabaseManager | null = null
-  private dbManagerInitPromise: Promise<DatabaseManager> | null = null
   private timeoutIds: ReturnType<typeof setTimeout>[] = [] // Use ReturnType instead of number
-  private pgliteRuntimeManager: PGliteRuntimeManager | null = null
-  private pgliteRuntimeManagerInitPromise: Promise<PGliteRuntimeManager> | null =
-    null
-  private isContinuationInProgress = false
-  private activeAbortControllers: Set<AbortController> = new Set()
   private learningGenerationAbortControllers: Set<AbortController> = new Set()
-  private tabCompletionController: TabCompletionController | null = null
-  private inlineSuggestionController: InlineSuggestionController | null = null
   private diffReviewController: DiffReviewController | null = null
-  private smartSpaceDraftState: SmartSpaceDraftState = null
-  private smartSpaceController: SmartSpaceController | null = null
-  // Selection chat state
-  private selectionChatController: SelectionChatController | null = null
-  // Obsidian command IDs (un-namespaced) registered for selection-chat shortcuts.
-  // Tracked so we can drop stale commands when the user edits the action list.
-  private registeredSelectionChatCommandIds: string[] = []
-  private selectionChatCommandsFingerprint: string | null = null
   private chatViewNavigator: ChatViewNavigator | null = null
   private chatLeafSessionManager: ChatLeafSessionManager | null = null
   private newTabEmptyStateEnhancer: NewTabEmptyStateEnhancer | null = null
-  private ragAutoUpdateService: RagAutoUpdateService | null = null
-  private ragCoordinator: RagCoordinator | null = null
-  private ragIndexService: RagIndexService | null = null
   private mcpCoordinator: McpCoordinator | null = null
   private localMcpServer: LocalMcpServerRuntime | null = null
   private localMcpSettingsUnsubscribe: (() => void) | null = null
-  private webviewSelectionBridge: WebviewSelectionBridge | null = null
-  private writeAssistController: WriteAssistController | null = null
   private learningEventBus: ProjectEventBus | null = null
   private learningSrsStore: LearningSrsStore | null = null
   private learningStatsService: LearningStatsService | null = null
@@ -246,8 +134,6 @@ export default class YoloPlugin extends Plugin {
   // Model list cache for provider model fetching
   private modelListCache: Map<string, { models: string[]; timestamp: number }> =
     new Map()
-  // Quick Ask state
-  private quickAskController: QuickAskController | null = null
   private agentService: AgentService | null = null
   private agentServiceReady: Promise<AgentService> | null = null
   private agentApiService: YoloAgentApiService | null = null
@@ -275,14 +161,6 @@ export default class YoloPlugin extends Plugin {
     }
   >()
 
-  getSmartSpaceDraftState(): SmartSpaceDraftState {
-    return this.smartSpaceDraftState
-  }
-
-  setSmartSpaceDraftState(state: SmartSpaceDraftState) {
-    this.smartSpaceDraftState = state
-  }
-
   private getPromptSourceSettingsFingerprint(
     settings: YoloSettings | undefined,
   ): string {
@@ -292,7 +170,7 @@ export default class YoloPlugin extends Plugin {
     return stableStringify({
       systemPrompt: settings.systemPrompt ?? '',
       baseDir: normalizePath(settings.yolo?.baseDir ?? ''),
-      disabledSkillIds: [...(settings.skills?.disabledSkillIds ?? [])]
+      disabledSkillNames: [...(settings.skills?.disabledSkillNames ?? [])]
         .map((id) => id.trim())
         .sort(),
       assistants: (settings.assistants ?? [])
@@ -457,21 +335,9 @@ export default class YoloPlugin extends Plugin {
     return leaf
   }
 
-  private getModelListCacheKey(
-    providerId: string,
-    scope: 'chat' | 'embedding',
-  ): string {
-    return `${providerId}::${scope}`
-  }
-
   // Get cached model list for a provider
-  getCachedModelList(
-    providerId: string,
-    scope: 'chat' | 'embedding' = 'chat',
-  ): string[] | null {
-    const cached = this.modelListCache.get(
-      this.getModelListCacheKey(providerId, scope),
-    )
+  getCachedModelList(providerId: string): string[] | null {
+    const cached = this.modelListCache.get(providerId)
     if (cached) {
       return cached.models
     }
@@ -479,12 +345,8 @@ export default class YoloPlugin extends Plugin {
   }
 
   // Set model list cache for a provider
-  setCachedModelList(
-    providerId: string,
-    models: string[],
-    scope: 'chat' | 'embedding' = 'chat',
-  ): void {
-    this.modelListCache.set(this.getModelListCacheKey(providerId, scope), {
+  setCachedModelList(providerId: string, models: string[]): void {
+    this.modelListCache.set(providerId, {
       models,
       timestamp: Date.now(),
     })
@@ -530,47 +392,6 @@ export default class YoloPlugin extends Plugin {
     clearChatGPTOAuthService(providerId)
   }
 
-  getGeminiOAuthService(providerId = 'gemini-oauth') {
-    return (
-      getGeminiOAuthServiceRuntime(providerId) ??
-      initializeGeminiOAuthRuntime(this.app, this.manifest.id, providerId)
-    )
-  }
-
-  async getGeminiOAuthStatus(providerId = 'gemini-oauth'): Promise<{
-    connected: boolean
-    email?: string
-    expiresAt?: number
-    projectId?: string
-  }> {
-    const credential =
-      await this.getGeminiOAuthService(providerId).getUsableCredential()
-    if (!credential) {
-      return { connected: false }
-    }
-
-    return {
-      connected: true,
-      ...(credential.email ? { email: credential.email } : {}),
-      ...(credential.managedProjectId || credential.projectId
-        ? {
-            projectId: credential.managedProjectId ?? credential.projectId,
-          }
-        : {}),
-      expiresAt: credential.expiresAt,
-    }
-  }
-
-  async disconnectGeminiOAuthAccount(
-    providerId = 'gemini-oauth',
-  ): Promise<void> {
-    await this.getGeminiOAuthService(providerId).clearCredential()
-  }
-
-  clearGeminiOAuthRuntime(providerId: string): void {
-    clearGeminiOAuthService(providerId)
-  }
-
   private syncOAuthRuntimesFromSettings(
     settings: Pick<YoloSettings, 'providers'> = this.settings,
   ): void {
@@ -578,287 +399,6 @@ export default class YoloPlugin extends Plugin {
       if (provider.presetType === 'chatgpt-oauth') {
         this.getChatGPTOAuthService(provider.id)
       }
-      if (provider.presetType === 'gemini-oauth') {
-        this.getGeminiOAuthService(provider.id)
-      }
-    }
-  }
-
-  async getPGliteRuntimeManager(): Promise<PGliteRuntimeManager> {
-    if (!this.pgliteRuntimeManager) {
-      this.pgliteRuntimeManagerInitPromise ??= (async () => {
-        try {
-          const { PGliteRuntimeManager } = await import(
-            './database/runtime/PGliteRuntimeManager'
-          )
-          if (this.isUnloaded) {
-            throw new Error('[YOLO] Plugin unloaded during PGlite warmup')
-          }
-          this.pgliteRuntimeManager = new PGliteRuntimeManager({
-            app: this.app,
-            pluginId: this.manifest.id,
-            pluginDir: this.manifest.dir
-              ? normalizePath(this.manifest.dir)
-              : undefined,
-            runtimeVersion: PGLITE_RUNTIME_VERSION,
-          })
-          return this.pgliteRuntimeManager
-        } catch (error) {
-          this.pgliteRuntimeManagerInitPromise = null
-          throw error
-        }
-      })()
-    }
-
-    return this.pgliteRuntimeManager ?? this.pgliteRuntimeManagerInitPromise!
-  }
-
-  // Compute a robust panel anchor position just below the caret line
-  private getSmartSpaceController(): SmartSpaceController {
-    if (!this.smartSpaceController) {
-      this.smartSpaceController = new SmartSpaceController({
-        plugin: this,
-        getSettings: () => this.settings,
-        getActiveMarkdownView: () =>
-          this.app.workspace.getActiveViewOfType(MarkdownView),
-        getEditorView: (editor) => this.getEditorView(editor),
-        clearPendingSelectionRewrite: () => {
-          this.selectionChatController?.clearPendingSelectionRewrite()
-        },
-      })
-    }
-    return this.smartSpaceController
-  }
-
-  private getQuickAskController(): QuickAskController {
-    if (!this.quickAskController) {
-      this.quickAskController = new QuickAskController({
-        plugin: this,
-        getSettings: () => this.settings,
-        getActiveMarkdownView: () =>
-          this.app.workspace.getActiveViewOfType(MarkdownView),
-        getEditorView: (editor) => this.getEditorView(editor),
-        getActiveFileTitle: () =>
-          this.app.workspace.getActiveFile()?.basename?.trim() ?? '',
-        closeSmartSpace: () => this.closeSmartSpace(),
-      })
-    }
-    return this.quickAskController
-  }
-
-  private closeSmartSpace() {
-    this.getSmartSpaceController().close()
-  }
-
-  private showSmartSpace(
-    editor: Editor,
-    view: EditorView,
-    showQuickActions = true,
-  ) {
-    this.getSmartSpaceController().show(editor, view, showQuickActions)
-  }
-
-  // Quick Ask methods
-  private showQuickAsk(editor: Editor, view: EditorView) {
-    const selectionOptions = this.getQuickAskSelectionOptions(editor)
-    if (selectionOptions) {
-      this.getQuickAskController().showWithOptions(
-        editor,
-        view,
-        selectionOptions,
-      )
-      return
-    }
-
-    this.getQuickAskController().show(editor, view)
-  }
-
-  private getQuickAskSelectionOptions(editor: Editor) {
-    const selectedText = editor.getSelection()
-    if (!selectedText || selectedText.trim().length === 0) {
-      return undefined
-    }
-
-    const markdownView = this.app.workspace.getActiveViewOfType(MarkdownView)
-    if (!markdownView) {
-      return undefined
-    }
-
-    const data = getMentionableBlockData(editor, markdownView)
-    if (!data) {
-      return undefined
-    }
-
-    const mentionable = {
-      type: 'block',
-      ...data,
-      source: 'selection',
-    } as const
-
-    return {
-      initialMentionables: [mentionable],
-      editContextText: selectedText,
-      editSelectionFrom: editor.getCursor('from'),
-      selectionScope: {
-        mentionable,
-        selectionFrom: editor.getCursor('from'),
-      } satisfies QuickAskSelectionScope,
-    }
-  }
-
-  private showQuickAskWithAutoSend(
-    editor: Editor,
-    view: EditorView,
-    options: {
-      prompt: string
-      mentionables: Mentionable[]
-      selectionScope?: QuickAskSelectionScope
-      initialAssistantId?: string
-    },
-  ) {
-    this.getQuickAskController().showWithAutoSend(editor, view, options)
-  }
-
-  private showQuickAskWithOptions(
-    editor: Editor,
-    view: EditorView,
-    options: {
-      initialPrompt?: string
-      initialMentionables?: Mentionable[]
-      initialMode?: QuickAskLaunchMode
-      initialInput?: string
-      editContextText?: string
-      editSelectionFrom?: { line: number; ch: number }
-      selectionScope?: QuickAskSelectionScope
-      autoSend?: boolean
-      initialAssistantId?: string
-    },
-  ) {
-    this.getQuickAskController().showWithOptions(editor, view, options)
-  }
-
-  private createQuickAskTriggerExtension(): Extension {
-    return this.getQuickAskController().createTriggerExtension()
-  }
-
-  // Selection Chat methods
-  private getSelectionChatController(): SelectionChatController {
-    if (!this.selectionChatController) {
-      this.selectionChatController = new SelectionChatController({
-        plugin: this,
-        app: this.app,
-        getSettings: () => this.settings,
-        t: (key, fallback) => this.t(key, fallback),
-        getEditorView: (editor) => this.getEditorView(editor),
-        showQuickAskWithOptions: (editor, view, options) =>
-          this.showQuickAskWithOptions(editor, view, options),
-        showQuickAskWithAutoSend: (editor, view, options) =>
-          this.showQuickAskWithAutoSend(editor, view, options),
-        showQuickAskFromPdf: (args) =>
-          this.getQuickAskController().showFromPdf(args),
-        pruneOrphanedQuickAskPdfInstance: (activePdfLeaves) =>
-          this.getQuickAskController().pruneOrphanedPdfInstance(
-            activePdfLeaves,
-          ),
-        openChatWithSelectionAndPrefill: async (
-          selectedBlock,
-          text,
-          assistantId,
-        ) => {
-          await this.getChatViewNavigator().openChatWithSelectionAndPrefill(
-            selectedBlock,
-            text,
-            assistantId,
-          )
-        },
-        addSelectionToSidebarChat: async (selectedBlock) => {
-          await this.getChatViewNavigator().addSelectionBlockToChat(
-            selectedBlock,
-          )
-        },
-        openChatWithSelectionAndSend: async (
-          selectedBlock,
-          text,
-          assistantId,
-        ) => {
-          await this.getChatViewNavigator().openChatWithSelectionAndSend(
-            selectedBlock,
-            text,
-            assistantId,
-          )
-        },
-        isSmartSpaceOpen: () => this.smartSpaceController?.isOpen() ?? false,
-      })
-    }
-    return this.selectionChatController
-  }
-
-  private initializeSelectionChat() {
-    this.getSelectionChatController().initialize()
-  }
-
-  /**
-   * Mirror the user's Cursor Chat 快捷指令 list into Obsidian commands so they
-   * can be assigned hotkeys or surfaced by third-party menu/launcher plugins.
-   * Each call fully rebuilds the set: previously-registered command IDs are
-   * removed first, then the current resolved list is re-registered. Action IDs
-   * are uuid-stable, so user-bound hotkeys persist across label/instruction
-   * edits.
-   */
-  private syncSelectionChatCommands() {
-    const actions = resolveSelectionChatActions(
-      this.settings,
-      (key, fallback) => this.t(key, fallback),
-    )
-    const fingerprint = JSON.stringify(
-      actions.map((a) => [
-        a.id,
-        a.label,
-        a.instruction,
-        a.mode,
-        a.rewriteBehavior,
-        a.assistantId,
-      ]),
-    )
-    if (fingerprint === this.selectionChatCommandsFingerprint) {
-      return
-    }
-    this.selectionChatCommandsFingerprint = fingerprint
-
-    const commandsApi = (
-      this.app as unknown as {
-        commands: { removeCommand: (id: string) => void }
-      }
-    ).commands
-    const pluginId = this.manifest.id
-
-    for (const id of this.registeredSelectionChatCommandIds) {
-      commandsApi.removeCommand(`${pluginId}:${id}`)
-    }
-    this.registeredSelectionChatCommandIds = []
-
-    for (const action of actions) {
-      const commandId = `selection-chat-action:${action.id}`
-      this.addCommand({
-        id: commandId,
-        name: `[Cursor Chat] ${action.label}`,
-        editorCallback: (editor: Editor) => {
-          const selected = editor.getSelection()
-          if (!selected || selected.trim().length === 0) {
-            new Notice('请先选中文本')
-            return
-          }
-          void this.getSelectionChatController().executeAction(
-            action.id,
-            editor,
-            action.instruction,
-            action.mode,
-            action.rewriteBehavior,
-            action.assistantId,
-          )
-        },
-      })
-      this.registeredSelectionChatCommandIds.push(commandId)
     }
   }
 
@@ -869,66 +409,11 @@ export default class YoloPlugin extends Plugin {
     return this.chatViewNavigator
   }
 
-  private getRagAutoUpdateService(): RagAutoUpdateService {
-    if (!this.ragAutoUpdateService) {
-      this.ragAutoUpdateService = new RagAutoUpdateService({
-        getSettings: () => this.settings,
-        setSettings: (settings) => this.setSettings(settings),
-        runIndex: async (request) => {
-          // Background auto-update never surfaces partial failures (product
-          // decision: settings page shows them durably via the snapshot). The
-          // reconcile result is intentionally discarded here.
-          await this.getRagIndexService().runIndex({
-            mode: 'sync',
-            scope: request,
-            trigger: 'auto',
-            retryPolicy: 'transient',
-          })
-        },
-        markRetryScheduled: (input) =>
-          this.getRagIndexService().markRetryScheduled({
-            mode: 'sync',
-            retryAt: input.retryAt,
-            failureMessage: input.failureMessage,
-          }),
-        clearRetryScheduled: () =>
-          this.getRagIndexService().clearRetryScheduled(),
-      })
-    }
-    return this.ragAutoUpdateService
-  }
-
-  private getRagIndexService(): RagIndexService {
-    if (!this.ragIndexService) {
-      this.ragIndexService = new RagIndexService({
-        app: this.app,
-        getRagEngine: () => this.getRagCoordinator().getRagEngine(),
-        activityRegistry: this.getBackgroundActivityRegistry(),
-        isRagEnabled: () => !!this.settings?.ragOptions?.enabled,
-        t: (key, fallback) => this.t(key, fallback),
-      })
-    }
-    return this.ragIndexService
-  }
-
   private getBackgroundActivityRegistry(): BackgroundActivityRegistry {
     if (!this.backgroundActivityRegistry) {
       this.backgroundActivityRegistry = new BackgroundActivityRegistry()
     }
     return this.backgroundActivityRegistry
-  }
-
-  private getRagCoordinator(): RagCoordinator {
-    if (!this.ragCoordinator) {
-      this.ragCoordinator = new RagCoordinator({
-        app: this.app,
-        getSettings: () => this.settings,
-        ensureRuntimeReady: async () =>
-          (await this.getPGliteRuntimeManager()).ensureReady(),
-        getDbManager: () => this.getDbManager(),
-      })
-    }
-    return this.ragCoordinator
   }
 
   private async getMcpCoordinator(): Promise<McpCoordinator> {
@@ -942,7 +427,6 @@ export default class YoloPlugin extends Plugin {
         registerSettingsListener: (
           listener: (settings: YoloSettings) => void,
         ) => this.addSettingsChangeListener(listener),
-        getRagEngine: () => this.getRAGEngine(),
         promptSourceWatcher: agentService.getPromptSourceWatcher(),
       })
     }
@@ -959,7 +443,6 @@ export default class YoloPlugin extends Plugin {
       getSettings: () => this.settings,
       getAgentService: () => this.warmupAgentService(),
       getMcpManager: () => this.getMcpManager(),
-      getRagEngine: () => this.getRAGEngine(),
       openConversation: (conversationId) =>
         this.openChatView({ initialConversationId: conversationId }),
     })
@@ -992,75 +475,6 @@ export default class YoloPlugin extends Plugin {
     return this.localMcpServer.subscribe(listener)
   }
 
-  private startWebviewSelectionBridge(): void {
-    this.webviewSelectionBridge?.destroy()
-    this.webviewSelectionBridge = new WebviewSelectionBridge(this.app, {
-      isEnabled: () =>
-        this.settings.continuationOptions?.enableSelectionChat ?? true,
-      onSelection: (selection) => {
-        const targetLeaf = this.getChatLeafSessionManager().resolveTargetLeaf()
-        if (targetLeaf?.view instanceof ChatView) {
-          targetLeaf.view.syncWebSelectionToInput(selection)
-        }
-      },
-      onClear: () => {
-        const targetLeaf = this.getChatLeafSessionManager().resolveTargetLeaf()
-        if (targetLeaf?.view instanceof ChatView) {
-          targetLeaf.view.clearSelectionFromChat()
-        }
-      },
-    })
-    this.webviewSelectionBridge.start()
-  }
-
-  private createSmartSpaceTriggerExtension(): Extension {
-    return this.getSmartSpaceController().createTriggerExtension()
-  }
-
-  private getActiveConversationOverrides():
-    | ConversationOverrideSettings
-    | undefined {
-    const leaf = this.getChatViewNavigator().resolveTargetChatLeaf({
-      allowCreate: false,
-    })
-    if (!(leaf?.view instanceof ChatView)) {
-      return undefined
-    }
-    return leaf.view.getCurrentConversationOverrides()
-  }
-
-  private resolveContinuationParams(overrides?: ConversationOverrideSettings): {
-    temperature?: number
-    topP?: number
-    stream: boolean
-  } {
-    const continuation = this.settings.continuationOptions ?? {}
-
-    const temperature =
-      typeof continuation.temperature === 'number'
-        ? continuation.temperature
-        : typeof overrides?.temperature === 'number'
-          ? overrides.temperature
-          : undefined
-
-    const overrideTopP = overrides?.top_p
-    const topP =
-      typeof continuation.topP === 'number'
-        ? continuation.topP
-        : typeof overrideTopP === 'number'
-          ? overrideTopP
-          : undefined
-
-    const stream =
-      typeof continuation.stream === 'boolean'
-        ? continuation.stream
-        : typeof overrides?.stream === 'boolean'
-          ? overrides.stream
-          : true
-
-    return { temperature, topP, stream }
-  }
-
   private resolveObsidianLanguage(): Language {
     const rawLanguage = String(getLanguage() ?? '')
       .trim()
@@ -1068,67 +482,6 @@ export default class YoloPlugin extends Plugin {
     if (rawLanguage.startsWith('zh')) return 'zh'
     if (rawLanguage.startsWith('it')) return 'it'
     return 'en'
-  }
-
-  private warnIfInstallationIncomplete() {
-    this.checkAndHandleInstallationIntegrity()
-  }
-
-  private checkAndHandleInstallationIntegrity(): void {
-    if (this.installationIntegrityCheckStarted) {
-      return
-    }
-    this.installationIntegrityCheckStarted = true
-
-    void (async () => {
-      const detail = await checkInstallationIntegrityLayer1And2(
-        this,
-        BAKED_PLUGIN_VERSION || null,
-      )
-
-      if (!detail) {
-        return
-      }
-
-      console.error(
-        `[YOLO] Installation integrity issue: target=${detail.targetVersion}, ` +
-          `suspects=${detail.suspectFiles.join(', ')}`,
-      )
-      this.installationIncompleteDetail = detail
-      this.notifyInstallationIncompleteListeners()
-
-      if (canSelfUpdate(this)) {
-        void this.autoRepairInstallation()
-      }
-    })()
-  }
-
-  isInstallationIncompleteBannerDismissed(): boolean {
-    return this.installationIncompleteBannerDismissed
-  }
-
-  dismissInstallationIncompleteBanner(): void {
-    this.installationIncompleteBannerDismissed = true
-    this.notifyInstallationIncompleteListeners()
-  }
-
-  addInstallationIncompleteListener(listener: () => void): () => void {
-    this.installationIncompleteListeners.push(listener)
-    return () => {
-      this.installationIncompleteListeners =
-        this.installationIncompleteListeners.filter((l) => l !== listener)
-    }
-  }
-
-  private notifyInstallationIncompleteListeners(): void {
-    for (const listener of this.installationIncompleteListeners) {
-      listener()
-    }
-  }
-
-  /** Re-notify banner subscribers when chat opens (aligned with checkForUpdateOnce). */
-  refreshInstallationIncompleteBanner(): void {
-    this.notifyInstallationIncompleteListeners()
   }
 
   private _tCache?: { language: Language; fn: TranslateFn }
@@ -1145,20 +498,6 @@ export default class YoloPlugin extends Plugin {
   }
 
   private cancelAllAiTasks() {
-    if (this.activeAbortControllers.size === 0) {
-      this.isContinuationInProgress = false
-      return
-    }
-    for (const controller of Array.from(this.activeAbortControllers)) {
-      try {
-        controller.abort()
-      } catch {
-        // Ignore abort errors; controllers may already be settled.
-      }
-    }
-    this.activeAbortControllers.clear()
-    this.isContinuationInProgress = false
-    this.tabCompletionController?.cancelRequest()
     this.agentService?.abortAll()
   }
 
@@ -1475,9 +814,6 @@ export default class YoloPlugin extends Plugin {
       (activity) =>
         activity.status === 'running' || activity.status === 'waiting',
     )
-    const failedActivities = activities.filter(
-      (activity) => activity.status === 'failed',
-    )
     const agentActivities = runningActivities.filter(
       (activity) => activity.kind === 'agent',
     )
@@ -1516,13 +852,6 @@ export default class YoloPlugin extends Plugin {
             'statusBar.agentRunning',
             '当前有 {count} 个 agent 正在运行',
           ).replace('{count}', String(agentActivities.length))
-    }
-
-    if (runningActivities.length === 1 && failedActivities.length === 0) {
-      const [activity] = runningActivities
-      if (activity.kind === 'rag-index') {
-        return this.t('statusBar.ragAutoUpdateRunning', '知识库正在后台更新')
-      }
     }
 
     if (runningActivities.length > 0) {
@@ -1779,10 +1108,6 @@ export default class YoloPlugin extends Plugin {
         })
         return
       }
-      if (currentAction.type === 'open-knowledge-settings') {
-        this.openKnowledgeSettings()
-        return
-      }
       if (currentAction.type === 'open-learning-view') {
         void this.openLearningView()
         return
@@ -1834,13 +1159,6 @@ export default class YoloPlugin extends Plugin {
     return activity.detail?.trim() ?? ''
   }
 
-  private openKnowledgeSettings(): void {
-    // @ts-expect-error: setting property exists in Obsidian's App but is not typed
-    this.app.setting.open()
-    // @ts-expect-error: setting property exists in Obsidian's App but is not typed
-    this.app.setting.openTabById(this.manifest.id)
-  }
-
   private resolveAgentConversationTitle(title: string | undefined): string {
     if (!isUntitledConversationTitle(title)) {
       return title!.trim()
@@ -1871,76 +1189,6 @@ export default class YoloPlugin extends Plugin {
     }
     const maybeEditor = editor as Editor & { cm?: EditorView }
     return maybeEditor.cm instanceof EditorView
-  }
-
-  private setInlineSuggestionGhost(
-    view: EditorView,
-    payload: InlineSuggestionGhostPayload,
-  ) {
-    this.getInlineSuggestionController().setInlineSuggestionGhost(view, payload)
-  }
-
-  private showThinkingIndicator(
-    view: EditorView,
-    from: number,
-    label: string,
-    snippet?: string,
-  ) {
-    this.getInlineSuggestionController().showThinkingIndicator(
-      view,
-      from,
-      label,
-      snippet,
-    )
-  }
-
-  private hideThinkingIndicator(view: EditorView) {
-    this.getInlineSuggestionController().hideThinkingIndicator(view)
-  }
-
-  private getTabCompletionController(): TabCompletionController {
-    if (!this.tabCompletionController) {
-      const inlineSuggestionController = this.getInlineSuggestionController()
-      this.tabCompletionController = new TabCompletionController({
-        getSettings: () => this.settings,
-        setSettings: (newSettings) => this.setSettings(newSettings),
-        getEditorView: (editor) => this.getEditorView(editor),
-        getActiveMarkdownView: () =>
-          this.app.workspace.getActiveViewOfType(MarkdownView),
-        getActiveConversationOverrides: () =>
-          this.getActiveConversationOverrides(),
-        resolveContinuationParams: (overrides) =>
-          this.resolveContinuationParams(overrides),
-        getActiveFileTitle: () =>
-          this.app.workspace.getActiveFile()?.basename?.trim() ?? '',
-        setInlineSuggestionGhost: (view, payload) =>
-          inlineSuggestionController.setInlineSuggestionGhost(view, payload),
-        showTabLoadingDots: (view, from) =>
-          inlineSuggestionController.showTabLoadingDots(view, from),
-        hideTabLoadingDots: (view) =>
-          inlineSuggestionController.hideTabLoadingDots(view),
-        clearInlineSuggestion: () =>
-          inlineSuggestionController.clearInlineSuggestion(),
-        setActiveInlineSuggestion: (suggestion) =>
-          inlineSuggestionController.setActiveInlineSuggestion(suggestion),
-        addAbortController: (controller) =>
-          this.activeAbortControllers.add(controller),
-        removeAbortController: (controller) =>
-          this.activeAbortControllers.delete(controller),
-        isContinuationInProgress: () => this.isContinuationInProgress,
-      })
-    }
-    return this.tabCompletionController
-  }
-
-  private getInlineSuggestionController(): InlineSuggestionController {
-    if (!this.inlineSuggestionController) {
-      this.inlineSuggestionController = new InlineSuggestionController({
-        getEditorView: (editor) => this.getEditorView(editor),
-        getTabCompletionController: () => this.getTabCompletionController(),
-      })
-    }
-    return this.inlineSuggestionController
   }
 
   private getDiffReviewController(): DiffReviewController {
@@ -1999,86 +1247,14 @@ export default class YoloPlugin extends Plugin {
     return false
   }
 
-  private getWriteAssistController(): WriteAssistController {
-    if (!this.writeAssistController) {
-      this.writeAssistController = new WriteAssistController({
-        app: this.app,
-        getSettings: () => this.settings,
-        setSettings: (newSettings) => this.setSettings(newSettings),
-        t: (key, fallback) => this.t(key, fallback),
-        getActiveConversationOverrides: () =>
-          this.getActiveConversationOverrides(),
-        resolveContinuationParams: (overrides) =>
-          this.resolveContinuationParams(overrides),
-        getEditorView: (editor) => this.getEditorView(editor),
-        closeSmartSpace: () => this.closeSmartSpace(),
-        registerTimeout: (callback, timeout) =>
-          this.registerTimeout(callback, timeout),
-        addAbortController: (controller) =>
-          this.activeAbortControllers.add(controller),
-        removeAbortController: (controller) =>
-          this.activeAbortControllers.delete(controller),
-        setContinuationInProgress: (value) => {
-          this.isContinuationInProgress = value
-        },
-        cancelAllAiTasks: () => this.cancelAllAiTasks(),
-        clearInlineSuggestion: () => this.clearInlineSuggestion(),
-        setInlineSuggestionGhost: (view, payload) =>
-          this.setInlineSuggestionGhost(view, payload),
-        showThinkingIndicator: (view, from, label, snippet) =>
-          this.showThinkingIndicator(view, from, label, snippet),
-        hideThinkingIndicator: (view) => this.hideThinkingIndicator(view),
-        setContinuationSuggestion: (params) =>
-          this.getInlineSuggestionController().setContinuationSuggestion(
-            params,
-          ),
-        openApplyReview: (state) => this.openApplyReview(state),
-      })
-    }
-    return this.writeAssistController
-  }
-
-  private cancelTabCompletionRequest() {
-    this.tabCompletionController?.cancelRequest()
-  }
-
-  private clearTabCompletionTimer() {
-    this.tabCompletionController?.clearTimer()
-  }
-
-  private clearInlineSuggestion() {
-    this.inlineSuggestionController?.clearInlineSuggestion()
-  }
-
-  private handleTabCompletionEditorChange(editor: Editor) {
-    this.getTabCompletionController().handleEditorChange(editor)
-  }
-
-  private async handleCustomRewrite(
-    editor: Editor,
-    customPrompt?: string,
-    preSelectedText?: string,
-    preSelectionFrom?: { line: number; ch: number },
-  ) {
-    return this.getWriteAssistController().handleCustomRewrite(
-      editor,
-      customPrompt,
-      preSelectedText,
-      preSelectionFrom,
-    )
-  }
-
   async onload() {
     this.isUnloaded = false
     ensureBufferByteLengthCompat()
-    clearRequestTransportMemory()
     addIcon(YOLO_ICON_ID, YOLO_ICON_SVG)
 
     await this.loadSettings()
     await loadLocale(this.resolveObsidianLanguage())
     this._tCache = undefined
-    await this.migrateLegacyVaultMirrorIfNeeded()
-    this.warnIfInstallationIncomplete()
     this.syncOAuthRuntimesFromSettings()
     await this.initializeLocalMcpServer().catch((error) => {
       console.error('[YOLO] Failed to initialize local MCP server', error)
@@ -2086,71 +1262,16 @@ export default class YoloPlugin extends Plugin {
 
     // Prune stale image cache entries (>30 days) on startup
     void pruneImageCache(this.app, 30, this.settings)
-    void prunePdfTextCache(this.app, 30, this.settings)
-    await this.getRagIndexService().initialize()
-    // One-time, idempotent migration of vault skill files from legacy
-    // `id + name` frontmatter to the converged `name`-only form. Kicked off as
-    // soon as the vault index is ready. Note: Obsidian's metadataCache updates
-    // asynchronously after each modify, so on the very first post-upgrade
-    // startup a skill list/open may briefly observe pre-migration frontmatter
-    // until the cache re-parses — self-healing and one-time. A full
-    // cache-event barrier is intentionally avoided as over-engineering for this
-    // sub-second transient; the migration is idempotent so it always converges.
-    this.app.workspace.onLayoutReady(() => {
-      void migrateVaultSkillFrontmatter(this.app, this.settings)
-    })
     this.app.workspace.onLayoutReady(() => {
       this.getLearningStatsService().start()
     })
-    this.app.workspace.onLayoutReady(() => {
-      if (!this.settings?.ragOptions?.enabled) return
-      const snapshot = this.getRagIndexSnapshot()
-      if (
-        snapshot.status !== 'retry_scheduled' ||
-        snapshot.retryPolicy !== 'transient'
-      ) {
-        return
-      }
-      const hasValidEmbeddingModel =
-        !!this.settings?.embeddingModelId &&
-        this.settings.embeddingModels.some(
-          (m) => m.id === this.settings.embeddingModelId,
-        )
-      if (
-        hasValidEmbeddingModel &&
-        this.settings.ragOptions.autoUpdateEnabled &&
-        snapshot.trigger === 'auto'
-      ) {
-        this.getRagAutoUpdateService().restoreRetryScheduled(
-          snapshot.retryAt,
-          STARTUP_GRACE_MS,
-        )
-      } else if (hasValidEmbeddingModel && snapshot.trigger === 'manual') {
-        this.getRagIndexService().restoreRetryScheduledRun(STARTUP_GRACE_MS)
-      }
-    })
-
     this.registerView(CHAT_VIEW_TYPE, (leaf) => new ChatView(leaf, this))
     this.registerView(
       LEARNING_VIEW_TYPE,
       (leaf) => new LearningView(leaf, this),
     )
-    this.startWebviewSelectionBridge()
-
     this.newTabEmptyStateEnhancer = new NewTabEmptyStateEnhancer(this)
     this.newTabEmptyStateEnhancer.enable()
-
-    enablePdfScreenshotFeature(this)
-
-    this.registerEditorExtension(selectionHighlightController.createExtension())
-    this.registerEditorExtension(this.createSmartSpaceTriggerExtension())
-    this.registerEditorExtension(this.createQuickAskTriggerExtension())
-    this.registerEditorExtension(
-      this.getInlineSuggestionController().createExtension(),
-    )
-    this.registerEditorExtension(
-      this.getTabCompletionController().createTriggerExtension(),
-    )
 
     // This creates an icon in the left ribbon.
     this.addRibbonIcon(YOLO_ICON_ID, 'YOLO Chat', () => {
@@ -2166,10 +1287,6 @@ export default class YoloPlugin extends Plugin {
 
     this.setupBackgroundActivityStatusBar()
     this.actionToastController = mountActionToast()
-    this.updateToastCleanup = mountUpdateToast(this)
-    // The toast is anchored to the window (not a chat view), so trigger the
-    // check at load time rather than waiting for a chat view to open.
-    this.checkForUpdateOnce()
     let shouldStartAgentNotifications = true
     void this.warmupAgentService()
       .then(() => {
@@ -2254,57 +1371,6 @@ export default class YoloPlugin extends Plugin {
       }
     })
 
-    this.addCommand({
-      id: 'add-selection-to-chat',
-      name: this.t('commands.addSelectionToChat'),
-      editorCallback: (editor: Editor, view: MarkdownView) => {
-        void this.addSelectionToChat(editor, view)
-      },
-    })
-
-    this.addCommand({
-      id: 'trigger-smart-space',
-      name: this.t('commands.triggerSmartSpace'),
-      editorCallback: (editor: Editor) => {
-        const cmView = this.getEditorView(editor)
-        if (!cmView) return
-        this.showSmartSpace(editor, cmView, true)
-      },
-    })
-
-    this.addCommand({
-      id: 'trigger-quick-ask',
-      name: this.t('commands.triggerQuickAsk'),
-      editorCallback: (editor: Editor) => {
-        const cmView = this.getEditorView(editor)
-        if (!cmView) return
-        this.showQuickAsk(editor, cmView)
-      },
-    })
-
-    this.addCommand({
-      id: 'trigger-tab-completion',
-      name: this.t('commands.triggerTabCompletion'),
-      editorCallback: (editor: Editor) => {
-        const cmView = this.getEditorView(editor)
-        if (!cmView) return
-        const cursorOffset = cmView.state.selection.main.head
-        void this.getTabCompletionController().run(editor, cursorOffset)
-      },
-    })
-
-    this.addCommand({
-      id: 'accept-inline-suggestion',
-      name: this.t('commands.acceptInlineSuggestion'),
-      editorCallback: (editor: Editor) => {
-        const cmView = this.getEditorView(editor)
-        if (!cmView) return
-        this.getInlineSuggestionController().tryAcceptInlineSuggestionFromView(
-          cmView,
-        )
-      },
-    })
-
     // Register file context menu for adding file/folder to chat
     this.registerEvent(
       this.app.workspace.on('file-menu', (menu, file) => {
@@ -2329,133 +1395,6 @@ export default class YoloPlugin extends Plugin {
         }
       }),
     )
-
-    // Auto update: listen to vault file changes and schedule incremental index updates
-    this.registerEvent(
-      this.app.vault.on('create', (file) =>
-        this.getRagAutoUpdateService().onVaultFileChanged(file, 'create'),
-      ),
-    )
-    this.registerEvent(
-      this.app.vault.on('modify', (file) =>
-        this.getRagAutoUpdateService().onVaultFileChanged(file, 'modify'),
-      ),
-    )
-    this.registerEvent(
-      this.app.vault.on('delete', (file) =>
-        this.getRagAutoUpdateService().onVaultFileChanged(file, 'delete'),
-      ),
-    )
-    this.registerEvent(
-      this.app.vault.on('rename', (file, oldPath) => {
-        const service = this.getRagAutoUpdateService()
-        service.onVaultFileChanged(file, 'rename')
-        if (oldPath)
-          service.onVaultPathChanged(oldPath, {
-            requiresFullScan: file instanceof TFolder,
-          })
-      }),
-    )
-    this.registerDomEvent(window, 'blur', () => {
-      this.getRagAutoUpdateService().onWindowBlur()
-    })
-    this.registerDomEvent(window, 'online', () => {
-      this.getRagAutoUpdateService().onOnline()
-    })
-
-    this.addCommand({
-      id: 'rebuild-vault-index',
-      name: this.t('commands.rebuildVaultIndex'),
-      callback: async () => {
-        const notice = new Notice(this.t('notices.rebuildingIndex'), 0)
-        try {
-          const result = await this.getRagIndexService().runIndex({
-            mode: 'rebuild',
-            scope: { kind: 'all' },
-            trigger: 'manual',
-            retryPolicy: 'transient',
-            onProgress: (progress) => {
-              notice.setMessage(
-                `Indexing chunks: ${progress.completedChunks} / ${progress.totalChunks}${
-                  progress.waitingForRateLimit
-                    ? '\n(waiting for rate limit to reset)'
-                    : ''
-                }`,
-              )
-            },
-          })
-          const skipped = result.permanentFailedPaths.length
-          notice.setMessage(
-            skipped > 0
-              ? this.t(
-                  'notices.indexedWithSkipped',
-                  '索引完成，{{count}} 个文件无法索引',
-                ).replace('{{count}}', String(skipped))
-              : this.t('notices.rebuildComplete'),
-          )
-        } catch (error) {
-          if (error instanceof RagIndexBusyError) {
-            notice.setMessage(
-              this.t('statusBar.ragAutoUpdateRunning', '知识库索引正在运行'),
-            )
-          } else {
-            console.error(error)
-            notice.setMessage(this.t('notices.rebuildFailed'))
-          }
-        } finally {
-          this.registerTimeout(() => {
-            notice.hide()
-          }, 1000)
-        }
-      },
-    })
-
-    this.addCommand({
-      id: 'update-vault-index',
-      name: this.t('commands.updateVaultIndex'),
-      callback: async () => {
-        const notice = new Notice(this.t('notices.updatingIndex'), 0)
-        try {
-          const result = await this.getRagIndexService().runIndex({
-            mode: 'sync',
-            scope: { kind: 'all' },
-            trigger: 'manual',
-            retryPolicy: 'none',
-            onProgress: (progress) => {
-              notice.setMessage(
-                `Indexing chunks: ${progress.completedChunks} / ${progress.totalChunks}${
-                  progress.waitingForRateLimit
-                    ? '\n(waiting for rate limit to reset)'
-                    : ''
-                }`,
-              )
-            },
-          })
-          const skipped = result.permanentFailedPaths.length
-          notice.setMessage(
-            skipped > 0
-              ? this.t(
-                  'notices.indexedWithSkipped',
-                  '索引完成，{{count}} 个文件无法索引',
-                ).replace('{{count}}', String(skipped))
-              : this.t('notices.indexUpdated'),
-          )
-        } catch (error) {
-          if (error instanceof RagIndexBusyError) {
-            notice.setMessage(
-              this.t('statusBar.ragAutoUpdateRunning', '知识库索引正在运行'),
-            )
-          } else {
-            console.error(error)
-            notice.setMessage(this.t('notices.indexUpdateFailed'))
-          }
-        } finally {
-          this.registerTimeout(() => {
-            notice.hide()
-          }, 1000)
-        }
-      },
-    })
 
     this.addCommand({
       id: 'export-settings',
@@ -2492,47 +1431,14 @@ export default class YoloPlugin extends Plugin {
     // This adds a settings tab so the user can configure various aspects of the plugin
     this.addSettingTab(new YoloSettingTab(this.app, this))
 
-    // removed templates JSON migration
-
-    // Handle tab completion trigger
     this.registerEvent(
       this.app.workspace.on('active-leaf-change', (leaf) => {
-        try {
-          if (leaf?.view instanceof ChatView) {
-            this.getChatLeafSessionManager().touchLeafActive(leaf)
-          }
-          noteWebviewLeafFocus(this.app, leaf)
-          this.webviewSelectionBridge?.noteWorkspaceChange()
-          const view = this.app.workspace.getActiveViewOfType(MarkdownView)
-          const editor = view?.editor
-          if (editor) {
-            this.handleTabCompletionEditorChange(editor)
-          }
-          this.selectionChatController?.handleActiveLeafChange(leaf ?? null)
-          // Update selection manager with new editor container
-          this.initializeSelectionChat()
-        } catch (err) {
-          console.error('Editor change handler error:', err)
+        if (leaf?.view instanceof ChatView) {
+          this.getChatLeafSessionManager().touchLeafActive(leaf)
         }
+        noteWebviewLeafFocus(this.app, leaf)
       }),
     )
-
-    // Initialize selection chat
-    this.initializeSelectionChat()
-    this.syncSelectionChatCommands()
-
-    // Listen for settings changes to reinitialize Selection Chat
-    this.addSettingsChangeListener((newSettings) => {
-      const enableSelectionChat =
-        newSettings.continuationOptions?.enableSelectionChat ?? true
-      const wasEnabled = this.selectionChatController?.isActive() ?? false
-
-      if (enableSelectionChat !== wasEnabled) {
-        // Re-initialize when the setting changes
-        this.initializeSelectionChat()
-      }
-      this.syncSelectionChatCommands()
-    })
   }
 
   onunload() {
@@ -2541,50 +1447,22 @@ export default class YoloPlugin extends Plugin {
       controller.abort()
     }
     this.learningGenerationAbortControllers.clear()
-    this.updateToastCleanup?.()
-    this.updateToastCleanup = null
     this.actionToastController?.destroy()
     this.actionToastController = null
     this.learningNavigationHandler = null
     this.pendingLearningNavigation = null
     this.learningStatsService?.dispose()
     this.learningStatsService = null
-    this.closeSmartSpace()
-
-    // Selection chat cleanup
-    this.webviewSelectionBridge?.destroy()
-    this.webviewSelectionBridge = null
-    this.selectionChatController?.destroy()
-    this.selectionChatController = null
     this.chatViewNavigator = null
     this.newTabEmptyStateEnhancer = null
-    this.inlineSuggestionController?.clearInlineSuggestion()
-    this.inlineSuggestionController?.destroy()
-    this.inlineSuggestionController = null
     this.diffReviewController?.destroy()
     this.diffReviewController = null
-    this.writeAssistController = null
 
     // clear all timers
     this.timeoutIds.forEach((id) => {
       clearTimeout(id)
     })
     this.timeoutIds = []
-
-    // RagEngine cleanup
-    this.ragIndexService?.cleanup()
-    this.ragIndexService = null
-    this.ragCoordinator?.cleanup()
-    this.ragCoordinator = null
-
-    // Promise cleanup
-    this.dbManagerInitPromise = null
-
-    // DatabaseManager cleanup
-    if (this.dbManager) {
-      void this.dbManager.cleanup()
-    }
-    this.dbManager = null
 
     // McpManager cleanup
     this.localMcpSettingsUnsubscribe?.()
@@ -2594,8 +1472,6 @@ export default class YoloPlugin extends Plugin {
     this.mcpCoordinator?.cleanup()
     this.mcpCoordinator = null
     this.mcpManager = null
-    this.ragAutoUpdateService?.cleanup()
-    this.ragAutoUpdateService = null
     this.agentService?.stopBackgroundTaskResultListener()
     this.agentService?.abortAll()
     this.agentService = null
@@ -2609,16 +1485,6 @@ export default class YoloPlugin extends Plugin {
     )
     // Ensure all in-flight requests are aborted on unload
     this.cancelAllAiTasks()
-    this.clearTabCompletionTimer()
-    this.cancelTabCompletionRequest()
-    this.clearInlineSuggestion()
-
-    // Release the pdfjs worker Blob URL we may have created during this
-    // session. Outstanding workers already spawned keep running; this only
-    // prevents future fetches and lets the GC collect the source string.
-    void import('./utils/pdf/pdfjsLoader').then(({ disposePdfjsWorker }) =>
-      disposePdfjsWorker(),
-    )
   }
 
   async loadSettings() {
@@ -2810,11 +1676,6 @@ export default class YoloPlugin extends Plugin {
       // the manual paste case) corresponds to the user's pre-restore
       // state and would be wrong to move. Tear down the active runtime
       // and let the next access re-init against the new paths.
-      if (this.dbManager) {
-        await this.dbManager.cleanup()
-        this.dbManager = null
-        this.dbManagerInitPromise = null
-      }
       new Notice(
         'YOLO: detected a `baseDir` change in data.json. Reloaded settings against the new path.',
       )
@@ -2822,7 +1683,6 @@ export default class YoloPlugin extends Plugin {
     }
 
     this.syncOAuthRuntimesFromSettings(normalizedSettings)
-    this.ragCoordinator?.updateSettings(normalizedSettings)
     this.settingsChangeListeners.forEach((listener) => {
       listener(normalizedSettings)
     })
@@ -2890,108 +1750,6 @@ export default class YoloPlugin extends Plugin {
     return { raw: extract.raw, meta: diskMeta }
   }
 
-  /**
-   * One-shot migration of the deprecated "vault mirror" feature. Earlier
-   * versions optionally mirrored `data.json` into a vault-visible folder
-   * so that Obsidian Sync (which historically didn't sync plugin configs)
-   * could carry the settings. Modern Obsidian Sync replicates
-   * `.obsidian/plugins/<id>/data.json` natively, and the mirror was the
-   * source of considerable concurrency pain — so we removed it.
-   *
-   * Trigger: presence of the legacy mirror file (or its pointer) on disk.
-   * The legacy `experimental.storeDataInVault` flag has already been
-   * dropped from the schema, so it gets stripped on parse and isn't a
-   * reliable signal anymore — the file's existence is.
-   *
-   * Steps:
-   *   1. Read mirror via the pointer (which honors a custom baseDir).
-   *   2. If the mirror beats plugin-dir under `metaBeats`, adopt mirror
-   *      payload into memory + plugin-dir (verified via re-stamp).
-   *   3. Best-effort delete pointer + mirror file.
-   *   4. Notify the user once.
-   *
-   * Idempotent: a second run finds no mirror and exits silently.
-   */
-  private async migrateLegacyVaultMirrorIfNeeded(): Promise<void> {
-    let mirrorRead
-    try {
-      // Pass current settings so the reader can fall back to the
-      // default mirror path ONLY when the pointer file is genuinely
-      // absent — this covers the partial legacy state where a user
-      // manually deleted the pointer but left `YOLO/.yolo_data.json`
-      // behind. A pointer that exists but is corrupt is treated as
-      // authoritative and yields null, deferring to the next launch
-      // rather than risking a stale default-path mirror.
-      mirrorRead = await readVaultDataJson(this.app, this.settings)
-    } catch (error) {
-      console.warn('[YOLO] Legacy mirror read failed during migration.', error)
-      return
-    }
-    if (!mirrorRead) {
-      return
-    }
-
-    const mirrorMeta = mirrorRead.meta
-    const currentMeta = this.currentSettingsMeta
-    // Adopt mirror only when it strictly beats plugin-dir under the
-    // total `metaBeats` ordering. Both meta-less or local-meta-only =>
-    // keep plugin-dir (it's the new source of truth).
-    const shouldAdoptMirror = !!(
-      mirrorMeta &&
-      (!currentMeta || this.metaBeats(currentMeta, mirrorMeta))
-    )
-
-    if (shouldAdoptMirror && mirrorMeta) {
-      await this.applyExternalSettingsUpdate(mirrorRead.raw, mirrorMeta)
-      try {
-        await this.saveData(stampYoloDataMeta(this.settings, mirrorMeta))
-        this.currentSettingsMeta = mirrorMeta
-      } catch (error) {
-        console.warn(
-          '[YOLO] Failed to persist plugin-dir during legacy mirror migration; aborting cleanup so the mirror remains as the canonical copy.',
-          error,
-        )
-        return
-      }
-      // Read-after-write verify before deleting the canonical mirror
-      // copy. Catches half-committed FS state where `saveData` reported
-      // success but the file isn't actually persisted as expected. On
-      // verification failure, leave the mirror in place so the next
-      // launch retries the migration.
-      try {
-        const verify = extractYoloDataMeta(await this.loadData())
-        if (
-          !verify?.meta ||
-          verify.meta.deviceId !== mirrorMeta.deviceId ||
-          verify.meta.updatedAt !== mirrorMeta.updatedAt
-        ) {
-          console.warn(
-            '[YOLO] Plugin-dir verification failed after legacy mirror migration write; leaving mirror in place for next launch.',
-          )
-          return
-        }
-      } catch (error) {
-        console.warn(
-          '[YOLO] Plugin-dir verification read failed during legacy mirror migration; leaving mirror in place.',
-          error,
-        )
-        return
-      }
-    }
-
-    // Best-effort cleanup of mirror + pointer. Failures are logged but
-    // never block startup.
-    try {
-      await removeVaultDataJson(this.app, this.settings)
-    } catch (error) {
-      console.warn('[YOLO] Failed to remove legacy mirror files.', error)
-    }
-
-    new Notice(
-      'YOLO: migrated legacy vault-mirror settings. Cross-device sync now uses Obsidian Sync (or your sync tool of choice) on the plugin data file directly.',
-    )
-  }
-
   async setSettings(newSettings: YoloSettings) {
     const { ensureDefaultAssistantInSettings } = await import(
       './core/agent/default-assistant'
@@ -3031,47 +1789,24 @@ ${validationResult.error.issues.map((v) => v.message).join('\n')}`)
       previousSettings?.yolo?.baseDir !== normalizedSettings.yolo.baseDir
 
     if (yoloBaseDirChanged) {
-      if (this.dbManager) {
-        // Snapshot the in-memory DB to the OLD location before relocating.
-        // If this fails (#408 OOM, disk full, etc.), the move would carry a
-        // stale snapshot to the new location and silently lose embeddings —
-        // abort the relocation and keep the user on the previous root.
-        try {
-          await this.dbManager.save()
-        } catch (error) {
-          console.error(
-            '[YOLO] Failed to snapshot vector database before base-dir change; aborting move.',
-            error,
-          )
-          new Notice(
-            'Failed to snapshot YOLO vector database. Keeping previous YOLO root folder.',
-          )
-          return
-        }
-      }
       const relocate = () =>
         relocateYoloManagedData({
           app: this.app,
           fromSettings: previousSettings,
           toSettings: normalizedSettings,
         })
-      const migrated = this.learningSrsStore
+      const relocated = this.learningSrsStore
         ? await this.learningSrsStore.runExclusive(async () => {
             const succeeded = await relocate()
             if (succeeded) this.settings = normalizedSettings
             return succeeded
           })
         : await relocate()
-      if (!migrated) {
+      if (!relocated) {
         new Notice(
           'Failed to move YOLO managed data. Keeping previous YOLO root folder.',
         )
         return
-      }
-      if (this.dbManager) {
-        await this.dbManager.cleanup()
-        this.dbManager = null
-        this.dbManagerInitPromise = null
       }
     }
 
@@ -3084,16 +1819,6 @@ ${validationResult.error.issues.map((v) => v.message).join('\n')}`)
     )
 
     this.syncOAuthRuntimesFromSettings(normalizedSettings)
-    this.ragCoordinator?.updateSettings(normalizedSettings)
-
-    // When RAG is disabled, stop all pending auto-update timers and clear
-    // any retry_scheduled state so the background-activity UI disappears.
-    const ragIsEnabled = normalizedSettings.ragOptions.enabled
-    if (!ragIsEnabled) {
-      this.ragAutoUpdateService?.cleanup()
-      this.ragIndexService?.refreshActivity()
-    }
-
     this.settingsChangeListeners.forEach((listener) => {
       listener(normalizedSettings)
     })
@@ -3108,399 +1833,9 @@ ${validationResult.error.issues.map((v) => v.message).join('\n')}`)
     }
   }
 
-  addUpdateCheckListener(listener: () => void): () => void {
-    this.updateCheckListeners.push(listener)
-    return () => {
-      this.updateCheckListeners = this.updateCheckListeners.filter(
-        (l) => l !== listener,
-      )
-    }
-  }
-
-  private notifyUpdateCheckListeners(): void {
-    for (const listener of this.updateCheckListeners) {
-      listener()
-    }
-  }
-
-  addPluginUpdateListener(listener: () => void): () => void {
-    this.pluginUpdateListeners.push(listener)
-    return () => {
-      this.pluginUpdateListeners = this.pluginUpdateListeners.filter(
-        (l) => l !== listener,
-      )
-    }
-  }
-
-  private notifyPluginUpdateListeners(): void {
-    for (const listener of this.pluginUpdateListeners) {
-      listener()
-    }
-  }
-
-  private setPluginUpdateState(state: PluginUpdateState): void {
-    this.pluginUpdateState = state
-    this.notifyPluginUpdateListeners()
-  }
-
-  canSelfUpdatePlugin(): boolean {
-    return canSelfUpdate(this)
-  }
-
-  private async refreshPluginUpdateStaging(version: string): Promise<void> {
-    if (!canSelfUpdate(this) || !this.manifest.dir) {
-      return
-    }
-    const stagingDir = getStagingDir(this.manifest.dir, version)
-    const status = await getStagingStatus(
-      this.app.vault.adapter,
-      stagingDir,
-      version,
-    )
-    if (status.ready) {
-      this.setPluginUpdateState({ status: 'ready', version })
-    }
-  }
-
-  async startPluginUpdateDownload(): Promise<void> {
-    const result = this.updateCheckResult
-    if (
-      !result?.hasUpdate ||
-      !result.assets ||
-      !canSelfUpdate(this) ||
-      !this.manifest.dir
-    ) {
-      return
-    }
-
-    return this.downloadPluginRelease(result.latestVersion, result.assets)
-  }
-
-  private repairFilesMatch(
-    left: ReleaseFileName[] | undefined,
-    right: ReleaseFileName[],
-  ): boolean {
-    if (!left || left.length !== right.length) {
-      return false
-    }
-    const sortedLeft = [...left].sort()
-    const sortedRight = [...right].sort()
-    return sortedLeft.every((file, index) => file === sortedRight[index])
-  }
-
-  private async downloadPluginRelease(
-    version: string,
-    assets: ReleaseAssets,
-  ): Promise<void> {
-    if (!canSelfUpdate(this) || !this.manifest.dir) {
-      return
-    }
-
-    if (this.pluginUpdateDownloadPromise) {
-      return this.pluginUpdateDownloadPromise
-    }
-
-    const normalized = normalizePluginVersion(version)
-    if (
-      this.pluginUpdateState.status === 'ready' &&
-      this.pluginUpdateState.version === normalized
-    ) {
-      return
-    }
-
-    if (this.pluginUpdateState.status === 'downloading') {
-      return
-    }
-
-    const stagingDir = getStagingDir(this.manifest.dir, normalized)
-    const existing = await getStagingStatus(
-      this.app.vault.adapter,
-      stagingDir,
-      normalized,
-    )
-    if (existing.ready) {
-      this.setPluginUpdateState({ status: 'ready', version: normalized })
-      return
-    }
-
-    this.setPluginUpdateState({
-      status: 'downloading',
-      version: normalized,
-      progress: 0,
-    })
-
-    this.pluginUpdateDownloadPromise = (async () => {
-      try {
-        await downloadReleaseToStaging({
-          adapter: this.app.vault.adapter,
-          pluginDir: this.manifest.dir!,
-          version: normalized,
-          assets,
-          onProgress: (progress) => {
-            this.setPluginUpdateState({
-              status: 'downloading',
-              version: normalized,
-              progress,
-            })
-          },
-        })
-        this.setPluginUpdateState({ status: 'ready', version: normalized })
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error)
-        this.setPluginUpdateState({
-          status: 'error',
-          version: normalized,
-          message,
-        })
-      } finally {
-        this.pluginUpdateDownloadPromise = null
-      }
-    })()
-
-    return this.pluginUpdateDownloadPromise
-  }
-
-  private async downloadPluginRepair(
-    version: string,
-    assets: ReleaseAssets,
-    files: ReleaseFileName[],
-  ): Promise<void> {
-    if (!canSelfUpdate(this) || !this.manifest.dir || files.length === 0) {
-      return
-    }
-
-    if (this.pluginUpdateDownloadPromise) {
-      return this.pluginUpdateDownloadPromise
-    }
-
-    const normalized = normalizePluginVersion(version)
-    const uniqueFiles = [...new Set(files)]
-    if (
-      this.pluginUpdateState.status === 'ready' &&
-      this.pluginUpdateState.version === normalized &&
-      this.repairFilesMatch(this.pluginUpdateState.repairFiles, uniqueFiles)
-    ) {
-      return
-    }
-
-    if (this.pluginUpdateState.status === 'downloading') {
-      return
-    }
-
-    const stagingDir = getStagingDir(this.manifest.dir, normalized)
-    const existing = await getRepairStagingStatus(
-      this.app.vault.adapter,
-      stagingDir,
-      normalized,
-    )
-    if (existing.ready && this.repairFilesMatch(existing.files, uniqueFiles)) {
-      this.setPluginUpdateState({
-        status: 'ready',
-        version: normalized,
-        repairFiles: uniqueFiles,
-      })
-      return
-    }
-
-    this.setPluginUpdateState({
-      status: 'downloading',
-      version: normalized,
-      progress: 0,
-      repairFiles: uniqueFiles,
-    })
-
-    this.pluginUpdateDownloadPromise = (async () => {
-      try {
-        await downloadRepairFilesToStaging({
-          adapter: this.app.vault.adapter,
-          pluginDir: this.manifest.dir!,
-          version: normalized,
-          assets,
-          files: uniqueFiles,
-          onProgress: (progress) => {
-            this.setPluginUpdateState({
-              status: 'downloading',
-              version: normalized,
-              progress,
-              repairFiles: uniqueFiles,
-            })
-          },
-        })
-        this.setPluginUpdateState({
-          status: 'ready',
-          version: normalized,
-          repairFiles: uniqueFiles,
-        })
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error)
-        this.setPluginUpdateState({
-          status: 'error',
-          version: normalized,
-          message,
-          repairFiles: uniqueFiles,
-        })
-      } finally {
-        this.pluginUpdateDownloadPromise = null
-      }
-    })()
-
-    return this.pluginUpdateDownloadPromise
-  }
-
-  async applyPluginUpdate(): Promise<void> {
-    if (this.pluginUpdateState.status !== 'ready') {
-      return
-    }
-
-    const version = this.pluginUpdateState.version
-    const repairFiles = this.pluginUpdateState.repairFiles
-
-    this.setPluginUpdateState({
-      status: 'applying',
-      version,
-      repairFiles,
-    })
-
-    const applyResult = repairFiles?.length
-      ? await applyRepairFiles(this.app, this, version)
-      : await applyStagedUpdate(this.app, this, version)
-    if (!applyResult.ok) {
-      if (applyResult.reason === 'min_app_version') {
-        const { InstallerUpdateRequiredModal } = await import(
-          './components/modals/InstallerUpdateRequiredModal'
-        )
-        new InstallerUpdateRequiredModal(this.app).open()
-      }
-      this.setPluginUpdateState({
-        status: 'error',
-        version,
-        message: applyResult.reason,
-        repairFiles,
-      })
-      return
-    }
-
-    this.setPluginUpdateState({ status: 'idle' })
-    this.updateCheckResult = null
-    this.notifyUpdateCheckListeners()
-  }
-
-  private async autoRepairInstallation(): Promise<void> {
-    const detail = this.installationIncompleteDetail
-    if (!detail || !canSelfUpdate(this) || detail.suspectFiles.length === 0) {
-      return
-    }
-
-    const version = normalizePluginVersion(detail.targetVersion)
-    const files = [...new Set(detail.suspectFiles)]
-    if (
-      this.pluginUpdateState.status === 'ready' &&
-      this.pluginUpdateState.version === version &&
-      this.repairFilesMatch(this.pluginUpdateState.repairFiles, files)
-    ) {
-      return
-    }
-
-    const assets = buildReleaseAssets(version)
-    if (!assets) {
-      return
-    }
-
-    await this.downloadPluginRepair(version, assets, files)
-  }
-
-  async repairIncompleteInstallation(): Promise<void> {
-    const detail = this.installationIncompleteDetail
-    if (!detail || !canSelfUpdate(this)) {
-      return
-    }
-
-    const version = normalizePluginVersion(detail.targetVersion)
-    const files = [...new Set(detail.suspectFiles)]
-    if (
-      this.pluginUpdateState.status === 'ready' &&
-      this.pluginUpdateState.version === version &&
-      this.repairFilesMatch(this.pluginUpdateState.repairFiles, files)
-    ) {
-      await this.applyPluginUpdate()
-      return
-    }
-
-    const assets = buildReleaseAssets(version)
-    if (!assets) {
-      return
-    }
-
-    await this.downloadPluginRepair(version, assets, files)
-  }
-
-  isUpdateVersionSoftDismissed(version: string): boolean {
-    return this.settings.softDismissedUpdateVersion === version
-  }
-
-  isUpdateVersionMuted(version: string): boolean {
-    const muted = normalizePluginVersion(this.settings.mutedUpdateVersion)
-    if (!muted) {
-      return false
-    }
-    return muted === normalizePluginVersion(version)
-  }
-
-  async muteUpdateVersion(version: string): Promise<void> {
-    const normalized = normalizePluginVersion(version)
-    await this.setSettings({
-      ...this.settings,
-      mutedUpdateVersion: normalized,
-    })
-    if (this.isUpdateVersionMuted(normalized)) {
-      this.updateCheckResult = null
-      this.notifyUpdateCheckListeners()
-    }
-  }
-
-  async dismissUpdateVersion(version: string): Promise<void> {
-    await this.setSettings({
-      ...this.settings,
-      softDismissedUpdateVersion: version,
-    })
-    // setSettings can no-op (e.g. external settings conflict). Only hide the
-    // toast when the dismissal state actually persisted, so the user can retry.
-    const persisted = this.isUpdateVersionSoftDismissed(version)
-    if (persisted) {
-      this.updateCheckResult = null
-      this.notifyUpdateCheckListeners()
-    }
-  }
-
-  checkForUpdateOnce(): void {
-    if (this.hasCheckedForUpdate) {
-      return
-    }
-    this.hasCheckedForUpdate = true
-    void (async () => {
-      const fetched = await checkForUpdate(this.manifest.version)
-      if (fetched?.hasUpdate) {
-        if (this.isUpdateVersionMuted(fetched.latestVersion)) {
-          return
-        }
-        this.updateCheckResult = fetched
-        this.notifyUpdateCheckListeners()
-        await this.refreshPluginUpdateStaging(fetched.latestVersion)
-        if (
-          this.settings.pluginUpdateAutoDownloadEnabled &&
-          canSelfUpdate(this) &&
-          fetched.assets
-        ) {
-          void this.startPluginUpdateDownload()
-        }
-      }
-    })()
-  }
-
   async openChatView(options?: {
     placement?: ChatLeafPlacement
     openNewChat?: boolean
-    selectedBlock?: MentionableBlockData
     initialConversationId?: string
     prefillText?: string
     forceNewLeaf?: boolean
@@ -3521,143 +1856,12 @@ ${validationResult.error.issues.map((v) => v.message).join('\n')}`)
     await this.getChatViewNavigator().openCurrentOrSidebarNewChat()
   }
 
-  async addSelectionToChat(editor: Editor, view: MarkdownView) {
-    const editorView = this.getEditorView(editor)
-    const data = getMentionableBlockData(editor, view)
-    if (!data) return
-
-    const highlightId = crypto.randomUUID()
-    if (
-      editorView &&
-      (this.settings.continuationOptions.persistSelectionHighlight ?? true)
-    ) {
-      const sel = editorView.state.selection.main
-      if (!sel.empty) {
-        selectionHighlightController.addHighlight(
-          editorView,
-          highlightId,
-          { from: sel.from, to: sel.to },
-          'pinned',
-          'chat',
-        )
-      }
-    }
-
-    await this.getChatViewNavigator().addSelectionBlockToChat({
-      ...data,
-      source: 'selection-pinned',
-      highlightId,
-    })
-  }
-
   async addFileToChat(file: TFile) {
     await this.getChatViewNavigator().addFileToChat(file)
   }
 
   async addFolderToChat(folder: TFolder) {
     await this.getChatViewNavigator().addFolderToChat(folder)
-  }
-
-  /**
-   * Inject a MentionableImage into the most recently active chat panel.
-   * If no chat panel is open, a new sidebar chat is created automatically.
-   * This is the typed public API used by the PDF screenshot feature.
-   */
-  async addImageToActiveChat(image: MentionableImage): Promise<void> {
-    await this.getChatViewNavigator().addImageToChat(image)
-  }
-
-  async getDbManager(): Promise<DatabaseManager> {
-    if (this.dbManager) {
-      return this.dbManager
-    }
-
-    if (!this.dbManagerInitPromise) {
-      this.dbManagerInitPromise = (async () => {
-        try {
-          const runtime = await (
-            await this.getPGliteRuntimeManager()
-          ).ensureReady()
-          const { DatabaseManager } = await import('./database/DatabaseManager')
-          this.dbManager = await DatabaseManager.create(
-            this.app,
-            runtime.dir,
-            this.settings,
-            this.manifest.dir ? normalizePath(this.manifest.dir) : undefined,
-          )
-          return this.dbManager
-        } catch (error) {
-          this.dbManagerInitPromise = null
-          if (error instanceof PGLiteAbortedException) {
-            const { InstallerUpdateRequiredModal } = await import(
-              './components/modals/InstallerUpdateRequiredModal'
-            )
-            new InstallerUpdateRequiredModal(this.app).open()
-          }
-          throw error
-        }
-      })()
-    }
-
-    // if initialization is running, wait for it to complete instead of creating a new initialization promise
-    return this.dbManagerInitPromise
-  }
-
-  async tryGetVectorManager(): Promise<VectorManager | null> {
-    try {
-      const dbManager = await this.getDbManager()
-      return dbManager.getVectorManager()
-    } catch (error) {
-      console.warn(
-        '[YOLO] Failed to initialize vector manager, skip vector-dependent operations.',
-        error,
-      )
-      return null
-    }
-  }
-
-  async getRAGEngine(): Promise<RAGEngine> {
-    return this.getRagCoordinator().getRagEngine()
-  }
-
-  async runRagIndex(options: {
-    mode: 'rebuild' | 'sync'
-    scope: import('./core/rag/reconciler').ReconcileScope
-    trigger: 'manual' | 'auto'
-    retryPolicy: 'none' | 'transient'
-    onProgress?: (
-      progress: import('./components/chat-view/QueryProgress').IndexProgress,
-    ) => void
-  }): Promise<ReconcileResult> {
-    return await this.getRagIndexService().runIndex(options)
-  }
-
-  /** Re-issue the previously failed run. Falls back to a full sync reconcile. */
-  async retryRagIndex(): Promise<void> {
-    const snapshot = this.getRagIndexSnapshot()
-    if (snapshot.mode === null) {
-      return
-    }
-    await this.runRagIndex({
-      mode: snapshot.mode,
-      scope: { kind: 'all' },
-      trigger: 'manual',
-      retryPolicy: 'transient',
-    })
-  }
-
-  subscribeToRagIndexRuns(
-    listener: (snapshot: RagIndexRunSnapshot) => void,
-  ): () => void {
-    return this.getRagIndexService().subscribe(listener)
-  }
-
-  getRagIndexSnapshot(): RagIndexRunSnapshot {
-    return this.getRagIndexService().getSnapshot()
-  }
-
-  cancelRagIndex(): void {
-    this.getRagIndexService().cancelActiveRun()
   }
 
   async getMcpManager(): Promise<McpManager> {
@@ -3669,65 +1873,5 @@ ${validationResult.error.issues.map((v) => v.message).join('\n')}`)
   private registerTimeout(callback: () => void, timeout: number): void {
     const timeoutId = setTimeout(callback, timeout)
     this.timeoutIds.push(timeoutId)
-  }
-
-  // Public wrapper for use in React modal
-  async continueWriting(
-    editor: Editor,
-    customPrompt?: string,
-    geminiTools?: { useWebSearch?: boolean; useUrlContext?: boolean },
-    mentionables?: (MentionableFile | MentionableFolder)[],
-  ) {
-    // Check if this is actually a rewrite request from Selection Chat
-    const pendingRewrite =
-      this.selectionChatController?.consumePendingSelectionRewrite() ?? null
-    if (pendingRewrite) {
-      const { editor: rewriteEditor, selectedText, from } = pendingRewrite
-
-      // Pass the pre-saved selectedText and position directly to handleCustomRewrite
-      // No need to re-select or check current selection
-      await this.handleCustomRewrite(
-        rewriteEditor,
-        customPrompt,
-        selectedText,
-        from,
-      )
-      return
-    }
-    return this.handleContinueWriting(
-      editor,
-      customPrompt,
-      geminiTools,
-      mentionables,
-    )
-  }
-
-  // Public wrapper for use in React panel
-  async customRewrite(
-    editor: Editor,
-    customPrompt?: string,
-    preSelectedText?: string,
-    preSelectionFrom?: { line: number; ch: number },
-  ) {
-    return this.handleCustomRewrite(
-      editor,
-      customPrompt,
-      preSelectedText,
-      preSelectionFrom,
-    )
-  }
-
-  private async handleContinueWriting(
-    editor: Editor,
-    customPrompt?: string,
-    geminiTools?: { useWebSearch?: boolean; useUrlContext?: boolean },
-    mentionables?: (MentionableFile | MentionableFolder)[],
-  ) {
-    return this.getWriteAssistController().handleContinueWriting(
-      editor,
-      customPrompt,
-      geminiTools,
-      mentionables,
-    )
   }
 }

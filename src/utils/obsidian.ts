@@ -252,16 +252,3 @@ export function openMarkdownFile(
     })
   }
 }
-
-/** Open a vault PDF at a 1-based page (Obsidian PDF viewer subpath `#page=N`). */
-export function openPdfFileAtPage(
-  app: App,
-  filePath: string,
-  page: number,
-): void {
-  const file = app.vault.getFileByPath(filePath)
-  if (!file) return
-  const safePage = Math.max(1, Math.floor(page))
-  const leaf = openTabInMainArea(app)
-  void leaf.openFile(file, { eState: { subpath: `#page=${safePage}` } })
-}

@@ -12,12 +12,10 @@ const tool = (name: string): McpTool => ({
 const assistantWithTools = (
   enabledToolNames: string[],
   includeBuiltinTools = true,
-): Pick<
-  Assistant,
-  'toolPreferences' | 'enabledToolNames' | 'includeBuiltinTools'
-> => ({
-  enabledToolNames,
-  toolPreferences: {},
+): Pick<Assistant, 'toolPreferences' | 'includeBuiltinTools'> => ({
+  toolPreferences: Object.fromEntries(
+    enabledToolNames.map((name) => [name, { enabled: true }]),
+  ),
   includeBuiltinTools,
 })
 
@@ -69,6 +67,7 @@ describe('countEnabledVisibleAssistantTools', () => {
       'server__disabled_tool',
     ])
     assistant.toolPreferences = {
+      ...assistant.toolPreferences,
       server__disabled_tool: { enabled: false },
     }
 

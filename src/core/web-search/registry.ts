@@ -1,6 +1,4 @@
 import { bingProvider } from './providers/bing'
-import { geminiGroundingProvider } from './providers/gemini-grounding'
-import { grokSearchProvider } from './providers/grok'
 import { jinaProvider } from './providers/jina'
 import { searxngProvider } from './providers/searxng'
 import { tavilyProvider } from './providers/tavily'
@@ -12,8 +10,6 @@ const PROVIDERS: Record<string, WebSearchProvider<any>> = {
   jina: jinaProvider,
   searxng: searxngProvider,
   bing: bingProvider,
-  'gemini-grounding': geminiGroundingProvider,
-  grok: grokSearchProvider,
   zhipu: zhipuProvider,
 }
 

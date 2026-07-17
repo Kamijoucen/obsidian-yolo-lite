@@ -11,20 +11,14 @@ import {
 describe('model-capability-registry', () => {
   it('normalizes provider-prefixed model ids', () => {
     expect(normalizeModelContextLookupKey('openai/gpt-4.1')).toBe('gpt-4.1')
-    expect(normalizeModelContextLookupKey('models/gemini-2.5-pro')).toBe(
-      'gemini-2.5-pro',
-    )
-    expect(normalizeModelContextLookupKey('claude-sonnet-4.0')).toBe(
-      'claude-sonnet-4.0',
+    expect(normalizeModelContextLookupKey('moonshot/kimi-k2.5')).toBe(
+      'kimi-k2.5',
     )
   })
 
   it('resolves known max context tokens for separator variants', () => {
-    expect(resolveKnownMaxContextTokens('anthropic/claude-sonnet-4.0')).toBe(
-      200000,
-    )
-    expect(resolveKnownMaxContextTokens('gemini-2.5-flash')).toBe(1048576)
-    expect(resolveKnownMaxContextTokens('openrouter/grok-4.20')).toBe(2000000)
+    expect(resolveKnownMaxContextTokens('openai/gpt-5')).toBe(400000)
+    expect(resolveKnownMaxContextTokens('moonshot/kimi-k2.5')).toBe(262144)
     expect(resolveKnownMaxContextTokens('deepseek/deepseek-v4-pro')).toBe(
       1048576,
     )
@@ -34,10 +28,7 @@ describe('model-capability-registry', () => {
     expect(
       resolveKnownChatModelModalities('deepseek/deepseek-v4-flash'),
     ).toEqual(['text'])
-    expect(
-      resolveKnownChatModelModalities('anthropic/claude-sonnet-4.5'),
-    ).toEqual(expect.arrayContaining(['text', 'vision']))
-    expect(resolveKnownChatModelModalities('google/gemini-2.5-flash')).toEqual(
+    expect(resolveKnownChatModelModalities('moonshot/kimi-k2.5')).toEqual(
       expect.arrayContaining(['text', 'vision']),
     )
     expect(
@@ -80,10 +71,10 @@ describe('model-capability-registry', () => {
   it('resolveEffectiveMaxContextTokens falls back to registry when unset', () => {
     expect(
       resolveEffectiveMaxContextTokens({
-        id: 'anthropic/claude-sonnet-4.0',
-        model: 'claude-sonnet-4.0',
+        id: 'moonshot/kimi-k2.5',
+        model: 'kimi-k2.5',
       }),
-    ).toBe(200000)
+    ).toBe(262144)
   })
 
   it('resolveEffectiveMaxContextTokens returns undefined for unknown models', () => {

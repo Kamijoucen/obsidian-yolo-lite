@@ -242,10 +242,8 @@ export function useDynamicPositioning(
           ? getScrollParent(rootElement, false)
           : getNodeBody(targetElement)
 
-      // Position tracking: 由 Floating UI 的 autoUpdate 统一处理 resize、
-      // 祖先 scroll、ResizeObserver,以及 animationFrame 轮询
-      // (后者是关键 —— Quick Ask 浮窗拖拽改的是内联 left/top,既不触发 resize
-      // 也不触发 scroll,只能靠 rAF 比对 getBoundingClientRect 才能感知)。
+      // Floating UI tracks resize, ancestor scrolling, ResizeObserver events,
+      // and animation-frame layout changes.
       const cleanupAutoUpdate = autoUpdate(
         targetElement,
         targetElement,
@@ -693,9 +691,7 @@ export function useMenuAnchorRef(
     const reposition = () => {
       const offsetTop = 4
       const margin = 8
-      const containerEl = rootElement.closest(
-        '.yolo-chat-user-input-container, .yolo-quick-ask-input-row',
-      )
+      const containerEl = rootElement.closest('.yolo-chat-user-input-container')
       const centeredChatContainer = rootElement.closest(
         '.yolo-chat-container--centered',
       )
@@ -764,7 +760,7 @@ export function useMenuAnchorRef(
         if (menuEle) {
           const available = Math.max(margin, Math.floor(rect.top - margin))
           const isMentionPopover = menuEle.classList.contains(
-            'yolo-smart-space-mention-popover',
+            'yolo-mention-menu-popover',
           )
           if (isMentionPopover) {
             const mentionPopoverWidth = isCenteredChatContainer

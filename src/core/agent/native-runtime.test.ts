@@ -178,7 +178,6 @@ describe('NativeAgentRuntime assistant continuation', () => {
       reasoning: undefined,
       annotations: undefined,
       usage: undefined,
-      providerMetadata: undefined,
       toolCalls: [],
     })
 

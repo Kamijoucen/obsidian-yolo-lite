@@ -35,7 +35,6 @@ export abstract class BaseLLMProvider<P extends LLMProvider> {
     const transportMode = providerSupportsTransportModeSelection(this.provider)
       ? resolveRequestTransportMode({
           additionalSettings: this.provider.additionalSettings,
-          hasCustomBaseUrl: Boolean(this.provider.baseUrl?.trim()),
         })
       : undefined
 
@@ -58,12 +57,6 @@ export abstract class BaseLLMProvider<P extends LLMProvider> {
     options?: LLMOptions,
   ): Promise<AsyncIterable<LLMResponseStreaming>>
 
-  abstract getEmbedding(
-    model: string,
-    text: string,
-    options?: { dimensions?: number },
-  ): Promise<number[]>
-
   protected applyCustomModelParameters<T extends Record<string, unknown>>(
     model: ChatModel,
     request: T,
@@ -80,14 +73,12 @@ export abstract class BaseLLMProvider<P extends LLMProvider> {
       if (rawValue.trim().length === 0) {
         continue
       }
-      const parsed = parseCustomParameterValue(rawValue, entry.type, key)
+      const parsed = parseCustomParameterValue(rawValue, entry.type)
       const existing = next[key]
-      // The `tools` field is a true set across the OpenAI/OpenRouter/Anthropic
-      // family: built-in (hosted) provider tools must coexist with agent
+      // The `tools` field is a set in the OpenAI-compatible family: built-in
+      // provider tools must coexist with agent
       // function-calling tools in the same array slot. Overwrite semantics
-      // would silently drop the agent's tools whenever a user adds e.g.
-      // `tools=[{type:"openrouter:web_search"}]` via custom parameters, so for
-      // this one key we append instead of replace.
+      // would silently drop the agent's tools, so for this one key we append.
       //
       // Other array-typed request fields (`messages`, `stop_sequences`,
       // `modalities`, etc.) are NOT free-form sets — appending would corrupt

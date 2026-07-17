@@ -18,11 +18,6 @@ export type CurrentFileViewState =
       totalLines: number
     }
   | {
-      kind: 'pdf'
-      currentPage: number // 1-indexed
-      totalPages: number
-    }
-  | {
       kind: 'other'
       totalLines?: number
     }
@@ -32,9 +27,6 @@ export type MentionableBlockData = {
   file: TFile
   startLine: number
   endLine: number
-  pageNumber?: number // 1-indexed; present when selection originates from a PDF view
-  source?: 'selection' | 'selection-sync' | 'selection-pinned'
-  highlightId?: string // runtime-only; links this mention to its visual highlight; not persisted
   contentFormat?: 'markdown-table'
   contentHash?: string
   contentCount?: number
@@ -58,35 +50,11 @@ export type MentionableUrl = {
   type: 'url'
   url: string
 }
-export type MentionableWebSelection = {
-  type: 'web-selection'
-  content: string
-  url: string
-  title: string
-  pageId?: string
-  source?: 'web-selection-sync' | 'web-selection-pinned'
-  contentHash?: string
-  contentCount?: number
-  contentUnit?: 'characters' | 'words' | 'wordsCharacters'
-}
 export type MentionableImage = {
   type: 'image'
   name: string
   mimeType: string
   data: string // base64
-}
-export type MentionablePDF = {
-  type: 'pdf'
-  name: string
-  // Base64-encoded original PDF bytes. Canonical source-of-truth for native PDF
-  // adapters (Gemini / Anthropic). Optional only for legacy mentionables
-  // serialized before native PDF support — those carry text in `data` instead.
-  rawData?: string
-  // Legacy field: pre-extracted plain text (pages joined). For new uploads this
-  // stays undefined until something needs the text fallback. Kept as `data`
-  // (rather than renamed) so old chat history deserializes unchanged.
-  data?: string
-  pageCount?: number
 }
 export type MentionableOffice = {
   type: 'office'
@@ -123,9 +91,7 @@ export type Mentionable =
   | MentionableBlock
   | MentionableAssistantQuote
   | MentionableUrl
-  | MentionableWebSelection
   | MentionableImage
-  | MentionablePDF
   | MentionableOffice
   | MentionableTextAttachment
   | MentionableModel
@@ -143,8 +109,6 @@ export type SerializedMentionableBlock = {
   file: string
   startLine: number
   endLine: number
-  pageNumber?: number
-  source?: 'selection' | 'selection-sync' | 'selection-pinned'
   contentFormat?: 'markdown-table'
   contentHash?: string
   contentCount?: number
@@ -162,9 +126,7 @@ export type SerializedMentionableAssistantQuote = {
   contentUnit?: 'characters' | 'words' | 'wordsCharacters'
 }
 export type SerializedMentionableUrl = MentionableUrl
-export type SerializedMentionableWebSelection = MentionableWebSelection
 export type SerializedMentionableImage = MentionableImage
-export type SerializedMentionablePDF = MentionablePDF
 export type SerializedMentionableOffice = MentionableOffice
 export type SerializedMentionableTextAttachment = MentionableTextAttachment
 export type SerializedMentionableModel = MentionableModel
@@ -174,9 +136,7 @@ export type SerializedMentionable =
   | SerializedMentionableBlock
   | SerializedMentionableAssistantQuote
   | SerializedMentionableUrl
-  | SerializedMentionableWebSelection
   | SerializedMentionableImage
-  | SerializedMentionablePDF
   | SerializedMentionableOffice
   | SerializedMentionableTextAttachment
   | SerializedMentionableModel

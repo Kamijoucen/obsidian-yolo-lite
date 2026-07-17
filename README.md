@@ -1,158 +1,99 @@
-<h1 align="center">YOLO</h1>
-<p align="center">
-  Agent-native AI assistant for Obsidian — chat, write, knowledge base, and orchestration, all in one place.
-</p>
+# YOLO Lite
 
-<p align="center"><a href="https://github.com/Lapis0x0/obsidian-yolo/commits/main">
-    <img src="https://img.shields.io/github/last-commit/Lapis0x0/obsidian-yolo/main?style=flat-square&color=6c5ce7" alt="Last Commit">
-  </a>
-  <a href="https://github.com/Lapis0x0/obsidian-yolo/stargazers">
-    <img src="https://img.shields.io/github/stars/Lapis0x0/obsidian-yolo?style=flat-square&color=6c5ce7" alt="GitHub Stars">
-  </a>
-  <a href="https://github.com/Lapis0x0/obsidian-yolo/releases/latest">
-    <img src="https://img.shields.io/github/v/release/Lapis0x0/obsidian-yolo?style=flat-square&color=00b894" alt="Latest Release">
-  </a>
-  <a href="https://github.com/Lapis0x0/obsidian-yolo/releases">
-    <img src="https://img.shields.io/github/downloads/Lapis0x0/obsidian-yolo/total?style=flat-square&color=0984e3" alt="Downloads">
-  </a>
-  <a href="https://github.com/Lapis0x0/obsidian-yolo/blob/main/LICENSE">
-    <img src="https://img.shields.io/github/license/Lapis0x0/obsidian-yolo?style=flat-square&color=636e72" alt="License">
-  </a>
-</p>
+YOLO Lite 是一个经过精简的 Obsidian AI 插件，专注于 Agent 对话、Vault 操作、MCP、Skills、联网搜索与学习工作流。
 
-<p align="center">
-  <b>English</b> | <a href="./README_zh-CN.md">简体中文</a> | <a href="./README_it.md">Italiano</a>
-</p>
+## 项目来源
 
-<p align="center">
-  <a href="https://discord.gg/d8EHm48ppU">
-    <img src="https://img.shields.io/badge/Discord-Join_the_community-5865F2?style=flat-square&logo=discord&logoColor=white" alt="Join the Discord community">
-  </a>
-</p>
+本项目 Fork 自 [lapis0x0/obsidian-yolo](https://github.com/lapis0x0/obsidian-yolo)，感谢原作者及贡献者完成的基础工作。
 
-## What's New
+YOLO Lite 面向更轻量、聚焦的个人使用需求。以下内容不是通过功能开关隐藏，而是从代码、配置、界面、命令入口、样式、资源、测试、构建流程和依赖中直接移除：
 
-- **`1.6`**: Introduces the new Learning Mode—turn any topic and reference materials into a personalized learning project with structured outlines, knowledge points, flashcards, and an interactive knowledge map. Built-in FSRS spaced repetition and Anki `.apkg` import help turn knowledge into a sustainable review workflow.
+- 空格提示（Smart Space）
+- Quick Ask
+- 选区聊天
+- Tab 补全
+- PDF 读取、选区与截图支持
+- PGlite、RAG、Embedding、向量数据库与语义搜索
+- OpenAI 和中国国产模型之外的 LLM 供应商
+- 插件自更新、版本检查与更新提示
+- 面向原版历史配置和旧数据结构的迁移兼容层
 
-- **`1.5`**: Introduces a new Agent runtime that turns AI from Q&A into active collaboration—with full tool calling, MCP, Skills, desktop Bash, subagents, and web search—plus smarter long-session context and memory, refreshed hybrid RAG, focus/PDF awareness, and multi-window chat with background Agents.
+本分支保留 Agent 对话、Vault 工具、MCP、Skills、联网搜索与学习工作流。
 
-## Highlights
+## 主要功能
 
-| A Complete Agent Experience, Across Devices | Turn Vault Knowledge into Lasting Mastery |
-|:--:|:--:|
-| ![Agent Tools](./assets/agenttools.gif) | ![Learning Mode](./assets/learning-mode.gif) |
-| Go beyond answers. YOLO understands and works directly with your Vault, calls tools and MCP servers, and uses Skills to get real work done your way. | Turn topics and source material into a personal learning system, then use flashcards and FSRS-powered review to move from saved notes to lasting knowledge. |
+- 侧边栏多会话与后台 Agent
+- Agent / Ask 模式
+- Vault 文件读写、桌面终端与子 Agent 工具
+- MCP 客户端与可选的本地 MCP 服务
+- 可复用 Skills
+- 按目录加载 `AGENTS.md` / `CLAUDE.md` 项目指令
+- 可配置的联网搜索
+- 学习项目、闪卡、FSRS 复习与 Anki `.apkg` 导入
+- 图片、Office 文档和文本附件
 
-## Features
+## 模型供应商
 
-Beyond the core capabilities above, YOLO also provides:
+内置支持以下供应商：
 
-| Feature | Description |
-|---------|-------------|
-| 🔌 External Agent Support | Connect MCP clients such as Hermes and OpenClaw to YOLO's Vault search, or delegate tasks to a configured YOLO Agent |
-| ⚡ Quick Ask & Smart Space | Ask, edit, and continue writing without leaving the editor |
-| 🔎 Vault RAG | Retrieve across your Vault for answers grounded in your own notes |
-| 🪟 Multi-Window Chat | Run different tasks and contexts in parallel across independent chat windows |
-| 🧠 Memory System | Lets YOLO remember preferences, habits, and long-term context for more consistent conversations |
-| 🪡 Cursor Chat | One-click context addition, conversation at your fingertips |
-| ⌨️ Tab Completion | Real-time AI-powered completion for smoother, more natural writing |
-| 🎛️ Multi-Model Support | OpenAI, Claude, Gemini, DeepSeek and other mainstream models, freely switch |
-| 🌍 i18n | Native multi-language support |
+- OpenAI API
+- ChatGPT OAuth
+- 通用 OpenAI 兼容接口
+- DeepSeek
+- 月之暗面 / Kimi
+- 智谱 AI
+- 豆包
+- SiliconFlow
+- 阶跃星辰
+- MiniMax
+- 腾讯混元
+- 小米 MiMo
 
-## Quick Start
+模型统一通过 OpenAI 兼容的 Chat Completions 或 Responses 协议接入。
 
-1. Open Obsidian Settings → Community Plugins → Browse → Search **"YOLO"**
-2. Install and enable
-3. Configure your API key in plugin settings, or use your own ChatGPT OAuth / Gemini OAuth:
-   - [OpenAI](https://platform.openai.com/api-keys) / [Anthropic](https://console.anthropic.com/settings/keys) / [Gemini](https://aistudio.google.com/apikey) / [Groq](https://console.groq.com/keys)
-4. Open the sidebar to start chatting — or try Quick Ask by typing `@` in the editor
+## 本地开发
 
-## Installation
+安装依赖并启动监听构建：
 
-### Community Plugin Store (Recommended)
+```bash
+npm install
+npm run dev
+```
 
-See Quick Start above.
+生产构建：
 
-### Manual Installation
+```bash
+npm run build
+```
 
-1. Go to [Releases](https://github.com/Lapis0x0/obsidian-yolo/releases) and download the latest `main.js`, `manifest.json`, `styles.css`
-2. Create folder: `<vault>/.obsidian/plugins/obsidian-yolo/`
-3. Copy files to that folder, then enable the plugin in Obsidian Settings
+开发时可将仓库软连接到 Obsidian Vault：
 
-> [!WARNING]
-> YOLO cannot coexist with [Smart Composer](https://github.com/glowingjade/obsidian-smart-composer). Please disable or uninstall Smart Composer before using YOLO.
+```text
+<vault>/.obsidian/plugins/yolo
+```
 
-## Mobile Support Note
+插件目录中必须存在：
 
-Due to the capability gap between Obsidian mobile and desktop, YOLO cannot fully match the desktop feature set and overall experience on mobile in the short term. With limited personal maintenance bandwidth, I can currently only guarantee that YOLO remains usable on mobile, not that every feature will reach desktop-level parity.
+- `manifest.json`
+- `main.js`
+- `styles.css`
 
-If you use YOLO on mobile, you may still encounter unavailable features, inconsistent behavior, or incomplete adaptations for some workflows. Please keep that expectation in mind.
+随后在 Obsidian 的第三方插件设置中启用 YOLO。
 
-## Roadmap
+## 质量检查
 
-- [x] Better and stronger Vault AI search
-- [x] Background Agent (long-running task automation)
-- [x] Multi-Agent orchestration (via subagents)
-- [x] Learning Mode — a dedicated study view
-- [ ] Annotation Mode — real-time AI annotations and suggestions on notes
-- [ ] Built-in assistant — a corner-pinned helper for config/agents, with auto-compaction and scheduled tasks
-- [ ] Better AI whiteboard
-- [ ] Voice input & meeting notes
+```bash
+npm run type:check
+npm run lint:check
+npm test
+```
 
-## Feedback & Issues
+`styles.css` 由 `src/styles/**` 生成。修改样式源码后运行：
 
-Hit a bug, something confusing, or have an idea? Open an issue:
+```bash
+npm run styles:build
+```
 
-🐛 [Report a bug](https://github.com/Lapis0x0/obsidian-yolo/issues/new?template=bug_report.yml) · ✨ [Request a feature](https://github.com/Lapis0x0/obsidian-yolo/issues/new?template=feature_request.yml)
+## 许可证
 
-What helps:
-
-- Bug reports with a clear reproduction (Obsidian version, OS, plugin version, what you did, what happened)
-- "I tried X and got Y" reports — UX papercuts, confusing wording, broken docs, outdated translations
-- Concrete feature ideas tied to a real use case ("when I do A, I want B because C")
-
-Please search existing issues first to avoid duplicates.
-
-## Contributing
-
-All forms of contribution are welcome — bug reports, documentation improvements, feature enhancements.
-
-**Please open an issue first to discuss feasibility and implementation for major features.**
-
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for the full guide: what we welcome, AI-assisted PR policy, size guidelines, and dev setup.
-
-## Acknowledgments
-
-Thanks to [Smart Composer](https://github.com/glowingjade/obsidian-smart-composer) for the original work — without them, there would be no YOLO.
-
-Special thanks to [Kilo Code](https://kilo.ai) for their sponsorship. Kilo is an open-source AI coding assistant platform with 500+ AI models, helping developers build and iterate faster.
-
-<p align="center">
-  <a href="https://kilo.ai" target="_blank">
-    <img src="https://img.shields.io/badge/Sponsored_by-Kilo_Code-FF6B6B?style=for-the-badge" alt="Sponsored by Kilo Code" height="30">
-  </a>
-</p>
-
-## Support
-
-If you find YOLO valuable, consider supporting the project:
-
-<p align="center">
-  <a href="https://afdian.com/a/lapis0x0" target="_blank">
-    <img src="https://img.shields.io/badge/爱发电-Support Developer-fd6c9e?style=for-the-badge" alt="爱发电">
-  </a>
-  &nbsp;
-  <a href="https://github.com/Lapis0x0/obsidian-yolo/blob/main/donation-qr.jpg" target="_blank">
-    <img src="https://img.shields.io/badge/WeChat/Alipay-Donation QR-00D924?style=for-the-badge" alt="WeChat/Alipay Donation QR">
-  </a>
-</p>
-
-Development logs are regularly updated on the [blog](https://www.lapis.cafe).
-
-## License
-
-[MIT License](LICENSE)
-
-## Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=Lapis0x0/obsidian-yolo&type=Date)](https://star-history.com/#Lapis0x0/obsidian-yolo&Type=Date)
+[MIT](./LICENSE)

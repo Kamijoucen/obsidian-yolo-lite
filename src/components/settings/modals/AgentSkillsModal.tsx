@@ -69,7 +69,7 @@ function AgentSkillsModalContent({
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const skillsDir = getYoloSkillsDir(settings)
 
-  const disabledSkillNames = settings.skills?.disabledSkillIds ?? []
+  const disabledSkillNames = settings.skills?.disabledSkillNames ?? []
   const disabledSkillNameSet = useMemo(
     () => new Set(disabledSkillNames),
     [disabledSkillNames],
@@ -83,7 +83,7 @@ function AgentSkillsModalContent({
   )
 
   const handleToggleSkill = (skillName: string, enabled: boolean) => {
-    const current = new Set(settings.skills?.disabledSkillIds ?? [])
+    const current = new Set(settings.skills?.disabledSkillNames ?? [])
     if (enabled) {
       current.delete(skillName)
     } else {
@@ -93,8 +93,8 @@ function AgentSkillsModalContent({
     void setSettings({
       ...settings,
       skills: {
-        ...(settings.skills ?? { disabledSkillIds: [] }),
-        disabledSkillIds: [...current],
+        ...(settings.skills ?? { disabledSkillNames: [] }),
+        disabledSkillNames: [...current],
       },
     })
   }

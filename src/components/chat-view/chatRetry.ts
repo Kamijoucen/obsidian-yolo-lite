@@ -29,7 +29,6 @@ export const getSourceUserMessageIdForGroup = (
 ): string | null => {
   for (const message of messages) {
     if (
-      message.role === 'external_agent_result' ||
       message.role === 'subagent_result' ||
       message.role === 'terminal_command_result'
     ) {
@@ -51,7 +50,6 @@ export const getDisplayedAssistantToolMessages = (
   const isBranchCompleted = (branchMessages: AssistantToolMessageGroup) => {
     const latestMessage = branchMessages.at(-1)
     const latestMetadata =
-      latestMessage?.role !== 'external_agent_result' &&
       latestMessage?.role !== 'subagent_result' &&
       latestMessage?.role !== 'terminal_command_result'
         ? latestMessage?.metadata

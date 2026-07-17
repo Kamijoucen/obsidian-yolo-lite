@@ -279,70 +279,53 @@ function MentionsTypeaheadMenuItem({
       Boolean(option.subtitle))
 
   if (option.payload.kind === 'back') {
-    iconNode = (
-      <ArrowLeft size={14} className="yolo-smart-space-mention-option-icon" />
-    )
+    iconNode = <ArrowLeft size={14} className="yolo-mention-menu-option-icon" />
   } else if (option.payload.kind === 'entry') {
     if (option.payload.entryType === 'assistant') {
-      iconNode = (
-        <Bot size={14} className="yolo-smart-space-mention-option-icon" />
-      )
+      iconNode = <Bot size={14} className="yolo-mention-menu-option-icon" />
     } else if (option.payload.entryType === 'mode') {
       iconNode = (
-        <MessageSquare
-          size={14}
-          className="yolo-smart-space-mention-option-icon"
-        />
+        <MessageSquare size={14} className="yolo-mention-menu-option-icon" />
       )
     } else if (option.payload.entryType === 'model') {
-      iconNode = (
-        <Cpu size={14} className="yolo-smart-space-mention-option-icon" />
-      )
+      iconNode = <Cpu size={14} className="yolo-mention-menu-option-icon" />
     } else if (option.payload.entryType === 'file') {
       iconNode = (
-        <FileIcon size={14} className="yolo-smart-space-mention-option-icon" />
+        <FileIcon size={14} className="yolo-mention-menu-option-icon" />
       )
     } else if (option.payload.entryType === 'current-file') {
       iconNode = (
-        <FileText size={14} className="yolo-smart-space-mention-option-icon" />
+        <FileText size={14} className="yolo-mention-menu-option-icon" />
       )
     } else {
       iconNode = (
-        <FolderClosedIcon
-          size={14}
-          className="yolo-smart-space-mention-option-icon"
-        />
+        <FolderClosedIcon size={14} className="yolo-mention-menu-option-icon" />
       )
     }
   } else if (option.payload.kind === 'assistant') {
     iconNode = renderAssistantIcon(
       option.payload.assistant.icon,
       14,
-      'yolo-smart-space-mention-option-icon',
+      'yolo-mention-menu-option-icon',
     )
   } else if (option.payload.kind === 'mode') {
     iconNode =
       option.payload.mode === 'agent' ? (
-        <Bot size={14} className="yolo-smart-space-mention-option-icon" />
+        <Bot size={14} className="yolo-mention-menu-option-icon" />
       ) : (
-        <MessageSquare
-          size={14}
-          className="yolo-smart-space-mention-option-icon"
-        />
+        <MessageSquare size={14} className="yolo-mention-menu-option-icon" />
       )
   } else {
     const Icon = getMentionableIcon(option.payload.mentionable)
     if (Icon) {
-      iconNode = (
-        <Icon size={14} className="yolo-smart-space-mention-option-icon" />
-      )
+      iconNode = <Icon size={14} className="yolo-mention-menu-option-icon" />
     }
   }
 
   return (
     <button
       type="button"
-      className={`yolo-popover-item yolo-smart-space-mention-option ${
+      className={`yolo-popover-item yolo-mention-menu-option ${
         isSelected ? 'active' : ''
       }`}
       ref={(el) => option.setRefElement(el)}
@@ -356,21 +339,17 @@ function MentionsTypeaheadMenuItem({
     >
       {iconNode}
       <div
-        className={`yolo-smart-space-mention-option-text${
+        className={`yolo-mention-menu-option-text${
           isInlineMetaOption
-            ? ' yolo-smart-space-mention-option-text--inline-meta'
+            ? ' yolo-mention-menu-option-text--inline-meta'
             : ''
         }`}
       >
-        <div className="yolo-smart-space-mention-option-name">
-          {option.name}
-        </div>
+        <div className="yolo-mention-menu-option-name">{option.name}</div>
         {option.subtitle && (
           <div
-            className={`yolo-smart-space-mention-option-path${
-              isInlineMetaOption
-                ? ' yolo-smart-space-mention-option-inline-meta'
-                : ''
+            className={`yolo-mention-menu-option-path${
+              isInlineMetaOption ? ' yolo-mention-menu-option-inline-meta' : ''
             }`}
           >
             {option.subtitle}
@@ -381,13 +360,10 @@ function MentionsTypeaheadMenuItem({
         option.payload.kind === 'mode') &&
         option.payload.isCurrent) ||
       (option.payload.kind === 'mentionable' && option.payload.isSelected) ? (
-        <Check size={12} className="yolo-smart-space-mention-option-check" />
+        <Check size={12} className="yolo-mention-menu-option-check" />
       ) : null}
       {option.payload.kind === 'entry' && (
-        <ChevronRight
-          size={14}
-          className="yolo-smart-space-mention-option-expand"
-        />
+        <ChevronRight size={14} className="yolo-mention-menu-option-expand" />
       )}
     </button>
   )

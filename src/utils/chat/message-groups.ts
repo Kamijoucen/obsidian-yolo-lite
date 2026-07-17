@@ -18,7 +18,6 @@ export function groupAssistantAndToolMessages(
         // Always push user messages directly
         acc.push(message)
       } else if (
-        message.role === 'external_agent_result' ||
         message.role === 'subagent_result' ||
         message.role === 'terminal_command_result'
       ) {

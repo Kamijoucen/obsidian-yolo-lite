@@ -52,7 +52,6 @@ export const estimateContinuationRequestContextTokens = async ({
         includeBuiltinTools,
         // Tailor built-in tool schemas to the active model so the token
         // estimate reflects what the model will actually see at request time.
-        chatModelModalities: model.modalities,
       })
     : []
   const {

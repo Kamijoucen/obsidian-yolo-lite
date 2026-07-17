@@ -130,17 +130,11 @@ function mentionablesToMarkdownLines(
       case 'url':
         lines.push(`<${m.url}>`)
         break
-      case 'web-selection':
-        lines.push(`Web selection: [${m.title || m.url}](${m.url})`)
-        break
       case 'assistant-quote':
         lines.push('Assistant quote')
         break
       case 'image':
         lines.push(`Image: ${m.name}`)
-        break
-      case 'pdf':
-        lines.push(`PDF: ${m.name}`)
         break
       case 'office':
         lines.push(`${m.kind.toUpperCase()}: ${m.name}`)
@@ -169,7 +163,6 @@ function groupSerializedAssistantAndToolMessages(
       if (message.role === 'user') {
         acc.push(message)
       } else if (
-        message.role === 'external_agent_result' ||
         message.role === 'subagent_result' ||
         message.role === 'terminal_command_result'
       ) {

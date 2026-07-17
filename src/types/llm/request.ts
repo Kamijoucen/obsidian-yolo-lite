@@ -1,12 +1,7 @@
-// These types are based on the OpenRouter API specification
-// https://openrouter.ai/docs/api-reference/overview#requests
-
 import { ChatCompletionCreateParams, ReasoningEffort } from 'openai/resources'
 
 import { ReasoningLevel } from '../reasoning'
 import { ToolCallRequest } from '../tool-call.types'
-
-import { ProviderMetadata } from './response'
 
 export type LLMRequestBase = {
   messages: RequestMessage[]
@@ -18,7 +13,7 @@ export type LLMRequestBase = {
   tools?: RequestTool[]
   tool_choice?: RequestToolChoice
 
-  // LLM Parameters (https://openrouter.ai/docs/api-reference/parameters)
+  // Common LLM parameters
   max_tokens?: number // Range: [1, context_length)
   temperature?: number // Range: [0, 2]
   top_p?: number // Range: (0, 1]
@@ -34,10 +29,10 @@ export type LLMRequestBase = {
   // Only available for OpenAI reasoning models
   reasoning_effort?: ReasoningEffort
 
-  // OpenRouter reasoning configuration
+  // OpenAI-compatible reasoning configuration
   reasoning?: Record<string, unknown>
 
-  // Only available for OpenAI search models and Perplexity
+  // OpenAI search models
   web_search_options?: ChatCompletionCreateParams.WebSearchOptions
 }
 
@@ -64,25 +59,7 @@ type ImageContentPart = {
   }
 }
 
-// Native document (currently PDF) input. The base64 bytes are forwarded to
-// providers that advertise the 'pdf' modality:
-//   • anthropic       → document block (base64 source)
-//   • gemini          → inlineData (mimeType + data)
-//   • openai-compatible → OpenAI `file` content part (file_data data-URL),
-//     the de-facto format adopted by OpenRouter and most proxies that fan out
-//     to PDF-capable upstreams. Proxies that don't speak it return their own
-//     error, which is more useful than ours.
-// For models without the 'pdf' modality, the request pipeline converts this
-// part into extracted plain text upstream of the adapter.
-type DocumentContentPart = {
-  type: 'document'
-  mediaType: 'application/pdf'
-  name: string
-  data: string // base64-encoded document bytes
-  pageCount?: number
-}
-
-export type ContentPart = TextContent | ImageContentPart | DocumentContentPart
+export type ContentPart = TextContent | ImageContentPart
 
 type RequestSystemMessage = {
   role: 'system'
@@ -97,7 +74,6 @@ type RequestAssistantMessage = {
   content: string
   reasoning?: string
   tool_calls?: ToolCallRequest[]
-  providerMetadata?: ProviderMetadata
 }
 type RequestToolMessage = {
   role: 'tool'
@@ -113,10 +89,6 @@ export type RequestMessage =
 export type LLMOptions = {
   signal?: AbortSignal
   debugTraceId?: string
-  geminiTools?: {
-    useWebSearch?: boolean
-    useUrlContext?: boolean
-  }
 }
 
 export type RequestTool = {

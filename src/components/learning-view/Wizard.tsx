@@ -273,12 +273,12 @@ function StepOne({
         optionalLabel={t('learning.wizard.optional', '（可选）')}
       >
         <LearningFileDropzone
-          accept=".pdf,.docx,.doc,.md,.markdown,.txt"
+          accept=".docx,.doc,.md,.markdown,.txt"
           multiple
           title={t('learning.wizard.uploadTitle', '拖拽文件到此处，或点击上传')}
           hint={t(
             'learning.wizard.uploadHint',
-            '支持 PDF、Word、Markdown，单个文件 ≤ 20MB',
+            '支持 Word、Markdown、文本，单个文件 ≤ 20MB',
           )}
           onFiles={handleFiles}
         />

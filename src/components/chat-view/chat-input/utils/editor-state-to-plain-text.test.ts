@@ -44,8 +44,7 @@ describe('editorStateToPlainText', () => {
   })
 
   it('uses full mentionName instead of truncated display text for URL mentions', () => {
-    const fullUrl =
-      'https://www.anthropic.com/engineering/some-long-article-path'
+    const fullUrl = 'https://example.com/engineering/some-long-article-path'
     const editorState: SerializedEditorState = {
       root: {
         children: [
@@ -56,7 +55,7 @@ describe('editorStateToPlainText', () => {
                 format: 0,
                 mode: 'token',
                 style: '',
-                text: 'https://www.anthropic.com/engin…',
+                text: 'https://example.com/engineering…',
                 type: 'mention',
                 version: 1,
                 mentionName: fullUrl,

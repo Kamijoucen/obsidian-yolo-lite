@@ -6,7 +6,6 @@ import { RequestTransportMode } from '../../types/provider.types'
 
 export type LLMDebugTransportMode =
   | Extract<RequestTransportMode, 'browser' | 'node' | 'obsidian'>
-  | 'bedrock'
   | 'mcp'
   | 'web-search'
   | 'unknown'
@@ -15,7 +14,6 @@ export type LLMDebugRequestKind =
   | 'streaming'
   | 'non-streaming'
   | 'title-generation'
-  | 'embedding'
   | 'unknown'
 
 export type LLMDebugTraceSummary = {
@@ -93,9 +91,7 @@ const SENSITIVE_HEADER_KEYS = new Set([
   'x-api-key',
   'api-key',
   'apikey',
-  'anthropic-api-key',
   'openai-api-key',
-  'x-goog-api-key',
   'x-qwen-api-key',
   'x-stainless-api-key',
   'chatgpt-account-id',
@@ -429,32 +425,11 @@ function isTitleGenerationDebugRequest(
   )
 }
 
-function isEmbeddingDebugRequest(
-  request: LLMDebugHttpExchange['request'],
-): boolean {
-  const url = request.url.toLowerCase()
-  if (/(^|[/_-])(embeddings?|embed|embd)(?:[/?#_-]|$)/i.test(url)) {
-    return true
-  }
-
-  const body = request.body ?? ''
-  return /embed|embedding|embd/i.test(body) && /"input"\s*:/i.test(body)
-}
-
 function resolveLLMDebugTraceIdForRequest(
   request: LLMDebugHttpExchange['request'],
 ): string | null {
   if (isTitleGenerationDebugRequest(request)) {
     return findActiveTraceIdByKind('title-generation')
-  }
-
-  // Embedding requests are only attributed to an explicit embedding-kind trace
-  // bound by signal or run context. We deliberately do not fall back to the
-  // active conversation trace: background RAG / index maintenance embeddings
-  // may overlap with a chat turn and would otherwise leak unrelated vault text
-  // into the user's exported debug log.
-  if (isEmbeddingDebugRequest(request)) {
-    return findActiveTraceIdByKind('embedding')
   }
 
   return null

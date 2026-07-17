@@ -131,60 +131,6 @@
   font-size: var(--font-ui-small);
 }
 
-/* Settings: Embedding DB Manage */
-
-.yolo-settings-embedding-db-manage-root {
-  padding: var(--size-4-2);
-}
-
-.yolo-settings-embedding-db-manage-header {
-  display: flex;
-  align-items: center;
-  justify-content: end;
-  gap: var(--size-4-1);
-  font-size: var(--font-ui-small);
-  margin-bottom: var(--size-4-2);
-}
-
-.yolo-settings-embedding-db-manage-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.yolo-settings-embedding-db-manage-table tr {
-  border-bottom: var(--border-width) solid var(--background-modifier-border);
-}
-
-.yolo-settings-embedding-db-manage-table th,
-.yolo-settings-embedding-db-manage-table td {
-  padding: var(--size-4-2);
-  text-align: left;
-}
-
-.yolo-settings-embedding-db-manage-table th {
-  font-weight: var(--font-medium);
-  color: var(--text-muted);
-  padding-bottom: var(--size-4-3);
-}
-
-.yolo-settings-embedding-db-manage-table td {
-  padding-top: var(--size-4-3);
-  padding-bottom: var(--size-4-3);
-  vertical-align: middle;
-}
-
-.yolo-settings-embedding-db-manage-actions {
-  display: flex;
-  gap: var(--size-4-2);
-}
-
-.yolo-settings-embedding-db-manage-actions-loading {
-  display: flex;
-  align-items: center;
-  gap: var(--size-2-2);
-  font-size: var(--font-ui-smaller);
-}
-
 /* Settings: tables */
 
 .yolo-settings-table-container {
@@ -1115,11 +1061,6 @@
 /* Folder picker row indent (base 8px + depth*12px) */
 .yolo-indent-folder {
   padding-left: calc(8px + var(--yolo-depth) * 12px);
-}
-
-/* RAG index list indent (base 16px + depth*12px) */
-.yolo-indent-list {
-  margin-left: calc(16px + var(--yolo-depth) * 12px);
 }
 
 .yolo-split-button {

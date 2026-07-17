@@ -30,22 +30,14 @@ export function isReasoningLevelString(value: string): value is ReasoningLevel {
   return (REASONING_LEVELS as readonly string[]).includes(value)
 }
 
-/** Per-chat / persisted value may be legacy `'on'` (Claude UI). */
 export function normalizeStoredReasoningLevel(
   value: string | undefined | null,
 ): ReasoningLevel | null {
   if (!value) return null
-  if (value === 'on') return 'medium'
-  if (value === 'extra-high') return 'xhigh'
   return isReasoningLevelString(value) ? value : null
 }
 
-export type ReasoningModelType =
-  | 'none'
-  | 'openai'
-  | 'gemini'
-  | 'anthropic'
-  | undefined
+export type ReasoningModelType = 'none' | 'openai' | undefined
 
 export function modelSupportsReasoning(model: {
   reasoningType?: ReasoningModelType

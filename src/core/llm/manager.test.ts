@@ -1,8 +1,6 @@
 import { YoloSettings } from '../../settings/schema/setting.types'
 
-import { BedrockProvider } from './bedrockProvider'
-import { GeminiProvider } from './gemini'
-import { GeminiOAuthProvider } from './geminiOAuthProvider'
+import { DeepSeekStudioProvider } from './deepseekStudioProvider'
 import { getProviderClient } from './manager'
 import { MoonshotProvider } from './moonshotProvider'
 import { OpenAICompatibleProvider } from './openaiCompatibleProvider'
@@ -11,29 +9,10 @@ const createSettings = (): YoloSettings =>
   ({
     providers: [
       {
-        id: 'bedrock-native',
-        presetType: 'amazon-bedrock',
-        apiType: 'amazon-bedrock',
-        apiKey: 'token',
-        additionalSettings: { awsRegion: 'us-east-1' },
-      },
-      {
-        id: 'bedrock-mantle',
-        presetType: 'amazon-bedrock',
+        id: 'deepseek',
+        presetType: 'deepseek',
         apiType: 'openai-compatible',
         apiKey: 'token',
-        additionalSettings: { awsRegion: 'us-east-1' },
-      },
-      {
-        id: 'gemini-native',
-        presetType: 'gemini',
-        apiType: 'gemini',
-        apiKey: 'token',
-      },
-      {
-        id: 'gemini-oauth',
-        presetType: 'gemini-oauth',
-        apiType: 'gemini',
       },
       {
         id: 'moonshot',
@@ -41,83 +20,32 @@ const createSettings = (): YoloSettings =>
         apiType: 'openai-compatible',
         apiKey: 'token',
       },
+      {
+        id: 'custom',
+        presetType: 'openai-compatible',
+        apiType: 'openai-compatible',
+        baseUrl: 'https://example.com/v1',
+      },
     ],
-    continuationOptions: {
+    requestPolicy: {
       streamFallbackRecoveryEnabled: true,
       primaryRequestTimeoutMs: 12000,
     },
   }) as unknown as YoloSettings
 
 describe('getProviderClient', () => {
-  it('routes native Bedrock providers to BedrockProvider', () => {
-    const client = getProviderClient({
-      settings: createSettings(),
-      providerId: 'bedrock-native',
-    })
-
-    expect(client).toBeInstanceOf(BedrockProvider)
+  it('routes domestic provider presets to their adapters', () => {
+    expect(
+      getProviderClient({ settings: createSettings(), providerId: 'deepseek' }),
+    ).toBeInstanceOf(DeepSeekStudioProvider)
+    expect(
+      getProviderClient({ settings: createSettings(), providerId: 'moonshot' }),
+    ).toBeInstanceOf(MoonshotProvider)
   })
 
-  it('routes Bedrock Mantle providers to OpenAICompatibleProvider', () => {
-    const client = getProviderClient({
-      settings: createSettings(),
-      providerId: 'bedrock-mantle',
-    })
-
-    expect(client).toBeInstanceOf(OpenAICompatibleProvider)
-  })
-
-  it('passes shared request policy to native Gemini providers', () => {
-    const client = getProviderClient({
-      settings: createSettings(),
-      providerId: 'gemini-native',
-    })
-    const clientWithPolicy = client as unknown as {
-      requestPolicy?: { timeoutMs: number }
-    }
-
-    expect(client).toBeInstanceOf(GeminiProvider)
-    expect(clientWithPolicy.requestPolicy).toEqual({
-      timeoutMs: 12000,
-    })
-  })
-
-  it('passes shared request policy to Gemini OAuth providers', () => {
-    const client = getProviderClient({
-      settings: createSettings(),
-      providerId: 'gemini-oauth',
-    })
-    const clientWithPolicy = client as unknown as {
-      requestPolicy?: { timeoutMs: number }
-    }
-
-    expect(client).toBeInstanceOf(GeminiOAuthProvider)
-    expect(clientWithPolicy.requestPolicy).toEqual({
-      timeoutMs: 12000,
-    })
-  })
-
-  it('passes shared request policy to native Bedrock providers', () => {
-    const client = getProviderClient({
-      settings: createSettings(),
-      providerId: 'bedrock-native',
-    })
-    const clientWithPolicy = client as unknown as {
-      requestPolicy?: { timeoutMs: number }
-    }
-
-    expect(clientWithPolicy.requestPolicy).toEqual({
-      timeoutMs: 12000,
-    })
-  })
-
-  it('routes Moonshot providers to MoonshotProvider', () => {
-    const client = getProviderClient({
-      settings: createSettings(),
-      providerId: 'moonshot',
-    })
-
-    expect(client).toBeInstanceOf(MoonshotProvider)
-    expect(client).toBeInstanceOf(OpenAICompatibleProvider)
+  it('routes custom endpoints to the generic OpenAI-compatible adapter', () => {
+    expect(
+      getProviderClient({ settings: createSettings(), providerId: 'custom' }),
+    ).toBeInstanceOf(OpenAICompatibleProvider)
   })
 })

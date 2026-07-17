@@ -93,9 +93,6 @@ function ProviderPickerComponent({
       all: PROVIDER_PICKER_ORDER.length,
       main: 0,
       cn: 0,
-      gw: 0,
-      cloud: 0,
-      local: 0,
     }
     for (const presetType of PROVIDER_PICKER_ORDER) {
       counts[PROVIDER_CATALOG[presetType].category] += 1

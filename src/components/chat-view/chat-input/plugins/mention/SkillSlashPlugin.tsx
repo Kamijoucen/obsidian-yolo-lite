@@ -137,38 +137,33 @@ function SkillTypeaheadMenuItem({
   switch (option.payload.kind) {
     case 'back':
       iconNode = (
-        <ArrowLeft size={14} className="yolo-smart-space-mention-option-icon" />
+        <ArrowLeft size={14} className="yolo-mention-menu-option-icon" />
       )
       break
     case 'entry':
       iconNode =
         option.payload.entryType === 'skill' ? (
-          <Sparkles
-            size={14}
-            className="yolo-smart-space-mention-option-icon"
-          />
+          <Sparkles size={14} className="yolo-mention-menu-option-icon" />
         ) : (
-          <Zap size={14} className="yolo-smart-space-mention-option-icon" />
+          <Zap size={14} className="yolo-mention-menu-option-icon" />
         )
       break
     case 'skill':
       iconNode = (
-        <Sparkles size={14} className="yolo-smart-space-mention-option-icon" />
+        <Sparkles size={14} className="yolo-mention-menu-option-icon" />
       )
       break
     case 'snippet':
-      iconNode = (
-        <Zap size={14} className="yolo-smart-space-mention-option-icon" />
-      )
+      iconNode = <Zap size={14} className="yolo-mention-menu-option-icon" />
       break
     case 'command':
       iconNode = (
-        <Minimize2 size={14} className="yolo-smart-space-mention-option-icon" />
+        <Minimize2 size={14} className="yolo-mention-menu-option-icon" />
       )
       break
     case 'create-snippets-file':
       iconNode = (
-        <FilePlus2 size={14} className="yolo-smart-space-mention-option-icon" />
+        <FilePlus2 size={14} className="yolo-mention-menu-option-icon" />
       )
       break
   }
@@ -180,7 +175,7 @@ function SkillTypeaheadMenuItem({
   return (
     <button
       type="button"
-      className={`yolo-popover-item yolo-smart-space-mention-option ${
+      className={`yolo-popover-item yolo-mention-menu-option ${
         isSelected ? 'active' : ''
       }`}
       ref={(el) => option.setRefElement(el)}
@@ -193,24 +188,19 @@ function SkillTypeaheadMenuItem({
       data-highlighted={isSelected ? 'true' : undefined}
     >
       {iconNode}
-      <div className="yolo-smart-space-mention-option-text yolo-smart-space-mention-option-text--inline-meta">
-        <div className="yolo-smart-space-mention-option-name">
-          {option.name}
-        </div>
+      <div className="yolo-mention-menu-option-text yolo-mention-menu-option-text--inline-meta">
+        <div className="yolo-mention-menu-option-name">{option.name}</div>
         {option.subtitle && (
-          <div className="yolo-smart-space-mention-option-path yolo-smart-space-mention-option-inline-meta">
+          <div className="yolo-mention-menu-option-path yolo-mention-menu-option-inline-meta">
             {option.subtitle}
           </div>
         )}
       </div>
       {isSelectedSkill && (
-        <Check size={12} className="yolo-smart-space-mention-option-check" />
+        <Check size={12} className="yolo-mention-menu-option-check" />
       )}
       {showChevron && (
-        <ChevronRight
-          size={14}
-          className="yolo-smart-space-mention-option-expand"
-        />
+        <ChevronRight size={14} className="yolo-mention-menu-option-expand" />
       )}
     </button>
   )

@@ -10,8 +10,6 @@ import {
 
 import { useApp } from '../../contexts/app-context'
 import { useChatView } from '../../contexts/chat-view-context'
-import { CitationSource } from '../../core/agent/citationRegistry'
-import { openMarkdownFile, openPdfFileAtPage } from '../../utils/obsidian'
 
 import {
   annotateRenderedLatex,
@@ -23,57 +21,7 @@ type ObsidianMarkdownProps = {
   content: string
   scale?: 'xs' | 'sm' | 'base'
   animateIncrementalText?: boolean
-  citationSources?: CitationSource[]
   initialFallback?: ReactNode
-}
-
-// Strict scheme match so we don't collide with web-search citation URLs like
-// `https://...?yolo-cite=1`, which share the same substring but should not be
-// hijacked as vault citations.
-const CITE_HREF_PATTERN = /^yolo-cite:(\d+)(?:\?|$)/
-
-function isVaultCitationHref(href: string): boolean {
-  return href.startsWith('yolo-cite:')
-}
-
-function findCitationSource(
-  href: string,
-  sources: CitationSource[] | undefined,
-): CitationSource | null {
-  if (!sources || sources.length === 0) {
-    return null
-  }
-  const match = href.match(CITE_HREF_PATTERN)
-  if (!match) {
-    return null
-  }
-  const ordinal = Number.parseInt(match[1], 10)
-  if (!Number.isFinite(ordinal)) {
-    return null
-  }
-  return sources.find((source) => source.ordinal === ordinal) ?? null
-}
-
-function openCitationSource(app: App, source: CitationSource): void {
-  if (source.path.toLowerCase().endsWith('.pdf') && source.page != null) {
-    openPdfFileAtPage(app, source.path, source.page)
-    return
-  }
-  openMarkdownFile(app, source.path, source.startLine)
-}
-
-function buildCitationTooltip(source: CitationSource): string {
-  const range =
-    source.startLine === source.endLine
-      ? `L${source.startLine}`
-      : `L${source.startLine}-${source.endLine}`
-  const header = `${source.path} ${range}`
-  const snippet = source.snippet
-    ? source.snippet.length > 80
-      ? `${source.snippet.slice(0, 80)}…`
-      : source.snippet
-    : ''
-  return snippet ? `${header}\n${snippet}` : header
 }
 
 // Detects LaTeX-bearing content so we can switch to two-phase rendering: a
@@ -180,7 +128,6 @@ const ObsidianMarkdown = memo(function ObsidianMarkdown({
   content,
   scale = 'base',
   animateIncrementalText = false,
-  citationSources,
   initialFallback,
 }: ObsidianMarkdownProps) {
   const app = useApp()
@@ -188,8 +135,6 @@ const ObsidianMarkdown = memo(function ObsidianMarkdown({
   const containerRef = useRef<HTMLDivElement>(null)
   const previousContentRef = useRef('')
   const renderTokenRef = useRef(0)
-  const citationSourcesRef = useRef(citationSources)
-  citationSourcesRef.current = citationSources
   const hasInitialFallback = initialFallback !== undefined
   const [initialRenderComplete, setInitialRenderComplete] = useState(
     () => !hasInitialFallback,
@@ -224,13 +169,7 @@ const ObsidianMarkdown = memo(function ObsidianMarkdown({
       // Atomic swap: scrollHeight transitions oldHeight → newHeight in one frame
       // with no zero-height window, so the scroll position is preserved.
       liveContainer.replaceChildren(...Array.from(staging.childNodes))
-      setupMarkdownLinks(
-        app,
-        liveContainer,
-        sourcePath,
-        false,
-        citationSourcesRef.current,
-      )
+      setupMarkdownLinks(app, liveContainer, sourcePath, false)
       if (includeLatexAnnotations) {
         annotateRenderedLatex(liveContainer, renderContent)
         syncRenderedLatexSelection(liveContainer)
@@ -316,20 +255,6 @@ const ObsidianMarkdown = memo(function ObsidianMarkdown({
     void renderMarkdown()
   }, [renderMarkdown])
 
-  // Re-bind citation handlers when sources arrive after the initial render
-  // (sources are appended to metadata only once the stream completes, so the
-  // first `setupMarkdownLinks` pass runs with an empty/stale `citationSources`
-  // and would leave the rendered `<a yolo-cite:N>` links without click handlers
-  // or tooltips). Scoped strictly to yolo-cite anchors so we don't disturb
-  // anything else in the container.
-  useEffect(() => {
-    const containerEl = containerRef.current
-    if (!containerEl) {
-      return
-    }
-    setupCitationLinks(app, containerEl, citationSources)
-  }, [app, citationSources])
-
   useEffect(() => {
     const containerEl = containerRef.current
     if (!containerEl) {
@@ -385,7 +310,6 @@ function setupMarkdownLinks(
   containerEl: HTMLElement,
   sourcePath: string,
   showLinkHover?: boolean,
-  citationSources?: CitationSource[],
 ) {
   containerEl.querySelectorAll('a.internal-link').forEach((el) => {
     el.addEventListener('click', (evt: MouseEvent) => {
@@ -416,41 +340,6 @@ function setupMarkdownLinks(
         }
       })
     }
-  })
-
-  setupCitationLinks(app, containerEl, citationSources)
-}
-
-/**
- * Bind click/title for `yolo-cite:N` anchors in the rendered markdown.
- * Idempotent: replaces each anchor with a clone before binding, so callers can
- * re-run this when `citationSources` arrives late (post-stream metadata) or
- * changes, without stacking duplicate listeners.
- */
-function setupCitationLinks(
-  app: App,
-  containerEl: HTMLElement,
-  citationSources?: CitationSource[],
-) {
-  containerEl.querySelectorAll('a').forEach((el) => {
-    const href = el.getAttribute('href')
-    if (!href || !isVaultCitationHref(href)) {
-      return
-    }
-    // Clear any previous handler/title (from an earlier pass with stale or
-    // empty sources) by replacing the node with a clone.
-    const fresh = el.cloneNode(true) as HTMLAnchorElement
-    el.replaceWith(fresh)
-
-    const source = findCitationSource(href, citationSources)
-    if (!source) {
-      return
-    }
-    fresh.setAttribute('title', buildCitationTooltip(source))
-    fresh.addEventListener('click', (evt: MouseEvent) => {
-      evt.preventDefault()
-      openCitationSource(app, source)
-    })
   })
 }
 

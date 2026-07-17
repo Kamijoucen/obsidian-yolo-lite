@@ -2,8 +2,8 @@ jest.mock('../../contexts/language-context', () => ({
   useLanguage: () => ({
     t: (key: string, fallback?: string) => {
       if (key === 'chat.reasoning') return '思考过程'
-      if (key === 'quickAsk.error') return '生成失败'
-      if (key === 'quickAsk.statusGenerating') return '生成中...'
+      if (key === 'chat.statusRequesting') return '请求中...'
+      if (key === 'chat.statusThinking') return '思考中...'
       return fallback ?? ''
     },
   }),

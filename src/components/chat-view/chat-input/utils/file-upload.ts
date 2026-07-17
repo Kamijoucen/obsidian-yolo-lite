@@ -2,7 +2,6 @@ import { getTextAttachmentKind } from '../../../../utils/llm/text-attachment'
 
 export type ClassifiedUploadFiles = {
   imageFiles: File[]
-  pdfFiles: File[]
   officeFiles: File[]
   textAttachmentFiles: File[]
   unsupportedFiles: File[]
@@ -10,7 +9,6 @@ export type ClassifiedUploadFiles = {
 
 export function classifyUploadFiles(files: File[]): ClassifiedUploadFiles {
   const imageFiles: File[] = []
-  const pdfFiles: File[] = []
   const officeFiles: File[] = []
   const textAttachmentFiles: File[] = []
   const unsupportedFiles: File[] = []
@@ -18,8 +16,6 @@ export function classifyUploadFiles(files: File[]): ClassifiedUploadFiles {
   for (const file of files) {
     if (file.type.startsWith('image/')) {
       imageFiles.push(file)
-    } else if (isPdfFile(file)) {
-      pdfFiles.push(file)
     } else if (isOfficeFile(file)) {
       officeFiles.push(file)
     } else if (isTextAttachmentFile(file)) {
@@ -31,7 +27,6 @@ export function classifyUploadFiles(files: File[]): ClassifiedUploadFiles {
 
   return {
     imageFiles,
-    pdfFiles,
     officeFiles,
     textAttachmentFiles,
     unsupportedFiles,
@@ -64,12 +59,6 @@ function dedupeFiles(files: File[]): File[] {
   })
 
   return result
-}
-
-function isPdfFile(file: File): boolean {
-  return (
-    file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
-  )
 }
 
 function isOfficeFile(file: File): boolean {

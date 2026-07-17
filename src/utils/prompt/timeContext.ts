@@ -34,7 +34,7 @@ export const formatTimeContext = (now: Date): string => {
  * 按设置把当前时间固定写入 `message.timeContext`,返回新对象(不原地修改入参);
  * 时间感知关闭时原样返回。
  *
- * 只能在「新用户回合进入对话」时调用(普通发送提交、Quick Ask 创建消息、入队那一刻、
+ * 只能在「新用户回合进入对话」时调用（普通发送提交或入队那一刻，
  * 历史编辑后重新提交)。retry / continue / tool recovery / 历史补编 等路径绝不调用,
  * 沿用消息上已有的 `timeContext`,以保证前缀缓存稳定。
  */

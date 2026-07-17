@@ -1,4 +1,4 @@
-import { ANTHROPIC_PRICES, GEMINI_PRICES, OPENAI_PRICES } from '../../constants'
+import { OPENAI_PRICES } from '../../constants'
 import { ChatModel } from '../../types/chat-model.types'
 import { ResponseUsage } from '../../types/llm/response'
 
@@ -24,24 +24,6 @@ export const calculateLLMCost = ({
     }
     case 'chatgpt-oauth': {
       return 0
-    }
-    case 'anthropic': {
-      const modelPricing = ANTHROPIC_PRICES[model.model]
-      if (!modelPricing) return null
-      return (
-        (usage.prompt_tokens * modelPricing.input +
-          usage.completion_tokens * modelPricing.output) /
-        1_000_000
-      )
-    }
-    case 'gemini': {
-      const modelPricing = GEMINI_PRICES[model.model]
-      if (!modelPricing) return null
-      return (
-        (usage.prompt_tokens * modelPricing.input +
-          usage.completion_tokens * modelPricing.output) /
-        1_000_000
-      )
     }
     default:
       return null

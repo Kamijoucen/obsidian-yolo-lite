@@ -4,7 +4,7 @@
 
 /**
  * @mention 菜单的二级 hover/方向键预览子面板。
- * popover 根（.yolo-smart-space-mention-popover）是 flex 容器（见 panels/smart-space.css）；
+ * popover 根（.yolo-mention-menu-popover）是 flex 容器；
  * 主面板宽度由 LexicalMenu 锁定为输入框宽度（containerDiv width），如果子面板作为 flex item
  * 会把主面板挤压成 0 宽。所以子面板改用 position:absolute 浮在主面板侧边，不参与 flex 布局；
  * popover 根加 position:relative 作为其定位参考。
@@ -15,12 +15,12 @@
  * 侧边栏 Chat pane 内放不下时隐藏子面板，点击一级菜单走 drill-down。
  * 空间不够时由组件切到 data-side="left" 翻到主面板左侧；
  * 两侧都不够时组件不渲染（drill-down 兜底）。 */
-.yolo-smart-space-mention-popover {
+.yolo-mention-menu-popover {
   position: relative;
   align-items: flex-start;
 }
 
-.yolo-smart-space-mention-subpanel {
+.yolo-mention-menu-subpanel {
   position: absolute;
   width: min(var(--yolo-chat-typeahead-max-width, 480px), calc(100vw - 24px));
   max-width: var(--yolo-chat-typeahead-max-width, 480px);
@@ -28,19 +28,19 @@
   pointer-events: auto;
 }
 
-.yolo-smart-space-mention-subpanel[data-side='right'] {
+.yolo-mention-menu-subpanel[data-side='right'] {
   left: calc(100% + 6px);
-  animation: yolo-smart-space-mention-subpanel-enter-right 105ms
+  animation: yolo-mention-menu-subpanel-enter-right 105ms
     cubic-bezier(0.2, 0, 0, 1) both;
 }
 
-.yolo-smart-space-mention-subpanel[data-side='left'] {
+.yolo-mention-menu-subpanel[data-side='left'] {
   right: calc(100% + 6px);
-  animation: yolo-smart-space-mention-subpanel-enter-left 105ms
+  animation: yolo-mention-menu-subpanel-enter-left 105ms
     cubic-bezier(0.2, 0, 0, 1) both;
 }
 
-@keyframes yolo-smart-space-mention-subpanel-enter-right {
+@keyframes yolo-mention-menu-subpanel-enter-right {
   from {
     opacity: 0;
     transform: translateX(-6px);
@@ -51,7 +51,7 @@
   }
 }
 
-@keyframes yolo-smart-space-mention-subpanel-enter-left {
+@keyframes yolo-mention-menu-subpanel-enter-left {
   from {
     opacity: 0;
     transform: translateX(6px);
@@ -66,23 +66,22 @@
  * placement='bottom'（主菜单向下） → 子菜单顶对齐 hover 项的顶 → 向下延伸；
  * placement='top'   （主菜单向上） → 子菜单底对齐 hover 项的底 → 向上延伸。
  * CSS 变量由 MentionPlugin 在测量 hover 项后写到 popover 根。 */
-.yolo-smart-space-mention-popover[data-placement='bottom']
-  .yolo-smart-space-mention-subpanel {
+.yolo-mention-menu-popover[data-placement='bottom']
+  .yolo-mention-menu-subpanel {
   top: var(--yolo-sub-anchor-top, 0);
   bottom: auto;
 }
 
-.yolo-smart-space-mention-popover[data-placement='top']
-  .yolo-smart-space-mention-subpanel {
+.yolo-mention-menu-popover[data-placement='top'] .yolo-mention-menu-subpanel {
   top: auto;
   bottom: calc(100% - var(--yolo-sub-anchor-bottom, 100%));
 }
 
 /* Safe triangle 内：抑制主面板（非子面板）item 的 :hover 染色，
  * 让 React 的 data-highlighted 完全主导视觉。这样鼠标穿越其他 entry 时不会瞬时高亮。 */
-.yolo-smart-space-mention-popover[data-safe-active='true']
-  > .yolo-smart-space-mention-dropdown:not(.yolo-smart-space-mention-subpanel)
-  .yolo-smart-space-mention-option:hover:not([data-highlighted='true']) {
+.yolo-mention-menu-popover[data-safe-active='true']
+  > .yolo-mention-menu-dropdown:not(.yolo-mention-menu-subpanel)
+  .yolo-mention-menu-option:hover:not([data-highlighted='true']) {
   background: transparent;
   box-shadow: none;
 }
@@ -187,10 +186,6 @@
   mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z'/%3E%3Cpath d='M2 10h20'/%3E%3C/svg%3E");
 }
 
-.yolo-lexical-content-editable-root .yolo-mention--pdf::before {
-  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z'/%3E%3Cpath d='M14 2v4a2 2 0 0 0 2 2h4'/%3E%3Cpath d='M10 9H8'/%3E%3Cpath d='M16 13H8'/%3E%3Cpath d='M16 17H8'/%3E%3C/svg%3E");
-}
-
 .yolo-lexical-content-editable-root .yolo-mention--office::before {
   mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z'/%3E%3Cpath d='M14 2v4a2 2 0 0 0 2 2h4'/%3E%3Cpath d='M10 9H8'/%3E%3Cpath d='M16 13H8'/%3E%3Cpath d='M16 17H8'/%3E%3C/svg%3E");
 }
@@ -243,9 +238,7 @@
   min-height: 0;
 }
 
-/* default 变体下的 group-label / separator / list / item 样式集中在这里。
-   --smart-space 变体的同名元素样式集中在 src/styles/panels/smart-space.css。
-   两个文件按变体严格隔离，避免源码顺序决定胜者的"屎山"问题。 */
+/* Default 变体下的 group-label / separator / list / item 样式。 */
 .yolo-popover-surface--default .yolo-popover-group-label {
   display: block;
   margin: 0;
@@ -2286,7 +2279,7 @@ body.is-mobile .yolo-chat-list-dropdown-item-actions:empty {
     .yolo-plan-streaming-preview-body,
   .yolo-plan-preview-panel--resolved.is-entering,
   .yolo-plan-streaming-preview-line,
-  .yolo-smart-space-mention-subpanel {
+  .yolo-mention-menu-subpanel {
     animation: none !important;
     transition: none !important;
   }

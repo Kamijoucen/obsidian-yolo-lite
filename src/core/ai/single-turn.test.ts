@@ -53,10 +53,6 @@ class MockProvider extends BaseLLMProvider<LLMProvider> {
   ): Promise<AsyncIterable<LLMResponseStreaming>> {
     return this.streamResponseMock(model, request, options)
   }
-
-  getEmbedding(): Promise<number[]> {
-    return Promise.resolve([])
-  }
 }
 
 const TEST_MODEL: ChatModel = {
@@ -94,7 +90,7 @@ describe('executeSingleTurn', () => {
     consoleWarnSpy.mockRestore()
   })
 
-  it('applies lightweight policy without clearing reasoningType', async () => {
+  it('applies lightweight policy without clearing OpenAI reasoning', async () => {
     const provider = new MockProvider()
     provider.generateResponseMock.mockResolvedValue({
       id: 'aux-1',
@@ -112,13 +108,17 @@ describe('executeSingleTurn', () => {
       providerClient: provider,
       model: {
         ...TEST_MODEL,
-        reasoningType: 'gemini',
-        builtinToolProvider: 'openrouter',
+        reasoningType: 'openai',
+        builtinToolProvider: 'gpt',
         builtinTools: {
-          openrouter: { webSearch: { enabled: true, engine: 'native' } },
+          gpt: { webSearch: { enabled: true } },
         },
         customParameters: [
-          { key: 'tools', value: '[{"type":"openrouter:web_search"}]' },
+          {
+            key: 'tools',
+            value: '[{"type":"web_search"}]',
+            type: 'json',
+          },
         ],
       },
       request: {
@@ -127,12 +127,11 @@ describe('executeSingleTurn', () => {
       },
       deliveryMode: 'buffered',
       purpose: 'lightweight',
-      geminiTools: { useWebSearch: true, useUrlContext: true },
     })
 
     expect(provider.generateResponseMock).toHaveBeenCalledWith(
       expect.objectContaining({
-        reasoningType: 'gemini',
+        reasoningType: 'openai',
         builtinToolProvider: 'none',
         builtinTools: undefined,
         customParameters: [],
@@ -140,9 +139,7 @@ describe('executeSingleTurn', () => {
       expect.objectContaining({
         reasoningLevel: 'off',
       }),
-      expect.objectContaining({
-        geminiTools: undefined,
-      }),
+      expect.any(Object),
     )
   })
 
@@ -1205,7 +1202,9 @@ describe('executeSingleTurn', () => {
 
   it('uses one buffered SSE request for Obsidian transport and publishes only the final result', async () => {
     const provider = new MockProvider({
-      additionalSettings: { requestTransportMode: 'obsidian' },
+      additionalSettings: {
+        requestTransportMode: { desktop: 'obsidian', mobile: 'obsidian' },
+      },
     })
     const onStreamDelta = jest.fn()
     provider.streamResponseMock.mockResolvedValue(
@@ -1262,7 +1261,9 @@ describe('executeSingleTurn', () => {
 
   it('does not replay a failed Obsidian buffered request with non-streaming', async () => {
     const provider = new MockProvider({
-      additionalSettings: { requestTransportMode: 'obsidian' },
+      additionalSettings: {
+        requestTransportMode: { desktop: 'obsidian', mobile: 'obsidian' },
+      },
     })
     provider.streamResponseMock.mockRejectedValue(new Error('unexpected EOF'))
 
@@ -1287,7 +1288,9 @@ describe('executeSingleTurn', () => {
 
   it('does not replay invalid write-tool arguments from an Obsidian buffered request', async () => {
     const provider = new MockProvider({
-      additionalSettings: { requestTransportMode: 'obsidian' },
+      additionalSettings: {
+        requestTransportMode: { desktop: 'obsidian', mobile: 'obsidian' },
+      },
     })
     provider.streamResponseMock.mockResolvedValue(
       toAsyncIterable([
@@ -1333,7 +1336,9 @@ describe('executeSingleTurn', () => {
     jest.useFakeTimers()
     try {
       const provider = new MockProvider({
-        additionalSettings: { requestTransportMode: 'obsidian' },
+        additionalSettings: {
+          requestTransportMode: { desktop: 'obsidian', mobile: 'obsidian' },
+        },
       })
       provider.streamResponseMock.mockImplementation(
         () => new Promise<AsyncIterable<LLMResponseStreaming>>(() => undefined),

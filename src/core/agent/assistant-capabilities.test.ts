@@ -1,4 +1,3 @@
-import type { YoloSettings } from '../../settings/schema/setting.types'
 import type { Assistant } from '../../types/assistant.types'
 
 import {
@@ -6,55 +5,34 @@ import {
   resolveAssistantTimeContextEnabled,
 } from './assistant-capabilities'
 
-const baseSettings = {
+const assistant = (overrides: Partial<Assistant> = {}): Assistant => ({
+  id: 'assistant-1',
+  name: 'Assistant',
+  systemPrompt: '',
+  includeCurrentFileContent: true,
   timeContextEnabled: true,
-  chatOptions: { includeCurrentFileContent: true },
-} as YoloSettings
+  ...overrides,
+})
 
 describe('assistant-capabilities', () => {
-  it('prefers per-agent focus sync over the global default', () => {
-    const assistant = {
-      id: 'a1',
-      name: 'A',
-      includeCurrentFileContent: false,
-    } as Assistant
-
+  it('uses the per-agent focus sync setting', () => {
     expect(
-      resolveAssistantIncludeCurrentFileContent(assistant, baseSettings),
+      resolveAssistantIncludeCurrentFileContent(
+        assistant({ includeCurrentFileContent: false }),
+      ),
     ).toBe(false)
   })
 
-  it('falls back to global focus sync when assistant has no value', () => {
-    const assistant = { id: 'a1', name: 'A' } as Assistant
-    const settings = {
-      ...baseSettings,
-      chatOptions: { includeCurrentFileContent: false },
-    } as YoloSettings
-
-    expect(resolveAssistantIncludeCurrentFileContent(assistant, settings)).toBe(
-      false,
-    )
+  it('uses the per-agent time awareness setting', () => {
+    expect(
+      resolveAssistantTimeContextEnabled(
+        assistant({ timeContextEnabled: false }),
+      ),
+    ).toBe(false)
   })
 
-  it('prefers per-agent time awareness over the global default', () => {
-    const assistant = {
-      id: 'a1',
-      name: 'A',
-      timeContextEnabled: false,
-    } as Assistant
-
-    expect(resolveAssistantTimeContextEnabled(assistant, baseSettings)).toBe(
-      false,
-    )
-  })
-
-  it('falls back to global time awareness when assistant has no value', () => {
-    const assistant = { id: 'a1', name: 'A' } as Assistant
-    const settings = {
-      ...baseSettings,
-      timeContextEnabled: false,
-    } as YoloSettings
-
-    expect(resolveAssistantTimeContextEnabled(assistant, settings)).toBe(false)
+  it('uses enabled defaults when no assistant is selected', () => {
+    expect(resolveAssistantIncludeCurrentFileContent(null)).toBe(true)
+    expect(resolveAssistantTimeContextEnabled(null)).toBe(true)
   })
 })

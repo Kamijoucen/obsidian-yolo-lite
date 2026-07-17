@@ -242,8 +242,6 @@ function compactInlineMentionable(
     file: mentionable.file,
     startLine: mentionable.startLine,
     endLine: mentionable.endLine,
-    pageNumber: mentionable.pageNumber,
-    source: mentionable.source,
     contentFormat: mentionable.contentFormat,
     contentHash:
       mentionable.contentHash ??

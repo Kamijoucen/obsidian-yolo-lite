@@ -221,7 +221,13 @@ describe('LearningSrsStore', () => {
   it('deduplicates concurrent initial project loads', async () => {
     const path = 'YOLO/.yolo_json_db/learning-srs/project.json'
     const { app, adapter } = createApp({
-      [path]: JSON.stringify({ version: 1, cards: {} }),
+      [path]: JSON.stringify({
+        version: 3,
+        cards: {},
+        suspended: [],
+        pausedAt: null,
+        lastStudiedAt: null,
+      }),
     })
     const store = createStore(app)
 
@@ -240,7 +246,7 @@ describe('LearningSrsStore', () => {
     const path = 'YOLO/.yolo_json_db/learning-srs/project.json'
     const { app } = createApp({
       [path]: JSON.stringify({
-        version: 1,
+        version: 3,
         cards: {
           aaaaaaaa: {
             due: '2026-07-11T12:00:00.000Z',
@@ -256,6 +262,9 @@ describe('LearningSrsStore', () => {
             introducedAt: '2026-07-10T12:00:00.000Z',
           },
         },
+        suspended: [],
+        pausedAt: null,
+        lastStudiedAt: '2026-07-10T12:00:00.000Z',
       }),
     })
     const store = createStore(app)
@@ -268,7 +277,7 @@ describe('LearningSrsStore', () => {
   it('accepts review cards with remaining long learning steps', async () => {
     const path = 'YOLO/.yolo_json_db/learning-srs/project.json'
     const state = {
-      version: 1,
+      version: 3,
       cards: {
         aaaaaaaa: {
           due: '2026-07-11T12:00:00.000Z',
@@ -284,16 +293,15 @@ describe('LearningSrsStore', () => {
           introducedAt: '2026-07-10T12:00:00.000Z',
         },
       },
+      suspended: [],
+      pausedAt: null,
+      lastStudiedAt: '2026-07-10T12:00:00.000Z',
     }
     const { app } = createApp({ [path]: JSON.stringify(state) })
     const store = createStore(app)
 
     await expect(store.getProjectState('project')).resolves.toEqual({
       ...state,
-      version: 3,
-      suspended: [],
-      pausedAt: null,
-      lastStudiedAt: '2026-07-10T12:00:00.000Z',
     })
   })
 
@@ -335,45 +343,15 @@ describe('LearningSrsStore', () => {
     expect(adapter.write).not.toHaveBeenCalled()
   })
 
-  it('migrates v1 deterministically and caches only after persistence succeeds', async () => {
+  it('rejects project state from a different schema version', async () => {
     const path = 'YOLO/.yolo_json_db/learning-srs/project.json'
-    const { app, adapter, files } = createApp({
-      [path]: JSON.stringify({ version: 1, cards: {} }),
+    const { app } = createApp({
+      [path]: JSON.stringify({ version: 2, cards: {}, suspended: [] }),
     })
-    const store = createStore(app)
 
-    await expect(store.getProjectState('project')).resolves.toEqual({
-      version: 3,
-      cards: {},
-      suspended: [],
-      pausedAt: null,
-      lastStudiedAt: null,
-    })
-    expect(JSON.parse(files.get(path)!)).toEqual({
-      version: 3,
-      cards: {},
-      suspended: [],
-      pausedAt: null,
-      lastStudiedAt: null,
-    })
-    expect(adapter.write).toHaveBeenCalledTimes(1)
-
-    const failed = createApp({
-      [path]: JSON.stringify({ version: 1, cards: {} }),
-    })
-    failed.adapter.write.mockRejectedValueOnce(new Error('migration failed'))
-    const failedStore = createStore(failed.app)
-    await expect(failedStore.getProjectState('project')).rejects.toThrow(
-      'migration failed',
+    await expect(createStore(app).getProjectState('project')).rejects.toThrow(
+      'SRS 文件版本不受支持',
     )
-    await expect(failedStore.getProjectState('project')).resolves.toEqual({
-      version: 3,
-      cards: {},
-      suspended: [],
-      pausedAt: null,
-      lastStudiedAt: null,
-    })
-    expect(failed.adapter.read).toHaveBeenCalledTimes(2)
   })
 
   it('suspends new and learned cards, resumes without changing due, and filters queues', async () => {
@@ -437,13 +415,15 @@ describe('LearningSrsStore', () => {
     )
   })
 
-  it('fully validates v2 suspended data and deduplicates persisted UUIDs', async () => {
+  it('fully validates current suspended data and deduplicates UUIDs', async () => {
     const path = 'YOLO/.yolo_json_db/learning-srs/project.json'
     const valid = createApp({
       [path]: JSON.stringify({
-        version: 2,
+        version: 3,
         cards: {},
         suspended: ['bbbbbbbb', 'aaaaaaaa', 'aaaaaaaa'],
+        pausedAt: null,
+        lastStudiedAt: null,
       }),
     })
     await expect(
@@ -462,71 +442,19 @@ describe('LearningSrsStore', () => {
       [[123], 'SRS 暂停卡片'],
     ] as const) {
       const invalid = createApp({
-        [path]: JSON.stringify({ version: 2, cards: {}, suspended }),
+        [path]: JSON.stringify({
+          version: 3,
+          cards: {},
+          suspended,
+          pausedAt: null,
+          lastStudiedAt: null,
+        }),
       })
       await expect(
         createStore(invalid.app).getProjectState('project'),
       ).rejects.toThrow(message)
     }
   })
-
-  it.each([1, 2] as const)(
-    'migrates v%s and derives the latest studied time from card reviews',
-    async (version) => {
-      const path = 'YOLO/.yolo_json_db/learning-srs/project.json'
-      const cards = {
-        aaaaaaaa: {
-          due: '2026-07-14T12:00:00.000Z',
-          stability: 1,
-          difficulty: 5,
-          elapsedDays: 1,
-          scheduledDays: 1,
-          learningSteps: 0,
-          reps: 1,
-          lapses: 0,
-          state: 2,
-          lastReview: '2026-07-10T12:00:00.000Z',
-          introducedAt: '2026-07-10T12:00:00.000Z',
-        },
-        bbbbbbbb: {
-          due: '2026-07-15T12:00:00.000Z',
-          stability: 1,
-          difficulty: 5,
-          elapsedDays: 1,
-          scheduledDays: 1,
-          learningSteps: 0,
-          reps: 1,
-          lapses: 0,
-          state: 2,
-          lastReview: '2026-07-12T12:00:00.000Z',
-          introducedAt: '2026-07-11T12:00:00.000Z',
-        },
-      }
-      const source = {
-        version,
-        cards,
-        ...(version === 2 ? { suspended: ['aaaaaaaa'] } : {}),
-      }
-      const { app, files } = createApp({ [path]: JSON.stringify(source) })
-
-      await expect(
-        createStore(app).getProjectState('project'),
-      ).resolves.toEqual({
-        version: 3,
-        cards,
-        suspended: version === 2 ? ['aaaaaaaa'] : [],
-        pausedAt: null,
-        lastStudiedAt: '2026-07-12T12:00:00.000Z',
-      })
-      expect(JSON.parse(files.get(path)!)).toEqual(
-        expect.objectContaining({
-          version: 3,
-          pausedAt: null,
-          lastStudiedAt: '2026-07-12T12:00:00.000Z',
-        }),
-      )
-    },
-  )
 
   it('strictly validates v3 project timestamps', async () => {
     const path = 'YOLO/.yolo_json_db/learning-srs/project.json'

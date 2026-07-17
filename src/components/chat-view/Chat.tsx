@@ -1,15 +1,7 @@
-import { EditorView } from '@codemirror/view'
 import { useMutation } from '@tanstack/react-query'
 import cx from 'clsx'
 import { Download, History, Pencil, Plus, Trash2 } from 'lucide-react'
-import {
-  MarkdownView,
-  Notice,
-  Platform,
-  TFile,
-  TFolder,
-  normalizePath,
-} from 'obsidian'
+import { Notice, Platform, TFile, TFolder, normalizePath } from 'obsidian'
 import {
   forwardRef,
   useCallback,
@@ -21,7 +13,6 @@ import {
   useState,
 } from 'react'
 import type { CSSProperties } from 'react'
-import { flushSync } from 'react-dom'
 import { v4 as uuidv4 } from 'uuid'
 
 import { useApp } from '../../contexts/app-context'
@@ -43,8 +34,6 @@ import { getLocalFileToolServerName } from '../../core/mcp/localFileTools'
 import { parseToolName } from '../../core/mcp/tool-name-utils'
 import { readEditReviewSnapshot } from '../../database/json/chat/editReviewSnapshotStore'
 import type { ChatLeafPlacement } from '../../features/chat/chatLeafSessionManager'
-import { selectionHighlightController } from '../../features/editor/selection-highlight/selectionHighlightController'
-import { useChatHighlightSession } from '../../features/editor/selection-highlight/useChatHighlightSession'
 import {
   getConversationDisplayTitle,
   useChatHistory,
@@ -67,10 +56,7 @@ import type { ConversationOverrideSettings } from '../../types/conversation-sett
 import type {
   Mentionable,
   MentionableAssistantQuote,
-  MentionableBlock,
-  MentionableBlockData,
   MentionableImage,
-  MentionableWebSelection,
 } from '../../types/mentionable'
 import {
   REASONING_LEVELS,
@@ -117,8 +103,6 @@ import { stampUserMessageTimeContext } from '../../utils/prompt/timeContext'
 import DotLoader from '../common/DotLoader'
 import { AcknowledgementModal } from '../modals/AcknowledgementModal'
 
-// removed Prompt Templates feature
-
 import { AssistantSelector } from './AssistantSelector'
 import AssistantToolMessageGroupItem from './AssistantToolMessageGroupItem'
 import { ChatInputDraftHolder } from './chat-input/chatInputDraft'
@@ -135,7 +119,7 @@ import type {
 } from './chat-input/ChatUserInput'
 import MentionableBadge from './chat-input/MentionableBadge'
 import { editorStateToPlainText } from './chat-input/utils/editor-state-to-plain-text'
-import { getChatSurfacePreset } from './chat-surface-presets'
+import { CHAT_SURFACE_PRESET } from './chat-surface-presets'
 import { ChatConversationPane } from './ChatConversationPane'
 import { ChatListDropdown } from './ChatListDropdown'
 import {
@@ -144,7 +128,6 @@ import {
   getDisplayedAssistantToolMessages,
   getSourceUserMessageIdForGroup,
 } from './chatRetry'
-import Composer from './Composer'
 import { useActiveViewState } from './hooks/useActiveViewState'
 import { getInputOverlayReserveHeight } from './inputOverlayReserve'
 import { syncRenderedLatexSelection } from './latex-copy'
@@ -162,7 +145,28 @@ import {
   useStableChatTimelineItems,
 } from './useChatTimelineReadModel'
 import UserMessageItem from './UserMessageItem'
-import ViewToggle from './ViewToggle'
+
+const createAssistantQuoteMentionable = ({
+  conversationId,
+  messageId,
+  content,
+}: {
+  conversationId: string
+  messageId: string
+  content: string
+}): MentionableAssistantQuote => {
+  const trimmedContent = content.trim()
+  const { count, unit } = getBlockMentionableCountInfo(trimmedContent)
+  return {
+    type: 'assistant-quote',
+    conversationId,
+    messageId,
+    content: trimmedContent,
+    contentHash: getBlockContentHash(trimmedContent),
+    contentCount: count,
+    contentUnit: unit,
+  }
+}
 
 const WORKSPACE_WIDE_HEADER_MIN_WIDTH = 1200
 const MESSAGE_NAVIGATOR_MIN_ANCHORS = 7
@@ -615,41 +619,6 @@ const getInlineSelectionRange = (
   }
 }
 
-const waitForEditorContentSync = async (
-  view: EditorView,
-  expectedContent: string,
-  timeoutMs = 400,
-): Promise<boolean> => {
-  if (view.state.doc.toString() === expectedContent) {
-    return true
-  }
-
-  const startedAt = Date.now()
-
-  return await new Promise((resolve) => {
-    const check = () => {
-      if (!view.dom.isConnected) {
-        resolve(false)
-        return
-      }
-
-      if (view.state.doc.toString() === expectedContent) {
-        resolve(true)
-        return
-      }
-
-      if (Date.now() - startedAt >= timeoutMs) {
-        resolve(false)
-        return
-      }
-
-      window.setTimeout(check, 16)
-    }
-
-    window.setTimeout(check, 16)
-  })
-}
-
 const getNewInputMessage = (
   reasoningLevel: ReasoningLevel,
 ): ChatUserMessage => {
@@ -712,140 +681,11 @@ const serializeActiveBranchByUserMessageId = (
   return entries.length > 0 ? Object.fromEntries(entries) : undefined
 }
 
-const createSelectionBlockMentionable = (
-  selectedBlock: MentionableBlockData,
-): MentionableBlock => {
-  const { count, unit } = getBlockMentionableCountInfo(selectedBlock.content)
-  const source = normalizeSelectionSource(selectedBlock.source)
-  return {
-    type: 'block',
-    ...selectedBlock,
-    source,
-    contentHash:
-      selectedBlock.contentHash ?? getBlockContentHash(selectedBlock.content),
-    contentCount: selectedBlock.contentCount ?? count,
-    contentUnit: selectedBlock.contentUnit ?? unit,
-  }
-}
-
-const createAssistantQuoteMentionable = ({
-  conversationId,
-  messageId,
-  content,
-}: {
-  conversationId: string
-  messageId: string
-  content: string
-}): MentionableAssistantQuote => {
-  const trimmedContent = content.trim()
-  const { count, unit } = getBlockMentionableCountInfo(trimmedContent)
-  return {
-    type: 'assistant-quote',
-    conversationId,
-    messageId,
-    content: trimmedContent,
-    contentHash: getBlockContentHash(trimmedContent),
-    contentCount: count,
-    contentUnit: unit,
-  }
-}
-
-const normalizeSelectionSource = (
-  source: MentionableBlockData['source'],
-): 'selection-sync' | 'selection-pinned' => {
-  return source === 'selection-pinned' ? 'selection-pinned' : 'selection-sync'
-}
-
-const isSyncSelectionSource = (source: MentionableBlock['source']): boolean => {
-  return source === 'selection' || source === 'selection-sync'
-}
-
-const isSyncSelectionMentionable = (mentionable: Mentionable): boolean => {
-  if (mentionable.type === 'block') {
-    return isSyncSelectionSource(mentionable.source)
-  }
-  return (
-    mentionable.type === 'web-selection' &&
-    mentionable.source === 'web-selection-sync'
-  )
-}
-
-const isSelectionBlockMentionable = (
-  mentionable: Mentionable,
-): mentionable is MentionableBlock => {
-  return (
-    mentionable.type === 'block' &&
-    (mentionable.source === 'selection' ||
-      mentionable.source === 'selection-sync' ||
-      mentionable.source === 'selection-pinned')
-  )
-}
-
-const collectSelectionHighlightIds = (
-  mentionables: Mentionable[],
-): string[] => {
-  const ids = new Set<string>()
-  for (const mentionable of mentionables) {
-    if (!isSelectionBlockMentionable(mentionable)) continue
-    if (mentionable.highlightId) ids.add(mentionable.highlightId)
-  }
-  return Array.from(ids)
-}
-
-const collectSelectionHighlightIdsFromMessages = (
-  messages: ChatMessage[],
-): string[] => {
-  const ids = new Set<string>()
-  for (const message of messages) {
-    if (message.role !== 'user') continue
-    for (const id of collectSelectionHighlightIds(message.mentionables)) {
-      ids.add(id)
-    }
-  }
-  return Array.from(ids)
-}
-
-const collectRemovedSelectionHighlightIds = (
-  previousMentionables: Mentionable[],
-  nextMentionables: Mentionable[],
-): string[] => {
-  const nextIds = new Set(collectSelectionHighlightIds(nextMentionables))
-  return collectSelectionHighlightIds(previousMentionables).filter(
-    (id) => !nextIds.has(id),
-  )
-}
-
-const collectSelectionHighlightIdsByMentionableKey = (
-  mentionables: Mentionable[],
-  mentionableKey: string,
-): string[] => {
-  return collectSelectionHighlightIds(
-    mentionables.filter(
-      (mentionable) =>
-        getMentionableKey(serializeMentionable(mentionable)) === mentionableKey,
-    ),
-  )
-}
-
 const REASONING_LEVEL_CANDIDATES: ReasoningLevel[] = [...REASONING_LEVELS]
 
 export type ChatRef = {
-  openNewChat: (selectedBlock?: MentionableBlockData) => void
+  openNewChat: () => void
   loadConversation: (conversationId: string) => Promise<void>
-  addSelectionToChat: (selectedBlock: MentionableBlockData) => void
-  addSelectionToInput: (selectedBlock: MentionableBlockData) => void
-  applySelectionToMainInput: (
-    selectedBlock: MentionableBlockData,
-    text: string,
-    options?: {
-      submit?: boolean
-      assistantId?: string
-    },
-  ) => void
-  syncSelectionToChat: (selectedBlock: MentionableBlockData) => void
-  syncSelectionToInput: (selectedBlock: MentionableBlockData) => void
-  syncWebSelectionToInput: (selection: MentionableWebSelection) => void
-  clearSelectionFromChat: () => void
   addFileToChat: (file: TFile) => void
   addFolderToChat: (folder: TFolder) => void
   addImageToChat: (image: MentionableImage) => void
@@ -879,9 +719,6 @@ export type ChatRuntimeSnapshot = {
 }
 
 export type ChatProps = {
-  selectedBlock?: MentionableBlockData
-  activeView?: 'chat' | 'composer'
-  onChangeView?: (view: 'chat' | 'composer') => void
   placement?: ChatLeafPlacement
   initialConversationId?: string
   /**
@@ -989,14 +826,7 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
     if (seededRuntimeSnapshot) {
       return seededRuntimeSnapshot.inputMessage
     }
-    const newMessage = getNewInputMessage(initialReasoningLevel)
-    if (props.selectedBlock) {
-      newMessage.mentionables = [
-        ...newMessage.mentionables,
-        createSelectionBlockMentionable(props.selectedBlock),
-      ]
-    }
-    return newMessage
+    return getNewInputMessage(initialReasoningLevel)
   })
   const inputDraftHolderRef = useRef<ChatInputDraftHolder | null>(null)
   if (!inputDraftHolderRef.current) {
@@ -1097,23 +927,6 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
     string | null
   >(null)
   const applyAbortControllerRef = useRef<AbortController | null>(null)
-  const getEditorViewForFile = useCallback(
-    (file: TFile): EditorView | null => {
-      const markdownLeaves = app.workspace.getLeavesOfType('markdown')
-      const targetLeaf = markdownLeaves.find((leaf) => {
-        const view = leaf.view
-        return view instanceof MarkdownView && view.file?.path === file.path
-      })
-
-      if (!(targetLeaf?.view instanceof MarkdownView)) {
-        return null
-      }
-
-      const editor = targetLeaf.view.editor as { cm?: unknown } | undefined
-      return editor?.cm instanceof EditorView ? editor.cm : null
-    },
-    [app.workspace],
-  )
   const [queryProgress, setQueryProgress] = useState<QueryProgressState>({
     type: 'idle',
   })
@@ -1199,8 +1012,6 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
   )
 
   const isSidebarPlacement = props.placement === 'sidebar'
-  const activeView = isSidebarPlacement ? (props.activeView ?? 'chat') : 'chat'
-  const onChangeView = props.onChangeView
 
   useEffect(() => {
     if (isSidebarPlacement) {
@@ -1316,8 +1127,8 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
     )
   }, [conversationAssistantId, settings.assistants])
   const selectedAssistantTimeContextEnabled = useMemo(
-    () => resolveAssistantTimeContextEnabled(selectedAssistant, settings),
-    [selectedAssistant, settings],
+    () => resolveAssistantTimeContextEnabled(selectedAssistant),
+    [selectedAssistant],
   )
 
   // Per-conversation model id (do NOT write back to global settings)
@@ -1745,26 +1556,6 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
     chatMessagesStateRef.current = chatMessages
   }, [chatMessages])
 
-  // Selection-highlight lifecycle — see useChatHighlightSession for the full
-  // contract. In-input mentions reconcile immediately on delete; sent
-  // selection mentions commit to sticky on submit, then drop on the next
-  // editor interaction.
-  const focusedHistoricalMentionables = useMemo<Mentionable[] | null>(() => {
-    if (!focusedMessageId || focusedMessageId === inputMessage.id) return null
-    const focused = chatMessages.find(
-      (message) => message.role === 'user' && message.id === focusedMessageId,
-    )
-    return focused?.role === 'user' ? focused.mentionables : null
-  }, [chatMessages, focusedMessageId, inputMessage.id])
-
-  const { commitSentSelectionHighlights, releaseHighlightIds } =
-    useChatHighlightSession({
-      conversationId: currentConversationId,
-      containerRef,
-      inputMentionables: inputMessage.mentionables,
-      focusedHistoricalMentionables,
-    })
-
   const compactionDividerAnchorMessageIds = useMemo(
     () => effectiveCompactionState.map((entry) => entry.anchorMessageId),
     [effectiveCompactionState],
@@ -1850,7 +1641,6 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
 
   const currentFileOverride = resolveAssistantIncludeCurrentFileContent(
     selectedAssistant,
-    settings,
   )
     ? activeFile
     : null
@@ -1874,7 +1664,7 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
     visibleMessageIds: string[]
   }>({ activeMessageId: null, visibleMessageIds: [] })
   const latexSelectionSyncFrameRef = useRef<number | null>(null)
-  const chatSurfacePreset = getChatSurfacePreset('chat')
+  const chatSurfacePreset = CHAT_SURFACE_PRESET
   const hasStreamingMessages = useMemo(
     () =>
       chatMessages.some(
@@ -2212,9 +2002,6 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
         if (conversationId !== currentConversationId) return
         if (messages.length === 0) return
         const latest = messages[messages.length - 1]
-        releaseHighlightIds(
-          collectSelectionHighlightIdsFromMessages(messages.slice(0, -1)),
-        )
         const currentInputMessage = getLatestInputMessage()
         replaceInputMessage({
           ...currentInputMessage,
@@ -2253,7 +2040,6 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
     agentService,
     currentConversationId,
     getLatestInputMessage,
-    releaseHighlightIds,
     replaceInputMessage,
     t,
   ])
@@ -2499,12 +2285,6 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
   const removeHistoricalUserMessage = useCallback(
     (messageId: string) => {
       const sourceMessages = chatMessagesStateRef.current
-      const removedMessages = sourceMessages.filter(
-        (message) => message.role === 'user' && message.id === messageId,
-      )
-      releaseHighlightIds(
-        collectSelectionHighlightIdsFromMessages(removedMessages),
-      )
       const nextMessages = sourceMessages.filter(
         (message) => !(message.role === 'user' && message.id === messageId),
       )
@@ -2559,7 +2339,6 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
       deleteConversation,
       inputMessage.id,
       persistConversation,
-      releaseHighlightIds,
     ],
   )
 
@@ -2820,7 +2599,6 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
         setChatMode(loadedChatMode)
         setYoloEnabled(
           normalizeYoloEnabled(
-            conversation.overrides?.chatMode,
             conversation.overrides?.agentYoloEnabled,
             settings.chatOptions.agentYoloEnabled ?? false,
           ),
@@ -2934,7 +2712,7 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
     ],
   )
 
-  // Load an initial conversation passed in via props (e.g., from Quick Ask)
+  // Load an initial conversation passed in via props.
   useEffect(() => {
     if (!props.initialConversationId) return
     void handleLoadConversation(props.initialConversationId)
@@ -3022,7 +2800,7 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
     [app, chatManager, settings, t],
   )
 
-  const handleNewChat = (selectedBlock?: MentionableBlockData) => {
+  const handleNewChat = () => {
     const newId = uuidv4()
     setCurrentConversationId(newId)
     conversationAssistantIdRef.current.set(newId, conversationAssistantId)
@@ -3056,13 +2834,6 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
     newInputMessage.selectedSkills = [
       ...(latestInputMessage.selectedSkills ?? []),
     ]
-    if (selectedBlock) {
-      const mentionableBlock = createSelectionBlockMentionable(selectedBlock)
-      newInputMessage.mentionables = [
-        ...newInputMessage.mentionables,
-        mentionableBlock,
-      ]
-    }
     setAddedBlockKey(null)
     replaceInputMessage(newInputMessage)
     setFocusedMessageId(newInputMessage.id)
@@ -3171,10 +2942,6 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
       const removedIds = new Set(
         sourceMessages.slice(startIdx, endIdx).map((m) => m.id),
       )
-      const removedMessages = sourceMessages.slice(startIdx, endIdx)
-      releaseHighlightIds(
-        collectSelectionHighlightIdsFromMessages(removedMessages),
-      )
       const nextMessages = sourceMessages.filter((m) => !removedIds.has(m.id))
       const nextAssistantGroupBoundaryMessageIds =
         normalizeAssistantGroupBoundaryMessageIds(
@@ -3226,7 +2993,6 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
       isCurrentConversationRunActive,
       normalizeAssistantGroupBoundaryMessageIds,
       persistConversation,
-      releaseHighlightIds,
     ],
   )
 
@@ -3268,7 +3034,6 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
         null
       const nextChatMode = normalizeChatMode(nextOverrides?.chatMode, chatMode)
       const nextYoloEnabled = normalizeYoloEnabled(
-        nextOverrides?.chatMode,
         nextOverrides?.agentYoloEnabled,
         yoloEnabled,
       )
@@ -4041,7 +3806,7 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
 
         if (materialized.errors.length > 0) {
           const partialMessage = t(
-            'quickAsk.editPartialSuccess',
+            'chat.editPartialSuccess',
             '已应用 {appliedCount}/{totalEdits} 个编辑，详情请查看控制台',
           )
             .replace('{appliedCount}', String(materialized.appliedCount))
@@ -4049,28 +3814,6 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
           new Notice(partialMessage)
         }
 
-        const updatedRanges = materialized.operationResults
-          .map((result) => result.newRange)
-          .filter((range): range is NonNullable<typeof range> => Boolean(range))
-        const editorView = getEditorViewForFile(targetFile)
-        if (editorView && updatedRanges.length > 0) {
-          const isEditorSynced = await waitForEditorContentSync(
-            editorView,
-            materialized.newContent,
-          )
-
-          if (isEditorSynced) {
-            selectionHighlightController.highlightRanges(
-              editorView,
-              updatedRanges.map((range) => ({
-                from: range.start,
-                to: range.end,
-                visual: 'updated' as const,
-              })),
-              1050,
-            )
-          }
-        }
         return
       }
 
@@ -4464,8 +4207,8 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
   const handleToolMessageUpdate = useCallback(
     (toolMessage: ChatToolMessage) => {
       // Normal Chat rendering uses handleToolCallResponseUpdate so unchanged
-      // sibling tool cards can stay memoized. This remains as the legacy whole
-      // message fallback for ToolMessage hosts that still call onMessageUpdate.
+      // sibling tool cards can stay memoized. This handles surfaces that send
+      // back a complete ToolMessage.
       const didFindToolMessage = updateToolMessageInChatHistory(toolMessage)
       if (didFindToolMessage) {
         return
@@ -4570,274 +4313,6 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
     persistConversationImmediately,
   ])
 
-  const buildSelectionMentionable = useCallback(
-    (selectedBlock: MentionableBlockData): MentionableBlock =>
-      createSelectionBlockMentionable(selectedBlock),
-    [],
-  )
-
-  const removeSelectionMentionable = useCallback(
-    (mentionables: ChatUserMessage['mentionables']) =>
-      mentionables.filter(
-        (mentionable) => !isSyncSelectionMentionable(mentionable),
-      ),
-    [],
-  )
-
-  const syncSelectionMentionable = useCallback(
-    (selectedBlock: MentionableBlockData) => {
-      if (!focusedMessageId) return
-
-      const mentionable = buildSelectionMentionable(selectedBlock)
-      const mentionableKey = getMentionableKey(
-        serializeMentionable(mentionable),
-      )
-
-      if (focusedMessageId === inputMessage.id) {
-        setInputMessage((prevInputMessage) => {
-          const existingSelection = prevInputMessage.mentionables.find((m) =>
-            isSyncSelectionMentionable(m),
-          )
-          if (existingSelection) {
-            const existingKey = getMentionableKey(
-              serializeMentionable(existingSelection),
-            )
-            if (existingKey === mentionableKey) {
-              return prevInputMessage
-            }
-          }
-          const nextMentionables = [
-            ...removeSelectionMentionable(prevInputMessage.mentionables),
-            mentionable,
-          ]
-          return {
-            ...prevInputMessage,
-            mentionables: nextMentionables,
-            promptContent: null,
-          }
-        })
-        return
-      }
-
-      setChatMessages((prevChatHistory) =>
-        prevChatHistory.map((message) => {
-          if (message.id === focusedMessageId && message.role === 'user') {
-            const existingSelection = message.mentionables.find((m) =>
-              isSyncSelectionMentionable(m),
-            )
-            if (existingSelection) {
-              const existingKey = getMentionableKey(
-                serializeMentionable(existingSelection),
-              )
-              if (existingKey === mentionableKey) {
-                return message
-              }
-            }
-            return {
-              ...message,
-              mentionables: [
-                ...removeSelectionMentionable(message.mentionables),
-                mentionable,
-              ],
-              promptContent: null,
-            }
-          }
-          return message
-        }),
-      )
-    },
-    [
-      buildSelectionMentionable,
-      focusedMessageId,
-      inputMessage.id,
-      removeSelectionMentionable,
-    ],
-  )
-
-  const syncSelectionMentionableToInput = useCallback(
-    (selectedBlock: MentionableBlockData) => {
-      const mentionable = buildSelectionMentionable(selectedBlock)
-      const mentionableKey = getMentionableKey(
-        serializeMentionable(mentionable),
-      )
-
-      flushSync(() => {
-        setInputMessage((prevInputMessage) => {
-          const existingSelection = prevInputMessage.mentionables.find((m) =>
-            isSyncSelectionMentionable(m),
-          )
-          if (existingSelection) {
-            const existingKey = getMentionableKey(
-              serializeMentionable(existingSelection),
-            )
-            if (existingKey === mentionableKey) {
-              return prevInputMessage
-            }
-          }
-
-          return {
-            ...prevInputMessage,
-            mentionables: [
-              ...removeSelectionMentionable(prevInputMessage.mentionables),
-              mentionable,
-            ],
-            promptContent: null,
-          }
-        })
-      })
-    },
-    [buildSelectionMentionable, removeSelectionMentionable],
-  )
-
-  const syncWebSelectionMentionableToInput = useCallback(
-    (selection: MentionableWebSelection) => {
-      const mentionable: MentionableWebSelection = {
-        ...selection,
-        source: selection.source ?? 'web-selection-sync',
-        contentHash:
-          selection.contentHash ?? getBlockContentHash(selection.content),
-      }
-      const mentionableKey = getMentionableKey(
-        serializeMentionable(mentionable),
-      )
-
-      flushSync(() => {
-        setInputMessage((prevInputMessage) => {
-          const existingSelection = prevInputMessage.mentionables.find((m) =>
-            isSyncSelectionMentionable(m),
-          )
-          if (existingSelection) {
-            const existingKey = getMentionableKey(
-              serializeMentionable(existingSelection),
-            )
-            if (existingKey === mentionableKey) {
-              return prevInputMessage
-            }
-          }
-
-          return {
-            ...prevInputMessage,
-            mentionables: [
-              ...removeSelectionMentionable(prevInputMessage.mentionables),
-              mentionable,
-            ],
-            promptContent: null,
-          }
-        })
-      })
-    },
-    [removeSelectionMentionable],
-  )
-
-  const upsertSelectionMentionableInMainInput = useCallback(
-    (mentionable: MentionableBlock) => {
-      setInputMessage((prevInputMessage) => {
-        const mentionableKey = getMentionableKey(
-          serializeMentionable(mentionable),
-        )
-        let changed = false
-        const nextMentionables = prevInputMessage.mentionables.map((m) => {
-          const key = getMentionableKey(serializeMentionable(m))
-          if (key !== mentionableKey) return m
-          if (m.type === 'block' && isSyncSelectionMentionable(m)) {
-            changed = true
-            return mentionable
-          }
-          return m
-        })
-
-        if (changed) {
-          return {
-            ...prevInputMessage,
-            mentionables: nextMentionables,
-            promptContent: null,
-          }
-        }
-
-        if (
-          prevInputMessage.mentionables.some(
-            (m) =>
-              getMentionableKey(serializeMentionable(m)) === mentionableKey,
-          )
-        ) {
-          return prevInputMessage
-        }
-
-        return {
-          ...prevInputMessage,
-          mentionables: [...prevInputMessage.mentionables, mentionable],
-          promptContent: null,
-        }
-      })
-    },
-    [],
-  )
-
-  const clearSelectionMentionable = useCallback(() => {
-    if (!focusedMessageId) return
-
-    if (focusedMessageId === inputMessage.id) {
-      const nextMentionables = removeSelectionMentionable(
-        inputMessageRef.current.mentionables,
-      )
-      releaseHighlightIds(
-        collectRemovedSelectionHighlightIds(
-          inputMessageRef.current.mentionables,
-          nextMentionables,
-        ),
-      )
-      setInputMessage((prevInputMessage) => {
-        const nextMentionables = removeSelectionMentionable(
-          prevInputMessage.mentionables,
-        )
-        if (nextMentionables.length === prevInputMessage.mentionables.length) {
-          return prevInputMessage
-        }
-        return {
-          ...prevInputMessage,
-          mentionables: nextMentionables,
-          promptContent: null,
-        }
-      })
-      return
-    }
-
-    const focusedMessage = chatMessagesStateRef.current.find(
-      (message): message is ChatUserMessage =>
-        message.role === 'user' && message.id === focusedMessageId,
-    )
-    if (focusedMessage) {
-      const nextMentionables = removeSelectionMentionable(
-        focusedMessage.mentionables,
-      )
-      releaseHighlightIds(
-        collectRemovedSelectionHighlightIds(
-          focusedMessage.mentionables,
-          nextMentionables,
-        ),
-      )
-    }
-
-    updateHistoricalUserMessage(focusedMessageId, (message) => {
-      const nextMentionables = removeSelectionMentionable(message.mentionables)
-      if (nextMentionables.length === message.mentionables.length) {
-        return message
-      }
-
-      return {
-        ...message,
-        mentionables: nextMentionables,
-        promptContent: null,
-      }
-    })
-  }, [
-    focusedMessageId,
-    inputMessage.id,
-    removeSelectionMentionable,
-    releaseHighlightIds,
-    updateHistoricalUserMessage,
-  ])
-
   // 从所有消息中删除指定的 mentionable，并清空 promptContent 以便重新编译
   const handleMentionableDeleteFromAll = useCallback(
     (mentionable: ChatUserMessage['mentionables'][number]) => {
@@ -4847,24 +4322,6 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
 
       // 从所有历史消息中删除
       const sourceMessages = chatMessagesStateRef.current
-      const idsToRelease = new Set<string>()
-      for (const message of sourceMessages) {
-        if (message.role !== 'user') continue
-        for (const id of collectSelectionHighlightIdsByMentionableKey(
-          message.mentionables,
-          mentionableKey,
-        )) {
-          idsToRelease.add(id)
-        }
-      }
-      for (const id of collectSelectionHighlightIdsByMentionableKey(
-        inputMessageRef.current.mentionables,
-        mentionableKey,
-      )) {
-        idsToRelease.add(id)
-      }
-      releaseHighlightIds(idsToRelease)
-
       let didChangeHistory = false
       const nextMessages = sourceMessages.flatMap((message): ChatMessage[] => {
         if (message.role !== 'user') {
@@ -4969,180 +4426,14 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
       inputMessage.id,
       isUserMessageEffectivelyEmpty,
       persistConversation,
-      releaseHighlightIds,
     ],
   )
 
   useImperativeHandle(ref, () => ({
-    openNewChat: (selectedBlock?: MentionableBlockData) =>
-      handleNewChat(selectedBlock),
+    openNewChat: () => handleNewChat(),
     loadConversation: async (conversationId: string) =>
       await handleLoadConversation(conversationId),
-    addSelectionToChat: (selectedBlock: MentionableBlockData) => {
-      const mentionable = createSelectionBlockMentionable({
-        ...selectedBlock,
-        source: 'selection-pinned',
-      })
 
-      setAddedBlockKey(null)
-
-      if (focusedMessageId === inputMessage.id) {
-        setInputMessage((prevInputMessage) => {
-          const mentionableKey = getMentionableKey(
-            serializeMentionable(mentionable),
-          )
-          let changed = false
-          const nextMentionables = prevInputMessage.mentionables.map((m) => {
-            const key = getMentionableKey(serializeMentionable(m))
-            if (key !== mentionableKey) return m
-            if (m.type === 'block' && isSyncSelectionMentionable(m)) {
-              changed = true
-              return mentionable
-            }
-            return m
-          })
-
-          if (changed) {
-            return {
-              ...prevInputMessage,
-              mentionables: nextMentionables,
-              promptContent: null,
-            }
-          }
-
-          if (
-            prevInputMessage.mentionables.some(
-              (m) =>
-                getMentionableKey(serializeMentionable(m)) === mentionableKey,
-            )
-          ) {
-            return prevInputMessage
-          }
-
-          return {
-            ...prevInputMessage,
-            mentionables: [...prevInputMessage.mentionables, mentionable],
-            promptContent: null,
-          }
-        })
-      } else {
-        setChatMessages((prevChatHistory) =>
-          prevChatHistory.map((message) => {
-            if (message.id === focusedMessageId && message.role === 'user') {
-              const mentionableKey = getMentionableKey(
-                serializeMentionable(mentionable),
-              )
-              let changed = false
-              const nextMentionables = message.mentionables.map((m) => {
-                const key = getMentionableKey(serializeMentionable(m))
-                if (key !== mentionableKey) return m
-                if (m.type === 'block' && isSyncSelectionMentionable(m)) {
-                  changed = true
-                  return mentionable
-                }
-                return m
-              })
-
-              if (changed) {
-                return {
-                  ...message,
-                  mentionables: nextMentionables,
-                  promptContent: null,
-                }
-              }
-
-              if (
-                message.mentionables.some(
-                  (m) =>
-                    getMentionableKey(serializeMentionable(m)) ===
-                    mentionableKey,
-                )
-              ) {
-                return message
-              }
-              return {
-                ...message,
-                mentionables: [...message.mentionables, mentionable],
-                promptContent: null,
-              }
-            }
-            return message
-          }),
-        )
-      }
-    },
-    addSelectionToInput: (selectedBlock: MentionableBlockData) => {
-      const mentionable = createSelectionBlockMentionable({
-        ...selectedBlock,
-        source: 'selection-pinned',
-      })
-
-      setAddedBlockKey(null)
-      upsertSelectionMentionableInMainInput(mentionable)
-    },
-    applySelectionToMainInput: (
-      selectedBlock: MentionableBlockData,
-      text: string,
-      options?: {
-        submit?: boolean
-        assistantId?: string
-      },
-    ) => {
-      const mentionable = createSelectionBlockMentionable({
-        ...selectedBlock,
-        source: 'selection-pinned',
-      })
-
-      setAddedBlockKey(null)
-      // Override the conversation's assistant/model inside the same flushSync
-      // as the mentionable update so the subsequent submit() reads the new
-      // state. The override is scoped to this conversation: we do NOT persist
-      // it to settings.currentAssistantId, so the user's global default is
-      // preserved.
-      const overrideAssistantId = options?.assistantId
-      const overrideAssistant = overrideAssistantId
-        ? (settings.assistants.find(
-            (assistant) => assistant.id === overrideAssistantId,
-          ) ?? null)
-        : null
-      flushSync(() => {
-        if (overrideAssistant) {
-          setConversationAssistantId(overrideAssistant.id)
-          conversationAssistantIdRef.current.set(
-            currentConversationId,
-            overrideAssistant.id,
-          )
-          if (overrideAssistant.modelId) {
-            applyAssistantDefaultModel(overrideAssistant.modelId)
-          }
-        }
-        upsertSelectionMentionableInMainInput(mentionable)
-      })
-
-      const inputRef = chatUserInputRefs.current.get(inputMessage.id)
-      if (text) {
-        inputRef?.appendText(text)
-      }
-
-      if (options?.submit) {
-        inputRef?.submit()
-        return
-      }
-
-      inputRef?.focus()
-    },
-    syncSelectionToChat: (selectedBlock: MentionableBlockData) => {
-      syncSelectionMentionable(selectedBlock)
-    },
-    syncSelectionToInput: (selectedBlock: MentionableBlockData) => {
-      syncSelectionMentionableToInput(selectedBlock)
-    },
-    syncWebSelectionToInput: (selection: MentionableWebSelection) => {
-      syncWebSelectionMentionableToInput(selection)
-    },
-    clearSelectionFromChat: () => {
-      clearSelectionMentionable()
-    },
     addFileToChat: (file: TFile) => {
       const mentionable: { type: 'file'; file: TFile } = {
         type: 'file',
@@ -5437,111 +4728,100 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
         isSidebarPlacement ? '' : ' yolo-chat-header--workspace'
       }`}
     >
-      {onChangeView ? (
-        <ViewToggle
-          activeView={activeView}
-          onChangeView={onChangeView}
-          showComposer={isSidebarPlacement}
-          disabled={false}
+      <h1 className="yolo-chat-header-title">
+        {t('sidebar.tabs.chat', 'Chat')}
+      </h1>
+      <div className="yolo-chat-header-right">
+        <AssistantSelector
+          currentAssistantId={conversationAssistantId}
+          triggerClassName={
+            !isSidebarPlacement && isWorkspaceWideHeader
+              ? 'yolo-assistant-selector-button--workspace-floating'
+              : undefined
+          }
+          contentClassName={
+            !isSidebarPlacement && isWorkspaceWideHeader
+              ? 'yolo-assistant-selector-content--workspace-floating'
+              : undefined
+          }
+          onAssistantChange={(assistant) => {
+            handleConversationAssistantSelect(assistant.id)
+          }}
         />
-      ) : (
-        <h1 className="yolo-chat-header-title">
-          {t('sidebar.tabs.chat', 'Chat')}
-        </h1>
-      )}
-      {activeView === 'chat' && (
-        <div className="yolo-chat-header-right">
-          <AssistantSelector
-            currentAssistantId={conversationAssistantId}
-            triggerClassName={
-              !isSidebarPlacement && isWorkspaceWideHeader
-                ? 'yolo-assistant-selector-button--workspace-floating'
-                : undefined
-            }
-            contentClassName={
-              !isSidebarPlacement && isWorkspaceWideHeader
-                ? 'yolo-assistant-selector-content--workspace-floating'
-                : undefined
-            }
-            onAssistantChange={(assistant) => {
-              handleConversationAssistantSelect(assistant.id)
+        <div className="yolo-chat-header-buttons">
+          <button
+            type="button"
+            onClick={() => handleNewChat()}
+            className="clickable-icon"
+            aria-label="New Chat"
+          >
+            <Plus size={18} />
+          </button>
+          <button
+            type="button"
+            onClick={() => handleExportChatToVault(currentConversationId)}
+            className="clickable-icon"
+            aria-label={t(
+              'sidebar.chatList.exportConversation',
+              'Export conversation to vault',
+            )}
+          >
+            <Download size={18} />
+          </button>
+          <ChatListDropdown
+            chatList={chatList}
+            currentConversationId={currentConversationId}
+            runSummariesByConversationId={runSummariesByConversationId}
+            onSelect={(conversationId) => {
+              if (conversationId === currentConversationId) return
+              void handleLoadConversation(conversationId)
             }}
-          />
-          <div className="yolo-chat-header-buttons">
-            <button
-              type="button"
-              onClick={() => handleNewChat()}
-              className="clickable-icon"
-              aria-label="New Chat"
-            >
-              <Plus size={18} />
-            </button>
-            <button
-              type="button"
-              onClick={() => handleExportChatToVault(currentConversationId)}
-              className="clickable-icon"
-              aria-label={t(
-                'sidebar.chatList.exportConversation',
-                'Export conversation to vault',
-              )}
-            >
-              <Download size={18} />
-            </button>
-            <ChatListDropdown
-              chatList={chatList}
-              currentConversationId={currentConversationId}
-              runSummariesByConversationId={runSummariesByConversationId}
-              onSelect={(conversationId) => {
-                if (conversationId === currentConversationId) return
-                void handleLoadConversation(conversationId)
-              }}
-              onDelete={(conversationId) => {
-                void (async () => {
-                  await deleteConversation(conversationId)
-                  if (conversationId === currentConversationId) {
-                    const nextConversation = chatList.find(
-                      (chat) => chat.id !== conversationId,
-                    )
-                    if (nextConversation) {
-                      void handleLoadConversation(nextConversation.id)
-                    } else {
-                      handleNewChat()
-                    }
-                  }
-                })()
-              }}
-              onUpdateTitle={async (conversationId, newTitle) => {
-                await updateConversationTitle(conversationId, newTitle)
-              }}
-              onTogglePinned={(conversationId) => {
-                void toggleConversationPinned(conversationId)
-              }}
-              onRetryTitle={async (conversationId) => {
-                const conversation = await getConversationById(conversationId)
-                if (!conversation) {
-                  console.error(
-                    'Failed to retry conversation title generation: conversation not found',
-                    {
-                      conversationId,
-                    },
+            onDelete={(conversationId) => {
+              void (async () => {
+                await deleteConversation(conversationId)
+                if (conversationId === currentConversationId) {
+                  const nextConversation = chatList.find(
+                    (chat) => chat.id !== conversationId,
                   )
-                  return
+                  if (nextConversation) {
+                    void handleLoadConversation(nextConversation.id)
+                  } else {
+                    handleNewChat()
+                  }
                 }
-                await generateConversationTitle(
-                  conversationId,
-                  conversation.messages,
+              })()
+            }}
+            onUpdateTitle={async (conversationId, newTitle) => {
+              await updateConversationTitle(conversationId, newTitle)
+            }}
+            onTogglePinned={(conversationId) => {
+              void toggleConversationPinned(conversationId)
+            }}
+            onRetryTitle={async (conversationId) => {
+              const conversation = await getConversationById(conversationId)
+              if (!conversation) {
+                console.error(
+                  'Failed to retry conversation title generation: conversation not found',
                   {
-                    force: true,
+                    conversationId,
                   },
                 )
-              }}
-              onExportConversation={handleExportChatToVault}
-            >
-              <History size={18} />
-            </ChatListDropdown>
-          </div>
+                return
+              }
+              await generateConversationTitle(
+                conversationId,
+                conversation.messages,
+                {
+                  force: true,
+                },
+              )
+            }}
+            onExportConversation={handleExportChatToVault}
+          >
+            <History size={18} />
+          </ChatListDropdown>
         </div>
-      )}
+      </div>
     </div>
   )
 
@@ -5553,7 +4833,6 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
   const persistReasoningLevelForModelRef = useLatestRef(
     persistReasoningLevelForModel,
   )
-  const releaseHighlightIdsRef = useLatestRef(releaseHighlightIds)
   const handleManualContextCompactionRef = useLatestRef(
     handleManualContextCompaction,
   )
@@ -5565,7 +4844,6 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
     agentService,
     buildInputMessageForSubmit,
     chatMessages,
-    commitSentSelectionHighlights,
     conversationModelId,
     currentConversationId,
     currentConversationRunSummary,
@@ -5611,10 +4889,7 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
       // 那一刻的时间,而非 drain 时刻。
       const messageForSubmit = stampUserMessageTimeContext(
         state.buildInputMessageForSubmit(content),
-        resolveAssistantTimeContextEnabled(
-          state.selectedAssistant,
-          state.settings,
-        ),
+        resolveAssistantTimeContextEnabled(state.selectedAssistant),
       )
 
       // ask_user_question parks the agent in a paused state that may outlive
@@ -5652,7 +4927,6 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
             next.set(state.inputMessage.id, state.reasoningLevel)
             return next
           })
-          state.commitSentSelectionHighlights(messageForSubmit.mentionables)
           if (state.queuedMessageEditState) {
             setReasoningLevel(
               state.queuedMessageEditState.preservedReasoningLevel,
@@ -5705,7 +4979,6 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
         next.set(state.inputMessage.id, state.reasoningLevel)
         return next
       })
-      state.commitSentSelectionHighlights(messageForSubmit.mentionables)
       if (state.queuedMessageEditState) {
         setReasoningLevel(state.queuedMessageEditState.preservedReasoningLevel)
         conversationReasoningLevelRef.current.set(
@@ -5727,21 +5000,12 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
 
   const handleMainInputMentionablesChange = useCallback<
     ChatUserInputProps['setMentionables']
-  >(
-    (mentionables) => {
-      releaseHighlightIdsRef.current(
-        collectRemovedSelectionHighlightIds(
-          inputMessageRef.current.mentionables,
-          mentionables,
-        ),
-      )
-      setInputMessage((prevInputMessage) => ({
-        ...prevInputMessage,
-        mentionables,
-      }))
-    },
-    [releaseHighlightIdsRef],
-  )
+  >((mentionables) => {
+    setInputMessage((prevInputMessage) => ({
+      ...prevInputMessage,
+      mentionables,
+    }))
+  }, [])
 
   const handleMainInputSelectedSkillsChange = useCallback<
     NonNullable<ChatUserInputProps['setSelectedSkills']>
@@ -6202,18 +5466,6 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
               setFocusedMessageId(messageOrGroup.id)
             }}
             onMentionablesChange={(mentionables) => {
-              const currentMessage = chatMessagesStateRef.current.find(
-                (message): message is ChatUserMessage =>
-                  message.role === 'user' && message.id === messageOrGroup.id,
-              )
-              if (currentMessage) {
-                releaseHighlightIds(
-                  collectRemovedSelectionHighlightIds(
-                    currentMessage.mentionables,
-                    mentionables,
-                  ),
-                )
-              }
               timelineHandlersRef.current.updateHistoricalUserMessage(
                 messageOrGroup.id,
                 (message) => {
@@ -6591,235 +5843,224 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
       style={containerStyle}
     >
       {header}
-      {activeView === 'composer' ? (
-        <div className="yolo-chat-composer-wrapper">
-          <Composer onNavigateChat={() => onChangeView?.('chat')} />
-        </div>
-      ) : (
-        <ChatConversationPane
-          chatMode={chatMode}
-          yoloEnabled={yoloEnabled}
-          showEmptyState={showEmptyState}
-          groupedChatMessagesLength={groupedChatMessages.length}
-          isAutoFollowEnabled={isAutoFollowEnabled}
-          currentConversationId={currentConversationId}
-          chatTimelineItems={stableChatTimelineItems}
-          timelineRenderVersion={chatTimelineRenderVersion}
-          chatMessagesRef={chatMessagesRef}
-          onScrollContainerChange={setChatMessagesElement}
-          onContentElementChange={setChatContentElement}
-          renderChatTimelineItem={renderChatTimelineItem}
-          editingAssistantMessageId={editingAssistantMessageId}
-          hasEarlierMessages={hasEarlierMessages}
-          hasNewerMessages={hasNewerMessages}
-          onLoadEarlier={loadEarlier}
-          onLoadNewer={loadNewer}
-          onForceScrollToBottom={handleForceScrollToBottom}
-          hasStreamingMessages={hasStreamingMessages}
-          scrollToBottomLabel={t('chat.scrollToBottom', '回到底部')}
-          scrollToBottomWhileStreamingLabel={t(
-            'chat.scrollToBottomWhileStreaming',
-            '回到底部继续跟随',
-          )}
-          emptyStateAskTitle={t('chat.emptyState.askTitle', '先想清楚，再落笔')}
-          emptyStateAgentTitle={t('chat.emptyState.agentTitle', '让 AI 去执行')}
-          emptyStateAgentFullTitle={t(
-            'chat.emptyState.agentFullTitle',
-            '让 AI 自主执行 · YOLO 模式',
-          )}
-          emptyStateWorkspaceTitle={workspaceEmptyStateTitle}
-          emptyStateAskDescription={t(
-            'chat.emptyState.askDescription',
-            '适合提问、润色与改写，专注表达本身',
-          )}
-          emptyStateAgentDescription={t(
-            'chat.emptyState.agentDescription',
-            '启用工具链，处理搜索、读写与多步骤任务',
-          )}
-          emptyStateAgentFullDescription={t(
-            'chat.emptyState.agentFullDescription',
-            '自动放行工具调用，处理搜索、读写与多步骤任务',
-          )}
-          onUserMessageViewportChange={setNavigatorViewport}
-          windowNavigationKey={windowNavigationKey || undefined}
-          windowNavigationTargetMessageId={windowNavigationTargetMessageId}
-          messageNavigatorContent={messageNavigatorContent}
-          bottomSpacerHeight={inputOverlayHeight}
-          footerContent={
-            <>
-              {(settings.chatOptions.mentionDisplayMode ?? 'inline') ===
-                'badge' &&
-                displayMentionablesForInput.length > 0 && (
-                  <div className="yolo-chat-user-input-files">
-                    {displayMentionablesForInput.map((mentionable) => {
-                      const mentionableKey = getMentionableKey(
-                        serializeMentionable(mentionable),
-                      )
+      <ChatConversationPane
+        chatMode={chatMode}
+        yoloEnabled={yoloEnabled}
+        showEmptyState={showEmptyState}
+        groupedChatMessagesLength={groupedChatMessages.length}
+        isAutoFollowEnabled={isAutoFollowEnabled}
+        currentConversationId={currentConversationId}
+        chatTimelineItems={stableChatTimelineItems}
+        timelineRenderVersion={chatTimelineRenderVersion}
+        chatMessagesRef={chatMessagesRef}
+        onScrollContainerChange={setChatMessagesElement}
+        onContentElementChange={setChatContentElement}
+        renderChatTimelineItem={renderChatTimelineItem}
+        editingAssistantMessageId={editingAssistantMessageId}
+        hasEarlierMessages={hasEarlierMessages}
+        hasNewerMessages={hasNewerMessages}
+        onLoadEarlier={loadEarlier}
+        onLoadNewer={loadNewer}
+        onForceScrollToBottom={handleForceScrollToBottom}
+        hasStreamingMessages={hasStreamingMessages}
+        scrollToBottomLabel={t('chat.scrollToBottom', '回到底部')}
+        scrollToBottomWhileStreamingLabel={t(
+          'chat.scrollToBottomWhileStreaming',
+          '回到底部继续跟随',
+        )}
+        emptyStateAskTitle={t('chat.emptyState.askTitle', '先想清楚，再落笔')}
+        emptyStateAgentTitle={t('chat.emptyState.agentTitle', '让 AI 去执行')}
+        emptyStateAgentFullTitle={t(
+          'chat.emptyState.agentFullTitle',
+          '让 AI 自主执行 · YOLO 模式',
+        )}
+        emptyStateWorkspaceTitle={workspaceEmptyStateTitle}
+        emptyStateAskDescription={t(
+          'chat.emptyState.askDescription',
+          '适合提问、润色与改写，专注表达本身',
+        )}
+        emptyStateAgentDescription={t(
+          'chat.emptyState.agentDescription',
+          '启用工具链，处理搜索、读写与多步骤任务',
+        )}
+        emptyStateAgentFullDescription={t(
+          'chat.emptyState.agentFullDescription',
+          '自动放行工具调用，处理搜索、读写与多步骤任务',
+        )}
+        onUserMessageViewportChange={setNavigatorViewport}
+        windowNavigationKey={windowNavigationKey || undefined}
+        windowNavigationTargetMessageId={windowNavigationTargetMessageId}
+        messageNavigatorContent={messageNavigatorContent}
+        bottomSpacerHeight={inputOverlayHeight}
+        footerContent={
+          <>
+            {(settings.chatOptions.mentionDisplayMode ?? 'inline') ===
+              'badge' &&
+              displayMentionablesForInput.length > 0 && (
+                <div className="yolo-chat-user-input-files">
+                  {displayMentionablesForInput.map((mentionable) => {
+                    const mentionableKey = getMentionableKey(
+                      serializeMentionable(mentionable),
+                    )
+                    return (
+                      <MentionableBadge
+                        key={mentionableKey}
+                        mentionable={mentionable}
+                        onDelete={() =>
+                          handleMentionableDeleteFromAll(mentionable)
+                        }
+                        onClick={() => {}}
+                      />
+                    )
+                  })}
+                </div>
+              )}
+            <div className="yolo-chat-input-wrapper">
+              <div
+                ref={setInputOverlayElement}
+                className="yolo-chat-input-overlay"
+              >
+                {queuedUserMessages.length > 0 && (
+                  <div className="yolo-chat-queued-messages">
+                    <div className="yolo-chat-queued-messages__hint">
+                      {t(
+                        'chat.queueMessage.hint',
+                        '等待 Agent 完成当前步骤...',
+                      )}
+                    </div>
+                    {queuedUserMessages.map((queued) => {
+                      const preview = queued.content
+                        ? editorStateToPlainText(queued.content).trim()
+                        : ''
                       return (
-                        <MentionableBadge
-                          key={mentionableKey}
-                          mentionable={mentionable}
-                          onDelete={() =>
-                            handleMentionableDeleteFromAll(mentionable)
-                          }
-                          onClick={() => {}}
-                        />
+                        <div
+                          key={queued.id}
+                          className="yolo-chat-queued-messages__item"
+                          title={preview}
+                        >
+                          <span className="yolo-chat-queued-messages__preview">
+                            {preview || ' '}
+                          </span>
+                          <span className="yolo-chat-queued-messages__actions">
+                            <button
+                              type="button"
+                              className="yolo-chat-queued-messages__action"
+                              aria-label={t('common.edit', '编辑')}
+                              title={t('common.edit', '编辑')}
+                              disabled={queuedMessageEditState !== null}
+                              onClick={() => {
+                                const removed =
+                                  agentService.removePendingUserMessage(
+                                    currentConversationId,
+                                    queued.id,
+                                  )
+                                if (!removed) return
+
+                                const preservedReasoningLevel = reasoningLevel
+                                const editingReasoningLevel =
+                                  normalizeReasoningLevel(
+                                    removed.reasoningLevel,
+                                  ) ?? reasoningLevel
+                                setQueuedMessageEditState({
+                                  preservedInputMessage:
+                                    getLatestInputMessage(),
+                                  preservedReasoningLevel,
+                                })
+                                setReasoningLevel(editingReasoningLevel)
+                                replaceInputMessage({
+                                  ...removed,
+                                  timeContext: undefined,
+                                })
+                                requestAnimationFrame(() => {
+                                  chatUserInputRefs.current
+                                    .get(removed.id)
+                                    ?.focus()
+                                })
+                              }}
+                            >
+                              <Pencil size={13} strokeWidth={2.5} />
+                            </button>
+                            <button
+                              type="button"
+                              className="yolo-chat-queued-messages__action is-delete"
+                              aria-label={t('common.delete', '删除')}
+                              title={t('common.delete', '删除')}
+                              onClick={() => {
+                                const removed =
+                                  agentService.removePendingUserMessage(
+                                    currentConversationId,
+                                    queued.id,
+                                  )
+                                if (!removed) return
+                                setMessageReasoningMap((prev) => {
+                                  if (!prev.has(removed.id)) return prev
+                                  const next = new Map(prev)
+                                  next.delete(removed.id)
+                                  return next
+                                })
+                              }}
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </span>
+                        </div>
                       )
                     })}
                   </div>
                 )}
-              <div className="yolo-chat-input-wrapper">
-                <div
-                  ref={setInputOverlayElement}
-                  className="yolo-chat-input-overlay"
-                >
-                  {queuedUserMessages.length > 0 && (
-                    <div className="yolo-chat-queued-messages">
-                      <div className="yolo-chat-queued-messages__hint">
-                        {t(
-                          'chat.queueMessage.hint',
-                          '等待 Agent 完成当前步骤...',
-                        )}
-                      </div>
-                      {queuedUserMessages.map((queued) => {
-                        const preview = queued.content
-                          ? editorStateToPlainText(queued.content).trim()
-                          : ''
-                        return (
-                          <div
-                            key={queued.id}
-                            className="yolo-chat-queued-messages__item"
-                            title={preview}
-                          >
-                            <span className="yolo-chat-queued-messages__preview">
-                              {preview || ' '}
-                            </span>
-                            <span className="yolo-chat-queued-messages__actions">
-                              <button
-                                type="button"
-                                className="yolo-chat-queued-messages__action"
-                                aria-label={t('common.edit', '编辑')}
-                                title={t('common.edit', '编辑')}
-                                disabled={queuedMessageEditState !== null}
-                                onClick={() => {
-                                  const removed =
-                                    agentService.removePendingUserMessage(
-                                      currentConversationId,
-                                      queued.id,
-                                    )
-                                  if (!removed) return
-
-                                  const preservedReasoningLevel = reasoningLevel
-                                  const editingReasoningLevel =
-                                    normalizeReasoningLevel(
-                                      removed.reasoningLevel,
-                                    ) ?? reasoningLevel
-                                  setQueuedMessageEditState({
-                                    preservedInputMessage:
-                                      getLatestInputMessage(),
-                                    preservedReasoningLevel,
-                                  })
-                                  setReasoningLevel(editingReasoningLevel)
-                                  replaceInputMessage({
-                                    ...removed,
-                                    timeContext: undefined,
-                                  })
-                                  requestAnimationFrame(() => {
-                                    chatUserInputRefs.current
-                                      .get(removed.id)
-                                      ?.focus()
-                                  })
-                                }}
-                              >
-                                <Pencil size={13} strokeWidth={2.5} />
-                              </button>
-                              <button
-                                type="button"
-                                className="yolo-chat-queued-messages__action is-delete"
-                                aria-label={t('common.delete', '删除')}
-                                title={t('common.delete', '删除')}
-                                onClick={() => {
-                                  const removed =
-                                    agentService.removePendingUserMessage(
-                                      currentConversationId,
-                                      queued.id,
-                                    )
-                                  if (!removed) return
-                                  releaseHighlightIds(
-                                    collectSelectionHighlightIds(
-                                      removed.mentionables,
-                                    ),
-                                  )
-                                  setMessageReasoningMap((prev) => {
-                                    if (!prev.has(removed.id)) return prev
-                                    const next = new Map(prev)
-                                    next.delete(removed.id)
-                                    return next
-                                  })
-                                }}
-                              >
-                                <Trash2 size={13} />
-                              </button>
-                            </span>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  )}
-                  <TodoListPanel
-                    key={currentConversationId}
-                    messages={displayedChatMessages}
-                    queuedMessageCount={queuedUserMessages.length}
-                  />
-                </div>
-                <ChatUserInput
-                  key={inputMessage.id}
-                  ref={handleMainInputRef}
-                  initialSerializedEditorState={null}
-                  getInitialSerializedEditorState={getLatestInputContent}
-                  replacementVersion={inputReplacementVersion}
-                  onChange={handleMainInputChange}
-                  onSubmit={handleMainInputSubmit}
-                  onFocus={handleMainInputFocus}
-                  mentionables={inputMessage.mentionables}
-                  setMentionables={handleMainInputMentionablesChange}
-                  selectedSkills={mainInputSelectedSkills}
-                  setSelectedSkills={handleMainInputSelectedSkillsChange}
-                  modelId={conversationModelId}
-                  onModelChange={handleMainInputModelChange}
-                  reasoningLevel={reasoningLevel}
-                  onReasoningChange={handleMainInputReasoningChange}
-                  autoFocus
-                  addedBlockKey={addedBlockKey}
-                  hideBadgeMentionables
-                  displayMentionables={displayMentionablesForInput}
-                  onDeleteFromAll={handleMentionableDeleteFromAll}
-                  currentAssistantId={conversationAssistantId}
-                  onSelectAssistantForConversation={
-                    handleConversationAssistantSelect
-                  }
-                  currentChatMode={chatMode}
-                  onSelectChatModeForConversation={handleChatModeChange}
-                  chatMode={chatMode}
-                  onChatModeChange={handleChatModeChange}
-                  yoloEnabled={yoloEnabled}
-                  onYoloChange={handleYoloChange}
-                  allowAgentModeOption={true}
-                  enableResize
-                  onRunSlashCommand={handleMainInputRunSlashCommand}
-                  isGenerating={currentConversationRunSummary.isAbortable}
-                  canQueueWhileGenerating={
-                    currentConversationRunSummary.isQueueable
-                  }
-                  onAbort={handleMainInputAbort}
-                  contextUsage={mainInputContextUsage}
-                  showQuickAccess={showEmptyState && !isSidebarPlacement}
+                <TodoListPanel
+                  key={currentConversationId}
+                  messages={displayedChatMessages}
+                  queuedMessageCount={queuedUserMessages.length}
                 />
               </div>
-            </>
-          }
-        />
-      )}
+              <ChatUserInput
+                key={inputMessage.id}
+                ref={handleMainInputRef}
+                initialSerializedEditorState={null}
+                getInitialSerializedEditorState={getLatestInputContent}
+                replacementVersion={inputReplacementVersion}
+                onChange={handleMainInputChange}
+                onSubmit={handleMainInputSubmit}
+                onFocus={handleMainInputFocus}
+                mentionables={inputMessage.mentionables}
+                setMentionables={handleMainInputMentionablesChange}
+                selectedSkills={mainInputSelectedSkills}
+                setSelectedSkills={handleMainInputSelectedSkillsChange}
+                modelId={conversationModelId}
+                onModelChange={handleMainInputModelChange}
+                reasoningLevel={reasoningLevel}
+                onReasoningChange={handleMainInputReasoningChange}
+                autoFocus
+                addedBlockKey={addedBlockKey}
+                hideBadgeMentionables
+                displayMentionables={displayMentionablesForInput}
+                onDeleteFromAll={handleMentionableDeleteFromAll}
+                currentAssistantId={conversationAssistantId}
+                onSelectAssistantForConversation={
+                  handleConversationAssistantSelect
+                }
+                currentChatMode={chatMode}
+                onSelectChatModeForConversation={handleChatModeChange}
+                chatMode={chatMode}
+                onChatModeChange={handleChatModeChange}
+                yoloEnabled={yoloEnabled}
+                onYoloChange={handleYoloChange}
+                allowAgentModeOption={true}
+                enableResize
+                onRunSlashCommand={handleMainInputRunSlashCommand}
+                isGenerating={currentConversationRunSummary.isAbortable}
+                canQueueWhileGenerating={
+                  currentConversationRunSummary.isQueueable
+                }
+                onAbort={handleMainInputAbort}
+                contextUsage={mainInputContextUsage}
+                showQuickAccess={showEmptyState && !isSidebarPlacement}
+              />
+            </div>
+          </>
+        }
+      />
     </div>
   )
 })

@@ -2,7 +2,6 @@
 @import './settings/providers-models.css';
 @import './settings/provider-picker.css';
 @import './settings/mcp.css';
-@import './settings/rag.css';
 @import './settings/assistants.css';
 @import './settings/tabs.css';
 @import './settings/agent.css';
@@ -24,9 +23,6 @@
 @import './chat/ask-user-question-panel.css';
 @import './chat/new-tab-action.css';
 
-@import './panels/smart-space.css';
-@import './panels/quick-ask.css';
-
 @import './learning/tokens.css';
 @import './learning/primitives.css';
 @import './learning/shell.css';
@@ -41,10 +37,4 @@
 @import './learning/workspace.css';
 @import './learning/knowledge-graph.css';
 
-@import './selection/selection-chat.css';
-@import './selection/pdf-selection.css';
-
-@import './editor/tab-completion.css';
-
-@import './pdf-screenshot.css';
 @import './config-transfer.css';

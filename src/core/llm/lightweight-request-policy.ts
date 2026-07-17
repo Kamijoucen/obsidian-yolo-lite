@@ -1,9 +1,7 @@
 import { ChatModel } from '../../types/chat-model.types'
-import { LLMOptions } from '../../types/llm/request'
-
 /**
  * Custom-parameter keys that are safe to keep on lightweight single-turn calls
- * (conversation title generation, tab completion, compaction summary). These
+ * (conversation title generation and compaction summaries). These
  * are generic sampling / output-shape knobs that cannot re-inject hosted tools,
  * reasoning, or search behavior.
  *
@@ -51,28 +49,5 @@ export function stripHeavyProviderFeatures(model: ChatModel): ChatModel {
       const key = (entry?.key ?? '').trim().toLowerCase()
       return key.length > 0 && LIGHTWEIGHT_ALLOWED_CUSTOM_PARAM_KEYS.has(key)
     }),
-  }
-}
-
-export function stripHostedToolOptions(options: LLMOptions): LLMOptions {
-  return {
-    ...options,
-    geminiTools: undefined,
-  }
-}
-
-export function applyLightweightRequestPolicy({
-  model,
-  options,
-}: {
-  model: ChatModel
-  options: LLMOptions
-}): {
-  model: ChatModel
-  options: LLMOptions
-} {
-  return {
-    model: stripHeavyProviderFeatures(model),
-    options: stripHostedToolOptions(options),
   }
 }

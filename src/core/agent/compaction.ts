@@ -610,8 +610,8 @@ export const createConversationCompactionSummary = async ({
       debugTraceId,
     })
 
-    // Several providers (Gemini, OpenAI-compatible via extra_body, Bedrock) do
-    // not honor tool_choice:'none'. Rather than depend on it, accept any
+    // Some OpenAI-compatible providers do not honor tool_choice:'none'.
+    // Rather than depend on it, accept any
     // non-empty summary text and ignore stray tool calls; only empty fails.
     const summary = parseSummaryFromResponse(response.content)
     if (summary.length === 0) {

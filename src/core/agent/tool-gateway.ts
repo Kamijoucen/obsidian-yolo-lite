@@ -21,7 +21,6 @@ import {
   ToolCallRequest,
   ToolCallResponse,
   ToolCallResponseStatus,
-  createCompleteToolCallArguments,
   createPartialToolCallArguments,
   getToolCallArgumentsObject,
   getToolCallArgumentsText,
@@ -65,8 +64,6 @@ import {
   expandAllowedToolNames,
   isLoadToolSchemasToolName,
 } from './tool-selection'
-import { GEMINI_STUB_ARGS_JSON_FIELD, isGeminiStubApiType } from './tool-stub'
-import type { AgentRunContext } from './types'
 import {
   buildAllowedSkillPathSet,
   findPathOutsideScope,
@@ -258,7 +255,6 @@ export class AgentToolGateway {
   private readonly workspaceScope?: AssistantWorkspaceScope
   private readonly allowedSkillPaths?: readonly string[]
   private readonly apiType?: LLMProviderApiType | null
-  private readonly runContext?: AgentRunContext
   private readonly subagentParentContext?: SubagentParentContext
   private readonly isSubagentChildRun: boolean
   private readonly toolApprovalConversationId?: string
@@ -285,7 +281,6 @@ export class AgentToolGateway {
       workspaceScope?: AssistantWorkspaceScope
       allowedSkillPaths?: string[]
       apiType?: LLMProviderApiType | null
-      runContext?: AgentRunContext
       subagentParentContext?: SubagentParentContext
       isSubagentChildRun?: boolean
       toolApprovalConversationId?: string
@@ -303,7 +298,6 @@ export class AgentToolGateway {
     this.workspaceScope = options?.workspaceScope
     this.allowedSkillPaths = options?.allowedSkillPaths
     this.apiType = options?.apiType
-    this.runContext = options?.runContext
     this.subagentParentContext = options?.subagentParentContext
     this.isSubagentChildRun = options?.isSubagentChildRun ?? false
     this.toolApprovalConversationId = options?.toolApprovalConversationId
@@ -374,9 +368,6 @@ export class AgentToolGateway {
       getAssistantToolDisclosureMode(
         {
           toolPreferences: this.toolPreferences,
-          enabledToolNames: this.allowedToolNames
-            ? [...this.allowedToolNames]
-            : undefined,
         },
         toolName,
         { serverToolTokenBudgets },
@@ -425,13 +416,9 @@ export class AgentToolGateway {
    *   1. Reject calls to on-demand tools whose schemas have not been disclosed
    *      via `load_tool_schemas` in this conversation yet. Errors point the
    *      model to `load_tool_schemas` so it can self-correct in the next turn.
-   *   2. For Gemini stubs, unpack the `args_json` field back into real
-   *      arguments before dispatch. Then validate the unpacked payload
-   *      against the real JSON Schema via ajv.
+   *   2. Validate the payload against the disclosed JSON Schema via ajv.
    *
-   * Returns either an updated request (Gemini args_json rewritten) or a
-   * structured error response that the caller substitutes for the would-be
-   * tool call.
+   * Returns either the validated request or a structured error response.
    */
   private async validateAndNormalizeRequest({
     request,
@@ -468,47 +455,7 @@ export class AgentToolGateway {
       }
     }
 
-    let normalizedArgs = getToolCallArgumentsObject(request.arguments) ?? {}
-    let normalizedRequest = request
-
-    if (isGeminiStubApiType(this.apiType)) {
-      const raw = normalizedArgs[GEMINI_STUB_ARGS_JSON_FIELD]
-      if (typeof raw !== 'string') {
-        return {
-          ok: false,
-          response: {
-            status: ToolCallResponseStatus.Error,
-            error: `Tool "${request.name}" is an on-demand tool. On Gemini, its arguments must be passed as a JSON-encoded string in the "${GEMINI_STUB_ARGS_JSON_FIELD}" field; received a non-string value instead.`,
-          },
-        }
-      }
-      let parsed: unknown
-      try {
-        parsed = JSON.parse(raw)
-      } catch (error) {
-        return {
-          ok: false,
-          response: {
-            status: ToolCallResponseStatus.Error,
-            error: `Tool "${request.name}" received an invalid JSON payload in "${GEMINI_STUB_ARGS_JSON_FIELD}": ${error instanceof Error ? error.message : String(error)}.`,
-          },
-        }
-      }
-      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-        return {
-          ok: false,
-          response: {
-            status: ToolCallResponseStatus.Error,
-            error: `Tool "${request.name}" expected an object payload in "${GEMINI_STUB_ARGS_JSON_FIELD}", received ${Array.isArray(parsed) ? 'an array' : typeof parsed}.`,
-          },
-        }
-      }
-      normalizedArgs = parsed as Record<string, unknown>
-      normalizedRequest = {
-        ...request,
-        arguments: createCompleteToolCallArguments({ value: normalizedArgs }),
-      }
-    }
+    const normalizedArgs = getToolCallArgumentsObject(request.arguments) ?? {}
 
     const realTool = await this.getRealToolSchema(request.name)
     if (!realTool) {
@@ -539,7 +486,7 @@ export class AgentToolGateway {
       }
     }
 
-    return { ok: true, request: normalizedRequest }
+    return { ok: true, request }
   }
 
   private findRequestPathOutsideScope(request: ToolCallRequest): string | null {
@@ -855,9 +802,8 @@ export class AgentToolGateway {
   }): Promise<ChatToolMessage> {
     const nextToolCalls = [...toolMessage.toolCalls]
     // Harness pre-pass: on-demand stubs let any call through provider-side
-    // validation, so we must enforce "schema previously disclosed" and (for
-    // Gemini) unpack the `args_json` smuggle field + run real-schema ajv
-    // validation before dispatch. Failures convert the call's status to
+    // validation, so we must enforce "schema previously disclosed" and run
+    // real-schema ajv validation before dispatch. Failures convert status to
     // Error with guidance pointing back to `load_tool_schemas`.
     const loadedToolNames = extractLoadedDeferredToolNames({
       messages: conversationMessages ?? [],
@@ -970,7 +916,6 @@ export class AgentToolGateway {
           debugTraceId,
           workspaceScope: this.workspaceScope,
           allowedSkillPaths: this.allowedSkillPaths,
-          runContext: this.runContext,
           subagentParentContext: this.subagentParentContext,
         }).then((response) => ({ entries: [entry], responses: [response] })),
       )
@@ -1009,7 +954,6 @@ export class AgentToolGateway {
             debugTraceId,
             workspaceScope: this.workspaceScope,
             allowedSkillPaths: this.allowedSkillPaths,
-            runContext: this.runContext,
             subagentParentContext: this.subagentParentContext,
           }).then((response) => ({ entries: [entry], responses: [response] })),
         )
@@ -1040,7 +984,6 @@ export class AgentToolGateway {
           debugTraceId,
           workspaceScope: this.workspaceScope,
           allowedSkillPaths: this.allowedSkillPaths,
-          runContext: this.runContext,
           subagentParentContext: this.subagentParentContext,
         }).then((response) => ({
           entries,
@@ -1164,7 +1107,6 @@ export class AgentToolGateway {
             debugTraceId,
             workspaceScope: this.workspaceScope,
             allowedSkillPaths: this.allowedSkillPaths,
-            runContext: this.runContext,
             subagentParentContext: this.subagentParentContext,
           }),
         )
@@ -1463,9 +1405,6 @@ export class AgentToolGateway {
       {
         toolPreferences: this.toolPreferences,
         toolServerPreferences: this.toolServerPreferences,
-        enabledToolNames: this.allowedToolNames
-          ? [...this.allowedToolNames]
-          : undefined,
       },
       request.name,
     )
@@ -1549,9 +1488,6 @@ export class AgentToolGateway {
           {
             toolPreferences: this.toolPreferences,
             toolServerPreferences: this.toolServerPreferences,
-            enabledToolNames: this.allowedToolNames
-              ? [...this.allowedToolNames]
-              : undefined,
           },
           toolName,
         ) === 'require_approval'
@@ -1585,7 +1521,6 @@ export class AgentToolGateway {
     return isAssistantToolEnabled(
       {
         toolPreferences: this.toolPreferences,
-        enabledToolNames: [...this.allowedToolNames],
       },
       toolName,
     )

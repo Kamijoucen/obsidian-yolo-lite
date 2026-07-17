@@ -164,10 +164,6 @@ export function AgentSection({ app }: AgentSectionProps) {
             settings.currentAssistantId === assistant.id
               ? updatedAssistants[0]?.id
               : settings.currentAssistantId,
-          quickAskAssistantId:
-            settings.quickAskAssistantId === assistant.id
-              ? updatedAssistants[0]?.id
-              : settings.quickAskAssistantId,
         })
       })().catch((error: unknown) => {
         console.error('Failed to delete agent', error)
@@ -312,10 +308,10 @@ export function AgentSection({ app }: AgentSectionProps) {
   }, [settings.mcp.builtinToolOptions, t])
 
   const allSkillEntries = useLiteSkillEntries(app, { settings })
-  const disabledSkillIds = settings.skills?.disabledSkillIds ?? []
+  const disabledSkillNames = settings.skills?.disabledSkillNames ?? []
   const disabledSkillSet = useMemo(
-    () => new Set(disabledSkillIds),
-    [disabledSkillIds],
+    () => new Set(disabledSkillNames),
+    [disabledSkillNames],
   )
   const globallyEnabledSkillEntries = useMemo(
     () => allSkillEntries.filter((skill) => !disabledSkillSet.has(skill.name)),
@@ -633,7 +629,7 @@ export function AgentSection({ app }: AgentSectionProps) {
                       isSkillEnabledForAssistant({
                         assistant,
                         skillName: skill.name,
-                        disabledSkillNames: disabledSkillIds,
+                        disabledSkillNames: disabledSkillNames,
                       }),
                     ).length
                   } skills`}

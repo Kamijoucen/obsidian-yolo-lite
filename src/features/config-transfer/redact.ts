@@ -101,7 +101,7 @@ export function clearSensitive(data: unknown): unknown {
  * 探测对象树中是否实际存在任意"非空字符串"的敏感值。
  * 用于 UI 动态判定某个顶层 key 的实例是否真的含凭证，
  * 替代过去基于类目的静态 `sensitive: true` 标记，
- * 避免给"没配 apiKey 的 Ollama / 无 env 的 MCP"误打标。
+ * 避免给没有凭证的服务商或 MCP 配置误打标。
  */
 export function hasNonEmptyCredentials(data: unknown): boolean {
   if (Array.isArray(data)) {

@@ -1,13 +1,10 @@
 import { ensureDefaultAssistantInSettings } from '../../core/agent/default-assistant'
-import { SETTINGS_SCHEMA_VERSION } from '../../settings/schema/migrations'
 import {
   YoloSettings,
   yoloSettingsSchema,
 } from '../../settings/schema/setting.types'
-import {
-  migrateYoloSettingsData,
-  normalizeYoloSettingsReferences,
-} from '../../settings/schema/settings'
+import { normalizeYoloSettingsReferences } from '../../settings/schema/settings'
+import { SETTINGS_SCHEMA_VERSION } from '../../settings/schema/version'
 
 import { EXCLUDED_KEYS, EXPORTABLE_CONFIG_KEYS } from './config-keys'
 import { computeChecksum } from './export-config'
@@ -71,10 +68,10 @@ export async function validateExportFile(
     )
   }
 
-  if (obj.settingsVersion > SETTINGS_SCHEMA_VERSION) {
+  if (obj.settingsVersion !== SETTINGS_SCHEMA_VERSION) {
     return failure(
-      'errorFileFromNewerVersion',
-      `配置文件来自更高版本的插件（版本 ${obj.settingsVersion}），当前插件版本为 ${SETTINGS_SCHEMA_VERSION}，请先升级当前插件后再导入。`,
+      'errorSettingsVersionMismatch',
+      `配置文件版本（${obj.settingsVersion}）与当前插件设置版本（${SETTINGS_SCHEMA_VERSION}）不匹配。`,
       {
         fileVersion: obj.settingsVersion,
         currentVersion: SETTINGS_SCHEMA_VERSION,
@@ -142,17 +139,15 @@ export function parseVaultData(
     )
   }
 
-  if (obj.version > SETTINGS_SCHEMA_VERSION) {
+  if (obj.version !== SETTINGS_SCHEMA_VERSION) {
     return failure(
-      'errorVaultFromNewerVersion',
-      `目标笔记库使用更高版本的插件（版本 ${obj.version}），当前插件版本为 ${SETTINGS_SCHEMA_VERSION}，请先升级当前插件后再导入。`,
+      'errorVaultVersionMismatch',
+      `目标笔记库设置版本（${obj.version}）与当前插件设置版本（${SETTINGS_SCHEMA_VERSION}）不匹配。`,
       { vaultVersion: obj.version, currentVersion: SETTINGS_SCHEMA_VERSION },
     )
   }
 
-  // 笔记库来源包含完整 data.json，应先在完整上下文中迁移，再提取可导入项。
-  // 这能保留跨字段迁移所需的信息（例如 assistants 迁移依赖 mcp）。
-  const migrated = migrateYoloSettingsData(obj)
+  const importedSettings = obj
 
   // 未在 EXPORTABLE_CONFIG_KEYS 中声明的顶层字段不应进入候选列表，
   // 否则用户能勾选这些字段，但 yoloSettingsSchema 会 strip 掉，最终出现
@@ -160,7 +155,7 @@ export function parseVaultData(
   const exportableKeySet = new Set(EXPORTABLE_CONFIG_KEYS.map((k) => k.key))
   const data: Record<string, unknown> = {}
   const keys: string[] = []
-  for (const [key, value] of Object.entries(migrated)) {
+  for (const [key, value] of Object.entries(importedSettings)) {
     if (EXCLUDED_KEYS.has(key)) continue
     if (!exportableKeySet.has(key)) continue
     data[key] = value
@@ -187,7 +182,7 @@ export function parseVaultData(
 }
 
 export type ImportOptions = {
-  /** 导入的配置数据（已校验，版本不高于当前版本） */
+  /** 导入的配置数据（已校验，版本与当前插件完全一致） */
   importData: ConfigExportFile
   /** 用户选择要导入的 key 列表 */
   selectedKeys: string[]
@@ -246,20 +241,19 @@ export class ImportValidationError extends Error {
  * 执行配置导入，返回合并后的完整 settings。
  *
  * 流程：
- * 1. 旧版部分导出文件以当前配置补齐迁移上下文，迁移后只提取导出字段
- * 2. 按合并策略将导入数据合并到 currentSettings
+ * 1. 按合并策略将导入数据合并到 currentSettings
  *    （脱敏导出时先把所有敏感字段清空，避免假凭证被写入）
- * 3. 通过 yoloSettingsSchema 显式校验；失败时抛出 ImportValidationError，
+ * 2. 通过 yoloSettingsSchema 显式校验；失败时抛出 ImportValidationError，
  *    调用方负责提示用户并保留原配置（不静默回退到默认值）
- * 4. 在合法结果上做引用规范化与默认 assistant 兜底
+ * 3. 在合法结果上做引用规范化并确保默认 assistant 存在
  */
 export function applyImport(options: ImportOptions): YoloSettings {
   const { importData, selectedKeys, currentSettings, mergeStrategy } = options
 
-  if (importData.settingsVersion > SETTINGS_SCHEMA_VERSION) {
+  if (importData.settingsVersion !== SETTINGS_SCHEMA_VERSION) {
     throw new ImportValidationError(
       'errorApplyVersionMismatch',
-      `导入数据版本（${importData.settingsVersion}）高于当前插件版本（${SETTINGS_SCHEMA_VERSION}），无法导入。`,
+      `导入数据版本（${importData.settingsVersion}）与当前插件设置版本（${SETTINGS_SCHEMA_VERSION}）不匹配。`,
       [],
       {
         importVersion: importData.settingsVersion,
@@ -268,32 +262,13 @@ export function applyImport(options: ImportOptions): YoloSettings {
     )
   }
 
-  let incomingData = importData.redacted
+  const incomingData = importData.redacted
     ? (clearSensitive(importData.data) as Record<string, unknown>)
     : importData.data
 
   const currentRaw = currentSettings as unknown as Record<string, unknown>
 
-  if (importData.settingsVersion < SETTINGS_SCHEMA_VERSION) {
-    // 部分导出缺少 migration 依赖的其他字段。用当前配置补齐上下文，并让
-    // 导出值优先；迁移后仍只提取文件声明的字段，不会改动未导出的配置。
-    const incomingKeys = Object.keys(incomingData)
-    const migrationContext = JSON.parse(
-      JSON.stringify({
-        ...currentRaw,
-        ...incomingData,
-        version: importData.settingsVersion,
-      }),
-    ) as Record<string, unknown>
-    const migrated = migrateYoloSettingsData(migrationContext)
-    incomingData = Object.fromEntries(
-      incomingKeys.flatMap((key) =>
-        key in migrated ? [[key, migrated[key]]] : [],
-      ),
-    )
-  }
-
-  // 2. 按合并策略合并到当前配置。脱敏导出时所有敏感字段（apiKey/password/
+  // 按合并策略合并到当前配置。脱敏导出时所有敏感字段（apiKey/password/
   //    headers/env/customHeaders.value）已是随机字符串，导入前清空，
   //    避免被当成真凭证写回 providers/webSearch/mcp。
   const merged: Record<string, unknown> = { ...currentRaw }
@@ -328,7 +303,7 @@ export function applyImport(options: ImportOptions): YoloSettings {
 
   merged.version = SETTINGS_SCHEMA_VERSION
 
-  // 3. 显式 schema 校验，失败时抛错（不走 parseYoloSettings 的默认值兜底）
+  // 显式 schema 校验，失败时抛错（不走 parseYoloSettings 的默认值兜底）
   const parsed = yoloSettingsSchema.safeParse(merged)
   if (!parsed.success) {
     const issues = parsed.error.issues.map((issue) => {
@@ -342,7 +317,7 @@ export function applyImport(options: ImportOptions): YoloSettings {
     )
   }
 
-  // 4. 引用规范化 + 默认 assistant 兜底
+  // 引用规范化 + 默认 assistant 兜底
   const normalized = normalizeYoloSettingsReferences(parsed.data)
   return ensureDefaultAssistantInSettings({
     ...normalized,

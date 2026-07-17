@@ -1,4 +1,4 @@
-import { SETTINGS_SCHEMA_VERSION } from '../../settings/schema/migrations'
+import { SETTINGS_SCHEMA_VERSION } from '../../settings/schema/version'
 
 import { buildExportData, computeChecksum } from './export-config'
 import {
@@ -251,15 +251,14 @@ describe('hasNonEmptyCredentials', () => {
     ).toBe(true)
   })
 
-  it('returns false for typical category without configured credentials (Ollama-only providers)', () => {
-    // 真实场景：用户只用本地 Ollama，没填 apiKey
+  it('returns false for a provider without configured credentials', () => {
     expect(
       hasNonEmptyCredentials({
         providers: [
           {
-            id: 'ollama',
-            presetType: 'ollama',
-            baseUrl: 'http://localhost:11434',
+            id: 'deepseek',
+            presetType: 'deepseek',
+            baseUrl: 'https://api.deepseek.com',
             apiKey: '',
           },
         ],

@@ -29,33 +29,16 @@ export const normalizeChatMode = (
   raw: string | null | undefined,
   fallback: ChatMode = 'agent',
 ): ChatMode => {
-  if (raw === 'chat') {
-    return 'ask'
-  }
-  // Legacy value: `agent-full` used to encode "agent + auto-approval". The
-  // capability is just Agent now; the YOLO bit is recovered via
-  // `normalizeYoloEnabled`.
-  if (raw === 'agent-full') {
-    return 'agent'
-  }
   if (raw && isChatMode(raw)) {
     return raw
   }
   return fallback
 }
 
-/**
- * Recover the orthogonal YOLO flag, including from the legacy `agent-full`
- * value that conflated mode and auto-approval.
- */
 export const normalizeYoloEnabled = (
-  rawMode: string | null | undefined,
   rawYolo: boolean | null | undefined,
   fallback = false,
 ): boolean => {
-  if (rawMode === 'agent-full') {
-    return true
-  }
   if (typeof rawYolo === 'boolean') {
     return rawYolo
   }

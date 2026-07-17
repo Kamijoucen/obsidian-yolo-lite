@@ -6,15 +6,12 @@ export type BackgroundActivityAction =
       conversationId: string
     }
   | {
-      type: 'open-knowledge-settings'
-    }
-  | {
       type: 'open-learning-view'
     }
 
 export type BackgroundActivity = {
   id: string
-  kind: 'agent' | 'learning-agent' | 'rag-index'
+  kind: 'agent' | 'learning-agent'
   title: string
   detail?: string
   status: BackgroundActivityStatus

@@ -14,7 +14,6 @@ import YoloPlugin from '../../../main'
 import { ObsidianButton } from '../../common/ObsidianButton'
 import { ObsidianDropdown } from '../../common/ObsidianDropdown'
 import { ObsidianSetting } from '../../common/ObsidianSetting'
-import { ObsidianTextArea } from '../../common/ObsidianTextArea'
 import { ObsidianTextInput } from '../../common/ObsidianTextInput'
 import { ObsidianToggle } from '../../common/ObsidianToggle'
 import { ReactModal } from '../../common/ReactModal'
@@ -254,68 +253,6 @@ function Form({ draft, editId, onClose }: FormProps & { onClose: () => void }) {
         </div>
       )}
 
-      {form.type === 'gemini-grounding' && (
-        <>
-          <ApiKeyField
-            value={form.apiKey}
-            onChange={(value) => update('apiKey', value)}
-          />
-          <ObsidianSetting name={t('settings.webSearch.fieldModel', 'Model')}>
-            <ObsidianTextInput
-              value={form.model}
-              onChange={(value) => update('model', value)}
-            />
-          </ObsidianSetting>
-          <ObsidianSetting
-            name={t('settings.webSearch.fieldBaseUrl', 'Base URL')}
-          >
-            <ObsidianTextInput
-              value={form.baseUrl}
-              onChange={(value) => update('baseUrl', value)}
-            />
-          </ObsidianSetting>
-          <SystemPromptField
-            value={form.systemPrompt}
-            onChange={(value) => update('systemPrompt', value)}
-          />
-        </>
-      )}
-
-      {form.type === 'grok' && (
-        <>
-          <ApiKeyField
-            value={form.apiKey}
-            onChange={(value) => update('apiKey', value)}
-          />
-          <ObsidianSetting name={t('settings.webSearch.fieldModel', 'Model')}>
-            <ObsidianTextInput
-              value={form.model}
-              onChange={(value) => update('model', value)}
-            />
-          </ObsidianSetting>
-          <ObsidianSetting
-            name={t('settings.webSearch.fieldBaseUrl', 'Base URL')}
-          >
-            <ObsidianTextInput
-              value={form.baseUrl}
-              onChange={(value) => update('baseUrl', value)}
-            />
-          </ObsidianSetting>
-          <SystemPromptField
-            value={form.systemPrompt}
-            onChange={(value) => update('systemPrompt', value)}
-          />
-          <ObsidianSetting
-            name={t('settings.webSearch.fieldEnableX', 'Also search X')}
-          >
-            <ObsidianToggle
-              value={form.enableX}
-              onChange={(value) => update('enableX', value)}
-            />
-          </ObsidianSetting>
-        </>
-      )}
-
       {form.type === 'zhipu' && (
         <>
           <ApiKeyField
@@ -426,32 +363,5 @@ function ApiKeyField({
     >
       <ObsidianTextInput value={value} onChange={onChange} />
     </ObsidianSetting>
-  )
-}
-
-function SystemPromptField({
-  value,
-  onChange,
-}: {
-  value: string
-  onChange: (value: string) => void
-}) {
-  const { t } = useLanguage()
-  return (
-    <>
-      <ObsidianSetting
-        name={t('settings.webSearch.fieldSystemPrompt', 'System prompt')}
-        className="yolo-settings-textarea-header"
-      />
-      <ObsidianSetting className="yolo-settings-textarea">
-        <ObsidianTextArea
-          value={value}
-          onChange={onChange}
-          autoResize
-          maxAutoResizeHeight={360}
-          inputClassName="yolo-ws-system-prompt-textarea"
-        />
-      </ObsidianSetting>
-    </>
   )
 }

@@ -80,7 +80,6 @@ describe('DesktopLocalMcpServer', () => {
       getSettings: () => settings,
       getAgentService: unavailable,
       getMcpManager: unavailable,
-      getRagEngine: unavailable,
       openConversation: async () => undefined,
     })
     const consoleSpy = jest.spyOn(console, 'error').mockImplementation()
@@ -130,7 +129,6 @@ describe('DesktopLocalMcpServer', () => {
       getSettings: () => settings,
       getAgentService: unavailable,
       getMcpManager: unavailable,
-      getRagEngine: unavailable,
       openConversation: async () => undefined,
     })
     const url = new URL(`http://127.0.0.1:${port}/mcp`)

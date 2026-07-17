@@ -26,16 +26,12 @@ import { toProviderHeadersRecord } from '../../utils/llm/provider-headers'
 
 import { BaseLLMProvider } from './base'
 import { ChatGPTOAuthResponsesAdapter } from './chatgptOAuthResponsesAdapter'
-import { extractEmbeddingVector } from './embedding-utils'
 import {
   LLMAPIKeyInvalidException,
   LLMAPIKeyNotSetException,
-  LLMRateLimitExceededException,
 } from './exception'
 import { ModelRequestPolicy, resolveSdkMaxRetries } from './requestPolicy'
 import {
-  AutoPromotedTransportMode,
-  createRequestTransportMemoryKey,
   resolveRequestTransportMode,
   runWithRequestTransport,
   runWithRequestTransportForStream,
@@ -48,21 +44,6 @@ export class OpenAIResponsesProvider extends BaseLLMProvider<LLMProvider> {
   private readonly obsidianClient: OpenAI
   private readonly nodeClient: OpenAI
   private requestTransportMode: RequestTransportMode
-  private readonly requestTransportMemoryKey: string
-  private onAutoPromoteTransportMode?: (mode: AutoPromotedTransportMode) => void
-
-  private promoteTransportMode = (mode: AutoPromotedTransportMode) => {
-    if (this.requestTransportMode === mode) {
-      return
-    }
-
-    this.provider.additionalSettings = {
-      ...(this.provider.additionalSettings ?? {}),
-      requestTransportMode: mode,
-    }
-    this.requestTransportMode = mode
-    this.onAutoPromoteTransportMode?.(mode)
-  }
 
   private applyReasoningEffort(
     model: ChatModel,
@@ -91,22 +72,13 @@ export class OpenAIResponsesProvider extends BaseLLMProvider<LLMProvider> {
   constructor(
     provider: LLMProvider,
     options?: {
-      onAutoPromoteTransportMode?: (mode: AutoPromotedTransportMode) => void
       requestPolicy?: ModelRequestPolicy
     },
   ) {
     super(provider)
-    this.onAutoPromoteTransportMode = options?.onAutoPromoteTransportMode
     const defaultHeaders = toProviderHeadersRecord(provider.customHeaders)
-    this.requestTransportMemoryKey = createRequestTransportMemoryKey({
-      providerType: provider.presetType,
-      providerId: provider.id,
-      baseUrl: provider.baseUrl,
-    })
     this.requestTransportMode = resolveRequestTransportMode({
       additionalSettings: provider.additionalSettings,
-      hasCustomBaseUrl: !!provider.baseUrl,
-      memoryKey: this.requestTransportMemoryKey,
     })
     const clientOptions = {
       apiKey: provider.apiKey ?? '',
@@ -135,11 +107,7 @@ export class OpenAIResponsesProvider extends BaseLLMProvider<LLMProvider> {
     model: ChatModel,
     body: ResponseCreateParamsStreaming,
   ): ResponseCreateParamsStreaming {
-    // Only the OpenAI hosted `web_search` family is forwarded on the Responses
-    // transport (mapped to `web_search_preview`). Other families
-    // (`openrouter:web_search`, `grok:live_search`, `gemini:web_search`) are
-    // dropped — they target different endpoints and rewriting them here would
-    // change user intent.
+    // Responses uses the `web_search_preview` hosted-tool shape.
     const webSearchCount = getBuiltinProviderTools(model).filter(
       (t) => t.type === 'web_search',
     ).length
@@ -182,8 +150,6 @@ export class OpenAIResponsesProvider extends BaseLLMProvider<LLMProvider> {
 
       const response = await runWithRequestTransport({
         mode: this.requestTransportMode,
-        memoryKey: this.requestTransportMemoryKey,
-        onAutoPromoteTransportMode: this.promoteTransportMode,
         runBrowser: () =>
           this.browserClient.responses.create(body as never, {
             signal: options?.signal,
@@ -232,8 +198,6 @@ export class OpenAIResponsesProvider extends BaseLLMProvider<LLMProvider> {
 
     const stream = await runWithRequestTransportForStream({
       mode: this.requestTransportMode,
-      memoryKey: this.requestTransportMemoryKey,
-      onAutoPromoteTransportMode: this.promoteTransportMode,
       signal: options?.signal,
       createBrowserStream: (signal) =>
         this.browserClient.responses.create(body, {
@@ -257,55 +221,6 @@ export class OpenAIResponsesProvider extends BaseLLMProvider<LLMProvider> {
           yield* adapter.parseStreamEvent(event, state)
         }
       },
-    }
-  }
-
-  async getEmbedding(
-    model: string,
-    text: string,
-    options?: { dimensions?: number },
-  ): Promise<number[]> {
-    if (!this.browserClient.apiKey) {
-      throw new LLMAPIKeyNotSetException(
-        `Provider ${this.provider.id} API key is missing. Please set it in settings menu.`,
-      )
-    }
-
-    const dimensionsParam = options?.dimensions
-      ? { dimensions: options.dimensions }
-      : {}
-    try {
-      const embedding = await runWithRequestTransport({
-        mode: this.requestTransportMode,
-        memoryKey: this.requestTransportMemoryKey,
-        onAutoPromoteTransportMode: this.promoteTransportMode,
-        runBrowser: () =>
-          this.browserClient.embeddings.create({
-            model,
-            input: text,
-            ...dimensionsParam,
-          }),
-        runObsidian: () =>
-          this.obsidianClient.embeddings.create({
-            model,
-            input: text,
-            ...dimensionsParam,
-          }),
-        runNode: () =>
-          this.nodeClient.embeddings.create({
-            model,
-            input: text,
-            ...dimensionsParam,
-          }),
-      })
-      return extractEmbeddingVector(embedding)
-    } catch (error) {
-      if ((error as { status?: number }).status === 429) {
-        throw new LLMRateLimitExceededException(
-          'OpenAI API rate limit exceeded. Please try again later.',
-        )
-      }
-      throw error
     }
   }
 }

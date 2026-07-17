@@ -68,7 +68,6 @@ export function findAssistantGroupIdForRunAnchor({
 
     const hasMatchingSource = messageOrGroup.some(
       (message) =>
-        message.role !== 'external_agent_result' &&
         message.role !== 'subagent_result' &&
         message.role !== 'terminal_command_result' &&
         message.metadata?.sourceUserMessageId === anchorMessageId,

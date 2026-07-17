@@ -1,10 +1,8 @@
 import { SerializedEditorState } from 'lexical'
 
-import { CitationSource } from '../core/agent/citationRegistry'
-
 import { ChatModel } from './chat-model.types'
 import { ContentPart } from './llm/request'
-import { Annotation, ProviderMetadata, ResponseUsage } from './llm/response'
+import { Annotation, ResponseUsage } from './llm/response'
 import { Mentionable, SerializedMentionable } from './mentionable'
 import { ToolCallRequest, ToolCallResponse } from './tool-call.types'
 
@@ -99,12 +97,11 @@ export type ChatAssistantMessage = {
   id: string
   metadata?: {
     usage?: ResponseUsage
-    model?: ChatModel // TODO: migrate legacy data to new model type
+    model?: ChatModel
     durationMs?: number
     generationState?: 'streaming' | 'completed' | 'aborted' | 'error'
     errorMessage?: string
     llmDebugTraceId?: string
-    providerMetadata?: ProviderMetadata
     sourceUserMessageId?: string
     branchId?: string
     branchModelId?: string
@@ -112,7 +109,6 @@ export type ChatAssistantMessage = {
     branchConversationId?: string
     branchRunStatus?: 'idle' | 'running' | 'completed' | 'aborted' | 'error'
     branchWaitingApproval?: boolean
-    sources?: CitationSource[]
   }
 }
 export type ChatToolMessage = {
@@ -144,26 +140,6 @@ export type TaskSource = {
   type: 'llm_tool_call'
   toolCallId: string
   assistantMessageId: string
-}
-
-export type ChatExternalAgentResultMessage = {
-  role: 'external_agent_result'
-  id: string
-  taskId: string
-  source: TaskSource
-  provider: 'codex' | 'claude-code'
-  title: string
-  status: AsyncTaskStatus
-  exitCode: number | null
-  stdout: string
-  stderr: string
-  durationMs: number
-  delegateAssistantMessageId: string
-  delegateToolCallId: string
-  metadata?: {
-    branchId?: string
-    branchConversationId?: string
-  }
 }
 
 export type SubagentResultStatus = 'completed' | 'failed' | 'aborted'
@@ -214,14 +190,12 @@ export type ChatMessage =
   | ChatUserMessage
   | ChatAssistantMessage
   | ChatToolMessage
-  | ChatExternalAgentResultMessage
   | ChatSubagentResultMessage
   | ChatTerminalCommandResultMessage
 
 export type AssistantToolMessageGroup = (
   | ChatAssistantMessage
   | ChatToolMessage
-  | ChatExternalAgentResultMessage
   | ChatSubagentResultMessage
   | ChatTerminalCommandResultMessage
 )[]
@@ -247,12 +221,11 @@ export type SerializedChatAssistantMessage = {
   id: string
   metadata?: {
     usage?: ResponseUsage
-    model?: ChatModel // TODO: migrate legacy data to new model type
+    model?: ChatModel
     durationMs?: number
     generationState?: 'streaming' | 'completed' | 'aborted' | 'error'
     errorMessage?: string
     llmDebugTraceId?: string
-    providerMetadata?: ProviderMetadata
     sourceUserMessageId?: string
     branchId?: string
     branchModelId?: string
@@ -260,7 +233,6 @@ export type SerializedChatAssistantMessage = {
     branchConversationId?: string
     branchRunStatus?: 'idle' | 'running' | 'completed' | 'aborted' | 'error'
     branchWaitingApproval?: boolean
-    sources?: CitationSource[]
   }
 }
 export type SerializedChatToolMessage = {
@@ -280,8 +252,6 @@ export type SerializedChatToolMessage = {
     branchWaitingApproval?: boolean
   }
 }
-export type SerializedChatExternalAgentResultMessage =
-  ChatExternalAgentResultMessage
 export type SerializedChatSubagentResultMessage = ChatSubagentResultMessage
 export type SerializedChatTerminalCommandResultMessage =
   ChatTerminalCommandResultMessage
@@ -290,7 +260,6 @@ export type SerializedChatMessage =
   | SerializedChatUserMessage
   | SerializedChatAssistantMessage
   | SerializedChatToolMessage
-  | SerializedChatExternalAgentResultMessage
   | SerializedChatSubagentResultMessage
   | SerializedChatTerminalCommandResultMessage
 

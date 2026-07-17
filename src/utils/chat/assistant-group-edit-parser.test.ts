@@ -1,7 +1,6 @@
 import type {
   AssistantToolMessageGroup,
   ChatAssistantMessage,
-  ChatExternalAgentResultMessage,
   ChatToolMessage,
 } from '../../types/chat'
 import { ToolCallResponseStatus } from '../../types/tool-call.types'
@@ -43,26 +42,6 @@ const tool = (id: string, requestIds: readonly string[]): ChatToolMessage => ({
       },
     },
   })),
-})
-
-const externalResult = (id: string): ChatExternalAgentResultMessage => ({
-  role: 'external_agent_result',
-  id,
-  taskId: `task-${id}`,
-  source: {
-    type: 'llm_tool_call',
-    toolCallId: 'call-external',
-    assistantMessageId: 'assistant-external',
-  },
-  provider: 'codex',
-  title: 'External task',
-  status: 'completed',
-  exitCode: 0,
-  stdout: '',
-  stderr: '',
-  durationMs: 1,
-  delegateAssistantMessageId: 'assistant-external',
-  delegateToolCallId: 'call-external',
 })
 
 const toolIds = (message: ChatToolMessage): string[] =>
@@ -270,25 +249,6 @@ describe('assistant group edit parser', () => {
     expect((result.retainedMessages[2] as ChatAssistantMessage).content).toBe(
       '\nafter',
     )
-  })
-
-  it('preserves async result messages defensively without placeholder handling', () => {
-    const messages: AssistantToolMessageGroup = [
-      assistant('a1', 'before', ['call-1']),
-      tool('t1', ['call-1']),
-      externalResult('e1'),
-      assistant('a2', 'after'),
-    ]
-
-    expect(serializeGroupForEdit(messages)).not.toContain('External task')
-
-    const result = parseGroupFromEdit('beforeafter', messages)
-
-    expect(result.retainedMessages.map((message) => message.id)).toEqual([
-      'e1',
-      'a2',
-    ])
-    expect(result.retainedMessages[0]).toBe(messages[2])
   })
 
   it('does not emit a reasoning placeholder when reasoning is empty', () => {

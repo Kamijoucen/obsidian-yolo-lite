@@ -71,10 +71,6 @@ type AgentLlmTurnExecutorInput = {
   contextualInjections?: ContextualInjection[]
   toolCapabilityMode?: ToolCapabilityMode
   transientRequestMessages?: RequestMessage[]
-  geminiTools?: {
-    useWebSearch?: boolean
-    useUrlContext?: boolean
-  }
   systemPromptOverride?: string
   onAssistantMessage: (message: ChatAssistantMessage) => void
 }
@@ -94,8 +90,7 @@ type AgentLlmTurnExecutorOutput = {
   /**
    * The resolved reasoning level actually applied this turn. Replayed by the
    * compaction bypass so its request carries the same thinking config — without
-   * it, Anthropic's cache key (which includes thinking config) would mismatch
-   * and the cache-warm prefix would not hit.
+   * it, the provider cache key may mismatch and miss the cache-warm prefix.
    */
   requestReasoning: ReasoningLevel | undefined
 }
@@ -112,11 +107,6 @@ export class AgentLlmTurnExecutor {
     const availableTools = this.input.enableTools
       ? await this.input.mcpManager.listAvailableTools({
           includeBuiltinTools: this.input.includeBuiltinTools,
-          // Pass the active model's modalities so built-in tool schemas
-          // (notably fs_read's modality enum) are tailored — PDF-capable
-          // models see ['text','pdf'], vision-capable see ['text','image'],
-          // text-only see no modality field at all.
-          chatModelModalities: this.input.model.modalities,
         })
       : []
     const {
@@ -242,7 +232,6 @@ export class AgentLlmTurnExecutor {
           this.input.requestParams?.primaryRequestTimeoutMs,
         streamFallbackRecoveryEnabled:
           this.input.requestParams?.streamFallbackRecoveryEnabled,
-        geminiTools: this.input.geminiTools,
         debugTraceId: debugTrace?.id,
         onStreamDelta: ({ contentDelta, reasoningDelta, chunk, toolCalls }) => {
           if (contentDelta) {
@@ -282,12 +271,6 @@ export class AgentLlmTurnExecutor {
             assistantMessage.metadata = {
               ...assistantMessage.metadata,
               usage: chunk.usage,
-            }
-          }
-          if (chunk.choices?.[0]?.delta?.providerMetadata) {
-            assistantMessage.metadata = {
-              ...assistantMessage.metadata,
-              providerMetadata: chunk.choices[0].delta.providerMetadata,
             }
           }
           this.input.onAssistantMessage(assistantMessage)
@@ -348,7 +331,6 @@ export class AgentLlmTurnExecutor {
       generationState: this.input.abortSignal?.aborted
         ? 'aborted'
         : 'completed',
-      providerMetadata: turnResult.providerMetadata,
     }
 
     const toolCallRequests = turnResult.toolCalls.map((toolCall) => ({

@@ -1,14 +1,8 @@
-import { LEGACY_UNTITLED_CONVERSATION_TITLES } from '../../constants'
-
-const LEGACY_UNTITLED_TITLE_SET = new Set<string>(
-  LEGACY_UNTITLED_CONVERSATION_TITLES,
-)
-
 export const isUntitledConversationTitle = (
   title: string | null | undefined,
 ): boolean => {
   const normalized = title?.trim() ?? ''
-  return normalized.length === 0 || LEGACY_UNTITLED_TITLE_SET.has(normalized)
+  return normalized.length === 0
 }
 
 export const getConversationDisplayTitle = (

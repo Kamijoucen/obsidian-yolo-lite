@@ -80,27 +80,20 @@ export const assistantSchema = z.object({
   modelId: z.string().optional(),
   enableTools: z.boolean().optional(),
   includeBuiltinTools: z.boolean().optional(),
-  enabledToolNames: z.array(z.string()).optional(),
   toolPreferences: z
     .record(z.string(), assistantToolPreferenceSchema)
     .optional(),
   toolServerPreferences: z
     .record(z.string(), assistantToolServerPreferenceSchema)
     .optional(),
-  // Legacy: per-assistant enabled skill list, keyed by canonical skill name.
-  enabledSkills: z.array(z.string()).optional(),
-  // Per-assistant skill preferences, keyed by canonical skill *name*
-  // (frontmatter `name`, trim-only, case-sensitive). Field/key names kept for
-  // backwards compatibility; keys are skill names, not a separate id.
+  // Per-assistant skill preferences, keyed by frontmatter `name`.
   skillPreferences: z
     .record(z.string(), assistantSkillPreferenceSchema)
     .optional(),
   workspaceScope: assistantWorkspaceScopeSchema.optional(),
   enableProjectInstructions: z.boolean().optional(),
-  // Per-agent focus sync (current file pointer injection in sidebar chat).
-  includeCurrentFileContent: z.boolean().optional(),
-  // Per-agent time awareness (<current_time> prefix on new user messages).
-  timeContextEnabled: z.boolean().optional(),
+  includeCurrentFileContent: z.boolean().default(true),
+  timeContextEnabled: z.boolean().default(true),
   createdAt: z.number().optional(),
   updatedAt: z.number().optional(),
 })

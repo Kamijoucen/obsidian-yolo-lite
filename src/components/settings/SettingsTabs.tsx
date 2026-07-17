@@ -11,8 +11,6 @@ import { useLanguage } from '../../contexts/language-context'
 import YoloPlugin from '../../main'
 
 import { AgentTab } from './tabs/AgentTab'
-import { EditorTab } from './tabs/EditorTab'
-import { KnowledgeTab } from './tabs/KnowledgeTab'
 import { LearningTab } from './tabs/LearningTab'
 import { ModelsTab } from './tabs/ModelsTab'
 import { OthersTab } from './tabs/OthersTab'
@@ -22,13 +20,7 @@ type SettingsTabsProps = {
   plugin: YoloPlugin
 }
 
-export type SettingsTabId =
-  | 'models'
-  | 'editor'
-  | 'knowledge'
-  | 'learning'
-  | 'agent'
-  | 'others'
+export type SettingsTabId = 'models' | 'learning' | 'agent' | 'others'
 
 type SettingsTab = {
   id: SettingsTabId
@@ -48,16 +40,6 @@ const SETTINGS_TABS: SettingsTab[] = [
     component: AgentTab,
   },
   {
-    id: 'editor',
-    labelKey: 'settings.tabs.editor',
-    component: EditorTab,
-  },
-  {
-    id: 'knowledge',
-    labelKey: 'settings.tabs.knowledge',
-    component: KnowledgeTab,
-  },
-  {
     id: 'learning',
     labelKey: 'settings.tabs.learning',
     component: LearningTab,
@@ -74,14 +56,7 @@ const STORAGE_KEY = 'yolo_settings_active_tab'
 export function SettingsTabs({ app, plugin }: SettingsTabsProps) {
   const { t } = useLanguage()
   const [activeTab, setActiveTab] = useState<SettingsTabId>(() => {
-    // Load from localStorage
     const stored = app.loadLocalStorage(STORAGE_KEY)
-    if (stored === 'tools') {
-      return 'agent'
-    }
-    if (stored === 'chat') {
-      return 'editor'
-    }
     if (stored && SETTINGS_TABS.some((tab) => tab.id === stored)) {
       return stored as SettingsTabId
     }
@@ -89,7 +64,6 @@ export function SettingsTabs({ app, plugin }: SettingsTabsProps) {
   })
 
   useEffect(() => {
-    // Save to localStorage when tab changes
     void app.saveLocalStorage(STORAGE_KEY, activeTab)
   }, [activeTab])
 
