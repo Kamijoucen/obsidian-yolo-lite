@@ -1,7 +1,7 @@
 import {
   callLocalFileTool,
-  getLocalFileToolServerName,
+  getBuiltinToolNamespace,
   getLocalFileTools,
-} from '../mcp/localFileTools'
+} from '../tools/localFileTools'
 
-export { callLocalFileTool, getLocalFileTools, getLocalFileToolServerName }
+export { callLocalFileTool, getLocalFileTools, getBuiltinToolNamespace }

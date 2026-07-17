@@ -27,7 +27,7 @@ jest.mock('../../components/chat-view/chat-runtime-profiles', () => ({
       includeBuiltinTools: true,
       maxAutoIterations: 100,
     },
-    allowedToolNames: ['server__search'],
+    allowedToolNames: ['yolo_local__search'],
     toolPreferences: undefined,
     bypassToolApproval: false,
   })),
@@ -70,7 +70,7 @@ import {
   ToolCallResponseStatus,
 } from '../../types/tool-call.types'
 import { getChatModelClient } from '../llm/manager'
-import type { McpManager } from '../mcp/mcpManager'
+import type { ToolManager } from '../tools/toolManager'
 
 import {
   buildAgentApiPrompt,
@@ -149,9 +149,7 @@ describe('agent api helpers', () => {
         },
       ],
       providers: [{ id: 'mock-provider', apiType: 'openai' }],
-      mcp: {
-        enableToolDisclosure: false,
-      },
+      tools: { builtinToolOptions: {} },
       requestPolicy: {
         primaryRequestTimeoutMs: 30000,
         streamFallbackRecoveryEnabled: true,
@@ -182,7 +180,7 @@ describe('agent api helpers', () => {
       app,
       settings,
       agentService,
-      mcpManager: {} as any,
+      toolManager: {} as any,
     })
 
     expect(result.input.messages).toHaveLength(1)
@@ -303,13 +301,13 @@ describe('agent api helpers', () => {
   it('only narrows runtime allowed tools', () => {
     expect(
       narrowAllowedToolNames(
-        ['yolo_local__fs_read', 'server__search'],
-        ['server__search', 'server__write'],
+        ['yolo_local__fs_read', 'yolo_local__search'],
+        ['yolo_local__search', 'yolo_local__write'],
       ),
-    ).toEqual(['server__search'])
+    ).toEqual(['yolo_local__search'])
 
     expect(
-      narrowAllowedToolNames(undefined, ['server__search']),
+      narrowAllowedToolNames(undefined, ['yolo_local__search']),
     ).toBeUndefined()
   })
 
@@ -427,7 +425,7 @@ describe('agent api helpers', () => {
       type: 'tool',
       conversationId: 'conversation-1',
       toolCallId: 'tool-1',
-      name: 'server__search',
+      name: 'yolo_local__search',
       status: 'awaiting_approval',
     })
   })
@@ -447,9 +445,7 @@ function buildResolveAgentApiRunInputArgs(request: YoloAgentRunRequest) {
       },
     ],
     providers: [{ id: 'mock-provider', apiType: 'openai' }],
-    mcp: {
-      enableToolDisclosure: false,
-    },
+    tools: { builtinToolOptions: {} },
     requestPolicy: {
       primaryRequestTimeoutMs: 30000,
       streamFallbackRecoveryEnabled: true,
@@ -471,7 +467,7 @@ function buildResolveAgentApiRunInputArgs(request: YoloAgentRunRequest) {
     app: { vault: {} } as unknown as App,
     settings,
     agentService,
-    mcpManager: {} as McpManager,
+    toolManager: {} as ToolManager,
   }
 }
 
@@ -518,7 +514,7 @@ function buildState({
                 {
                   request: {
                     id: 'tool-1',
-                    name: 'server__search',
+                    name: 'yolo_local__search',
                   },
                   response: {
                     status: toolStatus,

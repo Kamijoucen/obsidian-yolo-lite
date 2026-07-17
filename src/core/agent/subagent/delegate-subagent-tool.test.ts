@@ -1,4 +1,4 @@
-import { getLocalFileTools } from '../../mcp/localFileTools'
+import { getLocalFileTools } from '../../tools/localFileTools'
 
 import { DELEGATE_SUBAGENT_TOOL_SHORT_NAME } from './constants'
 

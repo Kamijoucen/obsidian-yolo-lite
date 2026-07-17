@@ -12,7 +12,7 @@ import { useLanguage } from '../../../contexts/language-context'
 import {
   type JsSandboxSettings,
   normalizeJsSandboxConfig,
-} from '../../../core/mcp/jsSandboxSettings'
+} from '../../../core/tools/jsSandboxSettings'
 import {
   JS_SANDBOX_BROWSER_READ_DEFAULT_MAX_KB,
   JS_SANDBOX_BROWSER_READ_HARD_MAX_KB,
@@ -26,7 +26,7 @@ import {
   JS_SANDBOX_VAULT_READ_DEFAULT_MAX_KB,
   JS_SANDBOX_VAULT_READ_HARD_MAX_KB,
   JS_SANDBOX_VAULT_READ_MIN_KB,
-} from '../../../core/mcp/jsSandboxTool'
+} from '../../../core/tools/jsSandboxTool'
 import { ObsidianSetting } from '../../common/ObsidianSetting'
 import { ObsidianTextInput } from '../../common/ObsidianTextInput'
 import { ObsidianToggle } from '../../common/ObsidianToggle'
@@ -267,7 +267,7 @@ function JsSandboxConfigModalContent({
                 v,
                 t(
                   'settings.agent.jsSandboxAllowFetchConfirm',
-                  'Enabling network requests lets scripts contact browser-accessible addresses and use a separate YOLO host request helper when browser cross-origin limits block a response. Only enable this for an agent you trust. Continue?',
+                  'Enabling network requests lets scripts contact browser-accessible addresses and use a separate YOLO-Lite host request helper when browser cross-origin limits block a response. Only enable this for an agent you trust. Continue?',
                 ),
               )
             }

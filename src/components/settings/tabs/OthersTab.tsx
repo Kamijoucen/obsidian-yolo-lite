@@ -12,7 +12,7 @@ import { ObsidianToggle } from '../../common/ObsidianToggle'
 import { ChatPreferencesSection } from '../sections/ChatPreferencesSection'
 import { EtcSection } from '../sections/EtcSection'
 
-const YOLO_REPO_URL = 'https://github.com/Lapis0x0/obsidian-yolo'
+const YOLO_REPO_URL = 'https://github.com/Kamijoucen/obsidian-yolo-lite'
 
 function detectGithubIssueOs(): 'Windows' | 'macOS' | 'Linux' | 'Other' {
   if (Platform.isMacOS) return 'macOS'
@@ -165,17 +165,13 @@ export function OthersTab({ app, plugin }: OthersTabProps) {
           className="yolo-settings-support-yolo"
         >
           <ObsidianButton
-            text={t('settings.supportYolo.buyMeACoffee')}
-            onClick={() => openExternalLink('https://afdian.com/a/lapis0x0')}
-            cta
-          />
-          <ObsidianButton
             text={t('settings.supportYolo.reportBug')}
             onClick={() =>
               openExternalLink(
                 buildBugReportUrl(plugin.manifest.version, language),
               )
             }
+            cta
           />
           <ObsidianButton
             text={t('settings.supportYolo.featureRequest')}
@@ -199,7 +195,7 @@ export function OthersTab({ app, plugin }: OthersTabProps) {
               name={t('settings.etc.ribbonClickAction', '侧边栏图标点击位置')}
               desc={t(
                 'settings.etc.ribbonClickActionDesc',
-                '选择点击左侧边栏 YOLO 图标时，Chat 视图在哪里打开。若选定位置已有 Chat 视图会直接激活复用，否则新建。',
+                '选择点击左侧边栏 YOLO-Lite 图标时，Chat 视图在哪里打开。若选定位置已有 Chat 视图会直接激活复用，否则新建。',
               )}
               className="yolo-settings-card"
             >

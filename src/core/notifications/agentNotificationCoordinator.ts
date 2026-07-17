@@ -96,7 +96,7 @@ export class AgentNotificationCoordinator {
         dedupeKey: toolCallId,
         title: this.options.translate(
           'chat.notification.approvalTitle',
-          'YOLO 需要你的确认',
+          'YOLO-Lite 需要你的确认',
         ),
         body: this.options.translate(
           'chat.notification.approvalBody',
@@ -119,7 +119,7 @@ export class AgentNotificationCoordinator {
         dedupeKey: `${state.conversationId}:${state.runId}`,
         title: this.options.translate(
           'chat.notification.completedTitle',
-          'YOLO 任务已结束',
+          'YOLO-Lite 任务已结束',
         ),
         body:
           state.status === 'error'

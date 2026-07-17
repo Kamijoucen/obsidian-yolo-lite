@@ -1,14 +1,12 @@
-import type { AssistantToolPreference } from '../../types/assistant.types'
 import type {
   ChatConversationCompactionLike,
   ChatMessage,
 } from '../../types/chat'
 import type { ChatModel } from '../../types/chat-model.types'
-import type { LLMProviderApiType } from '../../types/provider.types'
 import type { ContextualInjection } from '../../utils/chat/contextual-injections'
 import { RequestContextBuilder } from '../../utils/chat/requestContextBuilder'
 import { estimateJsonTokens } from '../../utils/llm/contextTokenEstimate'
-import { McpManager } from '../mcp/mcpManager'
+import { ToolManager } from '../tools/toolManager'
 
 import {
   type ToolCapabilityMode,
@@ -18,56 +16,42 @@ import { selectAllowedTools } from './tool-selection'
 
 export const estimateContinuationRequestContextTokens = async ({
   requestContextBuilder,
-  mcpManager,
+  toolManager,
   model,
   messages,
   conversationId,
   compaction,
   enableTools,
   includeBuiltinTools,
-  apiType,
   allowedToolNames,
-  enableToolDisclosure,
-  toolPreferences,
   contextualInjections,
   toolCapabilityMode,
 }: {
   requestContextBuilder: RequestContextBuilder
-  mcpManager: McpManager
+  toolManager: ToolManager
   model: ChatModel
   messages: ChatMessage[]
   conversationId: string
   compaction?: ChatConversationCompactionLike | null
   enableTools: boolean
   includeBuiltinTools: boolean
-  apiType?: LLMProviderApiType | null
   allowedToolNames?: string[]
-  enableToolDisclosure?: boolean
-  toolPreferences?: Record<string, AssistantToolPreference>
   contextualInjections?: ContextualInjection[]
   toolCapabilityMode?: ToolCapabilityMode
 }): Promise<number> => {
   const availableTools = enableTools
-    ? await mcpManager.listAvailableTools({
+    ? await toolManager.listAvailableTools({
         includeBuiltinTools,
         // Tailor built-in tool schemas to the active model so the token
         // estimate reflects what the model will actually see at request time.
       })
     : []
-  const {
-    filteredTools,
-    hasTools,
-    hasMemoryTools,
-    hasOnDemandTools,
-    requestTools,
-  } = await selectAllowedTools({
-    availableTools,
-    allowedToolNames,
-    toolPreferences,
-    apiType,
-    enableToolDisclosure,
-    jsSandboxSettings: mcpManager.getJsSandboxSettings(),
-  })
+  const { filteredTools, hasTools, hasMemoryTools, requestTools } =
+    await selectAllowedTools({
+      availableTools,
+      allowedToolNames,
+      jsSandboxSettings: toolManager.getJsSandboxSettings(),
+    })
 
   const runtimeModePrompt = buildToolCapabilityPrompt({
     mode: toolCapabilityMode ?? 'agent',
@@ -77,7 +61,6 @@ export const estimateContinuationRequestContextTokens = async ({
     messages,
     hasTools,
     hasMemoryTools,
-    hasOnDemandTools,
     model,
     conversationId,
     compaction,

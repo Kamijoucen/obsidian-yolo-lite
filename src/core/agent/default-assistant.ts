@@ -25,7 +25,6 @@ export const createDefaultAssistant = (fallbackModelId: string): Assistant => ({
   enableTools: true,
   includeBuiltinTools: true,
   toolPreferences: buildDefaultBuiltinToolPreferences(),
-  toolServerPreferences: {},
   skillPreferences: {},
   includeCurrentFileContent: true,
   timeContextEnabled: true,
@@ -48,8 +47,6 @@ const hasDefaultAssistantChanged = (
     current.includeBuiltinTools !== normalized.includeBuiltinTools ||
     JSON.stringify(current.toolPreferences ?? {}) !==
       JSON.stringify(normalized.toolPreferences ?? {}) ||
-    JSON.stringify(current.toolServerPreferences ?? {}) !==
-      JSON.stringify(normalized.toolServerPreferences ?? {}) ||
     JSON.stringify(current.skillPreferences ?? {}) !==
       JSON.stringify(normalized.skillPreferences ?? {}) ||
     (current.includeCurrentFileContent ?? true) !==
@@ -80,7 +77,6 @@ const normalizeDefaultAssistant = (
       Object.keys(toolPreferences).length > 0
         ? toolPreferences
         : buildDefaultBuiltinToolPreferences(),
-    toolServerPreferences: assistant.toolServerPreferences ?? {},
     skillPreferences: assistant.skillPreferences ?? {},
     includeCurrentFileContent: assistant.includeCurrentFileContent ?? true,
     timeContextEnabled: assistant.timeContextEnabled ?? true,

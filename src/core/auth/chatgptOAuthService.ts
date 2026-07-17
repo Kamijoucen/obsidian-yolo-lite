@@ -262,7 +262,7 @@ export class ChatGPTOAuthService {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'User-Agent': 'obsidian-yolo/chatgpt-oauth',
+        'User-Agent': 'obsidian-yolo-lite/chatgpt-oauth',
       },
       body: JSON.stringify({ client_id: CLIENT_ID }),
       throw: false,
@@ -295,7 +295,7 @@ export class ChatGPTOAuthService {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'User-Agent': 'obsidian-yolo/chatgpt-oauth',
+          'User-Agent': 'obsidian-yolo-lite/chatgpt-oauth',
         },
         body: JSON.stringify({
           device_auth_id: authorization.deviceAuthId,

@@ -1,4 +1,4 @@
-import type { McpManager } from '../../mcp/mcpManager'
+import type { ToolManager } from '../../tools/toolManager'
 import type { NativeAgentRuntime } from '../native-runtime'
 
 import {
@@ -26,7 +26,7 @@ const makeEntry = (
 ): SubagentRuntimeEntry => ({
   taskId: 'sub_1',
   runtime: makeRuntime(),
-  mcpManager: {} as McpManager,
+  toolManager: {} as ToolManager,
   parentConversationId: 'conv-parent',
   parentToolCallId: 'parent-tool-call',
   resumeRun: jest.fn().mockResolvedValue(undefined),

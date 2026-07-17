@@ -204,7 +204,7 @@ describe('NativeAgentRuntime assistant continuation', () => {
       sourceUserMessageId: 'user-1',
       continueAssistantMessageId: interruptedAssistant.id,
       requestContextBuilder: { generateRequestMessages },
-      mcpManager: {
+      toolManager: {
         getJsSandboxSettings: () => ({}),
         getSettingsSnapshot: () => ({}),
       },

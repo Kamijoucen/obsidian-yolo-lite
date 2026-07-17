@@ -17,14 +17,14 @@ import {
 import { RequestContextBuilder } from '../../utils/chat/requestContextBuilder'
 import { executeSingleTurn } from '../ai/single-turn'
 import { BaseLLMProvider } from '../llm/base'
-import type { McpManager } from '../mcp/mcpManager'
+import type { ToolManager } from '../tools/toolManager'
 
-jest.mock('../mcp/mcpManager', () => {
-  class MockedMcpManager {
+jest.mock('../tools/toolManager', () => {
+  class MockedToolManager {
     static TOOL_NAME_DELIMITER = '__'
   }
 
-  return { McpManager: MockedMcpManager }
+  return { ToolManager: MockedToolManager }
 })
 
 jest.mock('../ai/single-turn', () => ({
@@ -76,12 +76,12 @@ const TEST_MODEL: ChatModel = {
   model: 'gpt-4.1',
 }
 
-const createMockMcpManager = (tools: unknown[] = []): McpManager =>
+const createMockToolManager = (tools: unknown[] = []): ToolManager =>
   ({
     listAvailableTools: jest.fn().mockResolvedValue(tools),
     getJsSandboxSettings: jest.fn(() => ({})),
     getSettingsSnapshot: jest.fn(() => ({})),
-  }) as unknown as McpManager
+  }) as unknown as ToolManager
 
 describe('AgentLlmTurnExecutor', () => {
   beforeEach(() => {
@@ -105,13 +105,13 @@ describe('AgentLlmTurnExecutor', () => {
       generateRequestMessages,
     } as unknown as RequestContextBuilder
 
-    const mcpManager = createMockMcpManager()
+    const toolManager = createMockToolManager()
 
     const executor = new AgentLlmTurnExecutor({
       providerClient: provider,
       model: TEST_MODEL,
       requestContextBuilder,
-      mcpManager,
+      toolManager,
       conversationId: 'conv-1',
       messages: [],
       enableTools: false,
@@ -210,7 +210,7 @@ describe('AgentLlmTurnExecutor', () => {
         .mockResolvedValue([{ role: 'user', content: 'hello' }]),
     } as unknown as RequestContextBuilder
 
-    const mcpManager = createMockMcpManager([
+    const toolManager = createMockToolManager([
       {
         name: 'yolo_local__fs_move',
         description: 'Move path',
@@ -226,7 +226,7 @@ describe('AgentLlmTurnExecutor', () => {
       providerClient: provider,
       model: TEST_MODEL,
       requestContextBuilder,
-      mcpManager,
+      toolManager,
       conversationId: 'conv-1',
       messages: [],
       enableTools: true,
@@ -285,7 +285,7 @@ describe('AgentLlmTurnExecutor', () => {
         .mockResolvedValue([{ role: 'user', content: 'hello' }]),
     } as unknown as RequestContextBuilder
 
-    const mcpManager = createMockMcpManager()
+    const toolManager = createMockToolManager()
 
     mockExecuteSingleTurn.mockRejectedValue(new Error('network exploded'))
 
@@ -294,7 +294,7 @@ describe('AgentLlmTurnExecutor', () => {
       providerClient: provider,
       model: TEST_MODEL,
       requestContextBuilder,
-      mcpManager,
+      toolManager,
       conversationId: 'conv-1',
       messages: [],
       enableTools: false,
@@ -379,7 +379,7 @@ describe('AgentLlmTurnExecutor', () => {
           .fn()
           .mockResolvedValue([{ role: 'user', content: 'continue' }]),
       } as unknown as RequestContextBuilder,
-      mcpManager: createMockMcpManager(),
+      toolManager: createMockToolManager(),
       conversationId: 'conv-1',
       messages: [],
       sourceUserMessageId: 'user-1',
@@ -446,7 +446,7 @@ describe('AgentLlmTurnExecutor', () => {
           .fn()
           .mockResolvedValue([{ role: 'user', content: 'continue' }]),
       } as unknown as RequestContextBuilder,
-      mcpManager: createMockMcpManager(),
+      toolManager: createMockToolManager(),
       conversationId: 'conv-1',
       messages: [],
       sourceUserMessageId: 'user-1',
@@ -491,7 +491,7 @@ describe('AgentLlmTurnExecutor', () => {
         .mockResolvedValue([{ role: 'user', content: 'hello' }]),
     } as unknown as RequestContextBuilder
 
-    const mcpManager = createMockMcpManager()
+    const toolManager = createMockToolManager()
 
     const wrappedError = new Error('Connection error.') as Error & {
       cause?: unknown
@@ -506,7 +506,7 @@ describe('AgentLlmTurnExecutor', () => {
       providerClient: provider,
       model: TEST_MODEL,
       requestContextBuilder,
-      mcpManager,
+      toolManager,
       conversationId: 'conv-1',
       messages: [],
       enableTools: false,
@@ -544,7 +544,7 @@ describe('AgentLlmTurnExecutor', () => {
         .mockResolvedValue([{ role: 'user', content: 'hello' }]),
     } as unknown as RequestContextBuilder
 
-    const mcpManager = createMockMcpManager()
+    const toolManager = createMockToolManager()
     const abortController = new AbortController()
     abortController.abort()
 
@@ -557,7 +557,7 @@ describe('AgentLlmTurnExecutor', () => {
       providerClient: provider,
       model: TEST_MODEL,
       requestContextBuilder,
-      mcpManager,
+      toolManager,
       conversationId: 'conv-1',
       messages: [],
       enableTools: false,
@@ -596,7 +596,7 @@ describe('AgentLlmTurnExecutor', () => {
         .mockResolvedValue([{ role: 'user', content: 'hello' }]),
     } as unknown as RequestContextBuilder
 
-    const mcpManager = createMockMcpManager()
+    const toolManager = createMockToolManager()
 
     mockExecuteSingleTurn.mockImplementation(async ({ onStreamDelta }) => {
       onStreamDelta?.({
@@ -628,7 +628,7 @@ describe('AgentLlmTurnExecutor', () => {
       providerClient: provider,
       model: TEST_MODEL,
       requestContextBuilder,
-      mcpManager,
+      toolManager,
       conversationId: 'conv-1',
       messages: [],
       enableTools: false,
@@ -655,7 +655,7 @@ describe('AgentLlmTurnExecutor', () => {
         .mockResolvedValue([{ role: 'user', content: 'hello' }]),
     } as unknown as RequestContextBuilder
 
-    const mcpManager = createMockMcpManager([
+    const toolManager = createMockToolManager([
       {
         name: 'yolo_local__memory_add',
         description: 'Add memory',
@@ -678,7 +678,7 @@ describe('AgentLlmTurnExecutor', () => {
       providerClient: provider,
       model: TEST_MODEL,
       requestContextBuilder,
-      mcpManager,
+      toolManager,
       conversationId: 'conv-1',
       messages: [],
       enableTools: true,
@@ -710,7 +710,7 @@ describe('AgentLlmTurnExecutor', () => {
         .mockResolvedValue([{ role: 'user', content: 'hello' }]),
     } as unknown as RequestContextBuilder
 
-    const mcpManager = createMockMcpManager([
+    const toolManager = createMockToolManager([
       {
         name: 'yolo_local__fs_read',
         description: 'Read file',
@@ -733,7 +733,7 @@ describe('AgentLlmTurnExecutor', () => {
       providerClient: provider,
       model: TEST_MODEL,
       requestContextBuilder,
-      mcpManager,
+      toolManager,
       conversationId: 'conv-1',
       messages: [],
       enableTools: true,

@@ -3,7 +3,6 @@ import {
   Editor,
   MarkdownView,
   Notice,
-  Platform,
   Plugin,
   TFile,
   TFolder,
@@ -51,12 +50,6 @@ import type { LearningStatsSnapshot } from './core/learning/learningStatsService
 import type { ProjectEventBus } from './core/learning/projectEventBus'
 import { LearningSrsStore } from './core/learning/srs/srsStore'
 import { setLLMDebugCaptureEnabled } from './core/llm/debugCapture'
-import type {
-  LocalMcpServerRuntime,
-  LocalMcpServerState,
-} from './core/mcp/localMcpServerConfig'
-import type { McpCoordinator } from './core/mcp/mcpCoordinator'
-import type { McpManager } from './core/mcp/mcpManager'
 import { AgentNotificationCoordinator } from './core/notifications/agentNotificationCoordinator'
 import { NotificationService } from './core/notifications/notificationService'
 import {
@@ -66,6 +59,7 @@ import {
   stampYoloDataMeta,
 } from './core/paths/yoloManagedData'
 import { getYoloLearningDir } from './core/paths/yoloPaths'
+import { ToolManager } from './core/tools/toolManager'
 import { ChatManager } from './database/json/chat/ChatManager'
 import { pruneImageCache } from './database/json/chat/imageCacheStore'
 import {
@@ -116,16 +110,13 @@ export default class YoloPlugin extends Plugin {
   private deviceId: string | null = null
   private currentSettingsMeta: YoloDataMeta | null = null
   private actionToastController: ActionToastController | null = null
-  mcpManager: McpManager | null = null
+  toolManager: ToolManager | null = null
   private timeoutIds: ReturnType<typeof setTimeout>[] = [] // Use ReturnType instead of number
   private learningGenerationAbortControllers: Set<AbortController> = new Set()
   private diffReviewController: DiffReviewController | null = null
   private chatViewNavigator: ChatViewNavigator | null = null
   private chatLeafSessionManager: ChatLeafSessionManager | null = null
   private newTabEmptyStateEnhancer: NewTabEmptyStateEnhancer | null = null
-  private mcpCoordinator: McpCoordinator | null = null
-  private localMcpServer: LocalMcpServerRuntime | null = null
-  private localMcpSettingsUnsubscribe: (() => void) | null = null
   private learningEventBus: ProjectEventBus | null = null
   private learningSrsStore: LearningSrsStore | null = null
   private learningStatsService: LearningStatsService | null = null
@@ -416,65 +407,6 @@ export default class YoloPlugin extends Plugin {
     return this.backgroundActivityRegistry
   }
 
-  private async getMcpCoordinator(): Promise<McpCoordinator> {
-    if (!this.mcpCoordinator) {
-      const agentService = await this.warmupAgentService()
-      const { McpCoordinator } = await import('./core/mcp/mcpCoordinator')
-      this.mcpCoordinator = new McpCoordinator({
-        app: this.app,
-        getSettings: () => this.settings,
-        openApplyReview: (state) => this.openApplyReview(state),
-        registerSettingsListener: (
-          listener: (settings: YoloSettings) => void,
-        ) => this.addSettingsChangeListener(listener),
-        promptSourceWatcher: agentService.getPromptSourceWatcher(),
-      })
-    }
-    return this.mcpCoordinator
-  }
-
-  private async initializeLocalMcpServer(): Promise<void> {
-    if (!Platform.isDesktop || this.localMcpServer) return
-    const { DesktopLocalMcpServer } = await import(
-      './core/mcp/desktopLocalMcpServer'
-    )
-    const runtime = new DesktopLocalMcpServer({
-      app: this.app,
-      getSettings: () => this.settings,
-      getAgentService: () => this.warmupAgentService(),
-      getMcpManager: () => this.getMcpManager(),
-      openConversation: (conversationId) =>
-        this.openChatView({ initialConversationId: conversationId }),
-    })
-    this.localMcpServer = runtime
-    this.localMcpSettingsUnsubscribe = this.addSettingsChangeListener(
-      (settings) => {
-        void runtime.updateSettings(settings)
-      },
-    )
-    await runtime.initialize()
-    await runtime.updateSettings(this.settings)
-  }
-
-  getLocalMcpServerState(): LocalMcpServerState {
-    return (
-      this.localMcpServer?.getState() ?? {
-        status: 'stopped',
-        url: '',
-      }
-    )
-  }
-
-  subscribeLocalMcpServerState(
-    listener: (state: LocalMcpServerState) => void,
-  ): () => void {
-    if (!this.localMcpServer) {
-      listener(this.getLocalMcpServerState())
-      return () => undefined
-    }
-    return this.localMcpServer.subscribe(listener)
-  }
-
   private resolveObsidianLanguage(): Language {
     const rawLanguage = String(getLanguage() ?? '')
       .trim()
@@ -530,7 +462,7 @@ export default class YoloPlugin extends Plugin {
             app: this.app,
             getSettings: () => this.settings,
             getAgentService: () => this.getAgentService(),
-            getMcpManager: () => this.getMcpManager(),
+            getToolManager: () => this.getToolManager(),
           })
           return service
         } catch (error) {
@@ -781,7 +713,7 @@ export default class YoloPlugin extends Plugin {
         ? this.buildBackgroundStatusBarLabel(model.activities)
         : this.t(
             'statusBar.learningReviewLabel',
-            'YOLO Learning：今日有 {count} 张待复习卡片',
+            'YOLO-Lite Learning：今日有 {count} 张待复习卡片',
           ).replace('{count}', String(dueCards))
 
     this.backgroundStatusBarLabel.setText(label)
@@ -1010,7 +942,10 @@ export default class YoloPlugin extends Plugin {
     if (model.showReviewReminder) {
       const reminderId = 'reminder:learning-review'
       nextActivityIds.add(reminderId)
-      const title = this.t('statusBar.learningReviewTitle', 'YOLO Learning')
+      const title = this.t(
+        'statusBar.learningReviewTitle',
+        'YOLO-Lite Learning',
+      )
       const detail = this.t(
         'statusBar.learningReviewDetail',
         '{count} 张卡片待复习',
@@ -1255,10 +1190,6 @@ export default class YoloPlugin extends Plugin {
     await loadLocale(this.resolveObsidianLanguage())
     this._tCache = undefined
     this.syncOAuthRuntimesFromSettings()
-    await this.initializeLocalMcpServer().catch((error) => {
-      console.error('[YOLO] Failed to initialize local MCP server', error)
-    })
-
     // Prune stale image cache entries (>30 days) on startup
     void pruneImageCache(this.app, 30, this.settings)
     this.app.workspace.onLayoutReady(() => {
@@ -1273,7 +1204,7 @@ export default class YoloPlugin extends Plugin {
     this.newTabEmptyStateEnhancer.enable()
 
     // This creates an icon in the left ribbon.
-    this.addRibbonIcon(YOLO_ICON_ID, 'YOLO Chat', () => {
+    this.addRibbonIcon(YOLO_ICON_ID, 'YOLO-Lite Chat', () => {
       void this.openChatView({ placement: this.resolveRibbonPlacement() })
     })
     this.addRibbonIcon(
@@ -1463,14 +1394,9 @@ export default class YoloPlugin extends Plugin {
     })
     this.timeoutIds = []
 
-    // McpManager cleanup
-    this.localMcpSettingsUnsubscribe?.()
-    this.localMcpSettingsUnsubscribe = null
-    void this.localMcpServer?.close()
-    this.localMcpServer = null
-    this.mcpCoordinator?.cleanup()
-    this.mcpCoordinator = null
-    this.mcpManager = null
+    // ToolManager cleanup
+    this.toolManager?.cleanup()
+    this.toolManager = null
     this.agentService?.stopBackgroundTaskResultListener()
     this.agentService?.abortAll()
     this.agentService = null
@@ -1863,10 +1789,19 @@ ${validationResult.error.issues.map((v) => v.message).join('\n')}`)
     await this.getChatViewNavigator().addFolderToChat(folder)
   }
 
-  async getMcpManager(): Promise<McpManager> {
-    const manager = await (await this.getMcpCoordinator()).getMcpManager()
-    this.mcpManager = manager
-    return manager
+  async getToolManager(): Promise<ToolManager> {
+    if (!this.toolManager) {
+      const agentService = await this.warmupAgentService()
+      this.toolManager = new ToolManager({
+        app: this.app,
+        settings: this.settings,
+        openApplyReview: (state) => this.openApplyReview(state),
+        registerSettingsListener: (listener) =>
+          this.addSettingsChangeListener(listener),
+        promptSourceWatcher: agentService.getPromptSourceWatcher(),
+      })
+    }
+    return this.toolManager
   }
 
   private registerTimeout(callback: () => void, timeout: number): void {

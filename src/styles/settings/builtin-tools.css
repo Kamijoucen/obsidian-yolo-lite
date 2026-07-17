@@ -1,0 +1,98 @@
+.yolo-builtin-tools-table {
+  display: flex;
+  flex-direction: column;
+}
+
+.yolo-builtin-tools-table-header,
+.yolo-builtin-tools-table-row {
+  display: grid;
+  gap: var(--size-4-4);
+  align-items: center;
+  min-height: var(--size-4-10);
+}
+
+.yolo-builtin-tools-table-header {
+  border-bottom: var(--border-width) solid var(--background-modifier-border);
+  color: var(--text-muted);
+  font-weight: var(--font-medium);
+}
+
+.yolo-builtin-tools-table-header > div,
+.yolo-builtin-tools-table-row > div {
+  padding: var(--size-4-1);
+}
+
+.yolo-builtin-tools-table-body {
+  border-bottom: var(--border-width) solid var(--background-modifier-border);
+}
+
+.yolo-builtin-tools-table-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.yolo-tool-name {
+  font-family: var(--font-monospace);
+  font-size: var(--font-ui-smaller);
+}
+
+.yolo-tool-description {
+  position: relative;
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+}
+
+.yolo-tool-description-header {
+  display: flex;
+  align-items: center;
+  gap: var(--size-2-1);
+}
+
+.yolo-tool-description-text.is-clamped {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
+}
+
+.yolo-tool-description-text.is-expanded {
+  white-space: pre-wrap;
+}
+
+.yolo-tool-description > button.yolo-tool-description-toggle {
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+
+.yolo-tool-description
+  > button.yolo-tool-description-toggle
+  ~ .yolo-tool-description-text {
+  padding-right: var(--size-4-6);
+}
+
+button.yolo-tool-description-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+  flex-shrink: 0;
+}
+
+button.yolo-tool-description-toggle:hover {
+  color: var(--text-normal);
+  background: var(--background-modifier-hover);
+}
+
+button.yolo-tool-description-toggle.is-expanded {
+  transform: rotate(180deg);
+}

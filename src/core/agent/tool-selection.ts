@@ -1,32 +1,22 @@
 import type { YoloSettings } from '../../settings/schema/setting.types'
-import type { AssistantToolPreference } from '../../types/assistant.types'
 import type { RequestTool } from '../../types/llm/request'
-import type { McpTool } from '../../types/mcp.types'
-import type { LLMProviderApiType } from '../../types/provider.types'
-import { estimateJsonTokens } from '../../utils/llm/contextTokenEstimate'
-import { type JsSandboxSettings } from '../mcp/jsSandboxSettings'
-import { JS_SANDBOX_TOOL_NAME, getJsSandboxTool } from '../mcp/jsSandboxTool'
+import type { ToolDefinition } from '../../types/tool.types'
+import { type JsSandboxSettings } from '../tools/jsSandboxSettings'
+import { JS_SANDBOX_TOOL_NAME, getJsSandboxTool } from '../tools/jsSandboxTool'
 import {
-  LOAD_TOOL_SCHEMAS_LOCAL_TOOL_NAME,
   LOCAL_FS_EDIT_TOOL_NAMES,
   LOCAL_FS_PATH_OPERATION_TOOL_NAMES,
   LOCAL_MEMORY_SPLIT_ACTION_TOOL_NAMES,
-  getLoadToolSchemasTool,
-  getLocalFileToolServerName,
-} from '../mcp/localFileTools'
-import { McpManager } from '../mcp/mcpManager'
-import { parseToolName } from '../mcp/tool-name-utils'
+  getBuiltinToolNamespace,
+} from '../tools/localFileTools'
+import { parseToolName } from '../tools/tool-name-utils'
+import { ToolManager } from '../tools/toolManager'
 
 import { FILE_EDIT_GROUP_TOOL_NAME } from './builtinToolUiMeta'
 import {
   formatSubagentModelOption,
   resolveSubagentModelConfig,
 } from './subagent/model-config'
-import {
-  buildServerToolTokenBudgets,
-  getAssistantToolDisclosureMode,
-} from './tool-preferences'
-import { buildToolStub } from './tool-stub'
 
 const LOCAL_MEMORY_TOOL_NAMES = new Set([
   'memory_ops',
@@ -34,18 +24,6 @@ const LOCAL_MEMORY_TOOL_NAMES = new Set([
   'memory_update',
   'memory_delete',
 ])
-
-export const isLoadToolSchemasToolName = (toolName: string): boolean => {
-  try {
-    const parsed = parseToolName(toolName)
-    return (
-      parsed.serverName === getLocalFileToolServerName() &&
-      parsed.toolName === LOAD_TOOL_SCHEMAS_LOCAL_TOOL_NAME
-    )
-  } catch {
-    return toolName === LOAD_TOOL_SCHEMAS_LOCAL_TOOL_NAME
-  }
-}
 
 export const expandAllowedToolNames = (
   toolNames?: string[],
@@ -55,10 +33,10 @@ export const expandAllowedToolNames = (
   }
 
   const expanded = new Set<string>(toolNames)
-  const localServer = getLocalFileToolServerName()
-  const localFileEditTool = `${localServer}${McpManager.TOOL_NAME_DELIMITER}${FILE_EDIT_GROUP_TOOL_NAME}`
-  const localFileOpsTool = `${localServer}${McpManager.TOOL_NAME_DELIMITER}fs_file_ops`
-  const localMemoryOpsTool = `${localServer}${McpManager.TOOL_NAME_DELIMITER}memory_ops`
+  const builtinNamespace = getBuiltinToolNamespace()
+  const localFileEditTool = `${builtinNamespace}${ToolManager.TOOL_NAME_DELIMITER}${FILE_EDIT_GROUP_TOOL_NAME}`
+  const localFileOpsTool = `${builtinNamespace}${ToolManager.TOOL_NAME_DELIMITER}fs_file_ops`
+  const localMemoryOpsTool = `${builtinNamespace}${ToolManager.TOOL_NAME_DELIMITER}memory_ops`
   const hasFileEditGroup =
     expanded.has(localFileEditTool) || expanded.has(FILE_EDIT_GROUP_TOOL_NAME)
   const hasFileOpsGroup =
@@ -69,7 +47,7 @@ export const expandAllowedToolNames = (
   if (hasFileEditGroup) {
     for (const splitToolName of LOCAL_FS_EDIT_TOOL_NAMES) {
       expanded.add(
-        `${localServer}${McpManager.TOOL_NAME_DELIMITER}${splitToolName}`,
+        `${builtinNamespace}${ToolManager.TOOL_NAME_DELIMITER}${splitToolName}`,
       )
       expanded.add(splitToolName)
     }
@@ -78,7 +56,7 @@ export const expandAllowedToolNames = (
   if (hasFileOpsGroup) {
     for (const splitToolName of LOCAL_FS_PATH_OPERATION_TOOL_NAMES) {
       expanded.add(
-        `${localServer}${McpManager.TOOL_NAME_DELIMITER}${splitToolName}`,
+        `${builtinNamespace}${ToolManager.TOOL_NAME_DELIMITER}${splitToolName}`,
       )
       expanded.add(splitToolName)
     }
@@ -87,7 +65,7 @@ export const expandAllowedToolNames = (
   if (hasMemoryOpsGroup) {
     for (const splitToolName of LOCAL_MEMORY_SPLIT_ACTION_TOOL_NAMES) {
       expanded.add(
-        `${localServer}${McpManager.TOOL_NAME_DELIMITER}${splitToolName}`,
+        `${builtinNamespace}${ToolManager.TOOL_NAME_DELIMITER}${splitToolName}`,
       )
       expanded.add(splitToolName)
     }
@@ -100,7 +78,7 @@ export const isMemoryToolAvailable = (toolName: string): boolean => {
   try {
     const parsed = parseToolName(toolName)
     return (
-      parsed.serverName === getLocalFileToolServerName() &&
+      parsed.namespace === getBuiltinToolNamespace() &&
       LOCAL_MEMORY_TOOL_NAMES.has(parsed.toolName)
     )
   } catch {
@@ -122,26 +100,8 @@ const isToolAllowed = ({
   return allowedToolNames.has(toolName)
 }
 
-const groupToolsByServer = (
-  tools: readonly McpTool[],
-): Map<string, McpTool[]> => {
-  const serverTools = new Map<string, McpTool[]>()
-  for (const tool of tools) {
-    let serverName: string
-    try {
-      serverName = parseToolName(tool.name).serverName
-    } catch {
-      continue
-    }
-    const bucket = serverTools.get(serverName) ?? []
-    bucket.push(tool)
-    serverTools.set(serverName, bucket)
-  }
-  return serverTools
-}
-
 export const buildRequestTools = (
-  toolDefinitions: McpTool[],
+  toolDefinitions: ToolDefinition[],
 ): RequestTool[] | undefined => {
   if (toolDefinitions.length === 0) {
     return undefined
@@ -173,14 +133,14 @@ export const buildRequestTools = (
  * drifts from what the request actually sends.
  */
 export function applyDynamicToolDescriptions(
-  tools: McpTool[],
+  tools: ToolDefinition[],
   ctx: {
     jsSandboxSettings: JsSandboxSettings
     settings?: YoloSettings
   },
-): McpTool[] {
-  const jsSandboxFqn = `${getLocalFileToolServerName()}${McpManager.TOOL_NAME_DELIMITER}${JS_SANDBOX_TOOL_NAME}`
-  const delegateSubagentFqn = `${getLocalFileToolServerName()}${McpManager.TOOL_NAME_DELIMITER}delegate_subagent`
+): ToolDefinition[] {
+  const jsSandboxFqn = `${getBuiltinToolNamespace()}${ToolManager.TOOL_NAME_DELIMITER}${JS_SANDBOX_TOOL_NAME}`
+  const delegateSubagentFqn = `${getBuiltinToolNamespace()}${ToolManager.TOOL_NAME_DELIMITER}delegate_subagent`
   return tools.map((tool) => {
     if (tool.name === jsSandboxFqn) {
       const live = getJsSandboxTool(ctx.jsSandboxSettings)
@@ -200,9 +160,9 @@ export function applyDynamicToolDescriptions(
 }
 
 function applySubagentModelSchema(
-  tool: McpTool,
+  tool: ToolDefinition,
   settings: YoloSettings,
-): McpTool {
+): ToolDefinition {
   const config = resolveSubagentModelConfig(settings)
   const allowedLines = config.allowedModelIds
     .map((modelId) => `- ${formatSubagentModelOption(settings, modelId)}`)
@@ -237,32 +197,22 @@ function applySubagentModelSchema(
 export const selectAllowedTools = async ({
   availableTools,
   allowedToolNames,
-  toolPreferences,
-  apiType,
-  enableToolDisclosure = true,
   jsSandboxSettings = {},
   settings,
-  serverToolTokenBudgets,
 }: {
-  availableTools: McpTool[]
+  availableTools: ToolDefinition[]
   allowedToolNames?: string[]
-  toolPreferences?: Record<string, AssistantToolPreference>
-  apiType?: LLMProviderApiType | null
-  enableToolDisclosure?: boolean
   jsSandboxSettings?: JsSandboxSettings
   settings?: YoloSettings
-  serverToolTokenBudgets?: ReadonlyMap<string, number>
 }): Promise<{
-  filteredTools: McpTool[]
+  filteredTools: ToolDefinition[]
   hasTools: boolean
   hasMemoryTools: boolean
-  hasOnDemandTools: boolean
   requestTools: RequestTool[] | undefined
-  serverToolTokenBudgets: ReadonlyMap<string, number>
 }> => {
   const normalizedAllowedToolNames = expandAllowedToolNames(allowedToolNames)
 
-  const baseFiltered = applyDynamicToolDescriptions(
+  const filteredTools = applyDynamicToolDescriptions(
     availableTools.filter((tool) =>
       isToolAllowed({
         toolName: tool.name,
@@ -271,63 +221,6 @@ export const selectAllowedTools = async ({
     ),
     { jsSandboxSettings, settings },
   )
-  const assistantLike = {
-    toolPreferences,
-    enabledToolNames: normalizedAllowedToolNames
-      ? [...normalizedAllowedToolNames]
-      : undefined,
-  }
-  const resolvedServerToolTokenBudgets =
-    serverToolTokenBudgets ??
-    (await buildServerToolTokenBudgets(
-      groupToolsByServer(baseFiltered),
-      estimateJsonTokens,
-    ))
-
-  // Per-tool disclosure decisions for the filtered (non-loader) tools.
-  // Computed up front so the loader injection can ask "does any surviving
-  // tool actually need on-demand disclosure?" before adding itself.
-  const disclosureModes = new Map<string, 'always' | 'on_demand'>()
-  for (const tool of baseFiltered) {
-    disclosureModes.set(
-      tool.name,
-      getAssistantToolDisclosureMode(assistantLike, tool.name, {
-        enableToolDisclosure,
-        serverToolTokenBudgets: resolvedServerToolTokenBudgets,
-      }),
-    )
-  }
-
-  // Inject the protocol-level loader tool only when the on-demand disclosure
-  // mechanism is globally enabled AND at least one surviving tool would be
-  // sent as a stub. Without this guard the loader bloats every request prefix
-  // even for agents that don't need it; with a stub present but no loader,
-  // the model would have no way to reach the real schema (deadlock).
-  const loaderFqn = `${getLocalFileToolServerName()}${McpManager.TOOL_NAME_DELIMITER}${LOAD_TOOL_SCHEMAS_LOCAL_TOOL_NAME}`
-  const hasOnDemand = [...disclosureModes.values()].some(
-    (mode) => mode === 'on_demand',
-  )
-  const shouldInjectLoader = enableToolDisclosure && hasOnDemand
-  const filteredTools: McpTool[] = shouldInjectLoader
-    ? [getLoadToolSchemasToolFqn(), ...baseFiltered]
-    : baseFiltered
-
-  // All allowed tools — including on-demand stubs — are registered in the
-  // request's `tools` field for the entire conversation so the prompt-cache
-  // prefix stays frozen. On-demand tools start as stubs (name + short
-  // description + permissive schema) and stay stubs even after their full
-  // schema has been disclosed via load_tool_schemas: schemas now ride the messages
-  // stream (tool_result + compaction registry) instead of the tools field.
-  const requestToolDefinitions: McpTool[] = filteredTools.map((tool) => {
-    if (tool.name === loaderFqn) {
-      return tool
-    }
-    const disclosureMode = disclosureModes.get(tool.name) ?? 'always'
-    if (disclosureMode === 'on_demand') {
-      return buildToolStub(tool, apiType)
-    }
-    return tool
-  })
 
   return {
     filteredTools,
@@ -335,16 +228,6 @@ export const selectAllowedTools = async ({
     hasMemoryTools: filteredTools.some((tool) =>
       isMemoryToolAvailable(tool.name),
     ),
-    hasOnDemandTools: hasOnDemand,
-    requestTools: buildRequestTools(requestToolDefinitions),
-    serverToolTokenBudgets: resolvedServerToolTokenBudgets,
-  }
-}
-
-function getLoadToolSchemasToolFqn(): McpTool {
-  const tool = getLoadToolSchemasTool()
-  return {
-    ...tool,
-    name: `${getLocalFileToolServerName()}${McpManager.TOOL_NAME_DELIMITER}${tool.name}`,
+    requestTools: buildRequestTools(filteredTools),
   }
 }

@@ -1,5 +1,5 @@
-import { getLocalFileToolServerName } from '../../mcp/localFileTools'
-import { getToolName } from '../../mcp/tool-name-utils'
+import { getBuiltinToolNamespace } from '../../tools/localFileTools'
+import { getToolName } from '../../tools/tool-name-utils'
 
 import { SUBAGENT_BLOCKED_TOOL_SHORT_NAMES } from './constants'
 import {
@@ -8,32 +8,27 @@ import {
 } from './tool-filter'
 
 describe('subagent tool-filter', () => {
-  const fsEdit = getToolName(getLocalFileToolServerName(), 'fs_edit')
-  const delegate = getToolName(
-    getLocalFileToolServerName(),
-    'delegate_subagent',
-  )
-  const terminal = getToolName(getLocalFileToolServerName(), 'terminal_command')
-  const askUser = getToolName(getLocalFileToolServerName(), 'ask_user_question')
+  const fsEdit = getToolName(getBuiltinToolNamespace(), 'fs_edit')
+  const delegate = getToolName(getBuiltinToolNamespace(), 'delegate_subagent')
+  const terminal = getToolName(getBuiltinToolNamespace(), 'terminal_command')
+  const askUser = getToolName(getBuiltinToolNamespace(), 'ask_user_question')
 
   it('blocks recursive and interactive delegation tools by FQN', () => {
     for (const shortName of SUBAGENT_BLOCKED_TOOL_SHORT_NAMES) {
-      const fqn = getToolName(getLocalFileToolServerName(), shortName)
+      const fqn = getToolName(getBuiltinToolNamespace(), shortName)
       expect(isSubagentBlockedToolName(fqn)).toBe(true)
     }
   })
 
   it('filters parent allowlist without blanket fs bans', () => {
-    const parent = [
-      fsEdit,
-      delegate,
-      terminal,
-      askUser,
-      'mcp_server__remote_tool',
-    ]
+    const parent = [fsEdit, delegate, terminal, askUser]
 
     const filtered = filterAllowedToolsForSubagent(parent)
-    expect(filtered).toEqual([fsEdit, terminal, 'mcp_server__remote_tool'])
+    expect(filtered).toEqual([fsEdit, terminal])
+  })
+
+  it('drops names outside the built-in namespace', () => {
+    expect(filterAllowedToolsForSubagent(['unknown__tool'])).toEqual([])
   })
 
   it('treats a missing parent allowlist as no inherited tools', () => {
@@ -45,7 +40,7 @@ describe('subagent tool-filter', () => {
     // review mode, etc.) are intentionally NOT in the deny-list. Their
     // approval requests bubble up to the SubagentCard's inline approval
     // block. See `docs/plans/2026-06-18-subagent-tool-approval-routing.md`.
-    const jsEval = getToolName(getLocalFileToolServerName(), 'js_eval')
+    const jsEval = getToolName(getBuiltinToolNamespace(), 'js_eval')
     expect(isSubagentBlockedToolName(jsEval)).toBe(false)
     expect(filterAllowedToolsForSubagent([fsEdit, jsEval])).toEqual([
       fsEdit,

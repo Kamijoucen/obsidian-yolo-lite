@@ -1,11 +1,10 @@
 {
   "id": "yolo",
-  "name": "YOLO",
+  "name": "YOLO-Lite",
   "version": "1.6.0.3",
   "minAppVersion": "1.8.0",
-  "description": "Agent-native AI assistant — chat, write, search, orchestrate, all in one.",
-  "author": "Lapix0x0",
-  "authorUrl": "https://github.com/Lapis0x0",
-  "fundingUrl": "https://afdian.com/a/lapis0x0",
+  "description": "Lightweight AI agent chat, Vault tools, Skills, web search, and learning workflows.",
+  "author": "kamijoucen",
+  "authorUrl": "https://github.com/Kamijoucen",
   "isDesktopOnly": false
 }

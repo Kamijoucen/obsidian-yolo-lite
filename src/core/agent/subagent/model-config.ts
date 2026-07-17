@@ -18,7 +18,7 @@ export function resolveSubagentModelConfig(
   const registeredModels = getRegisteredChatModels(settings)
   const registeredIds = new Set(registeredModels.map((model) => model.id))
   const options =
-    settings.mcp.builtinToolOptions[DELEGATE_SUBAGENT_TOOL_SHORT_NAME]
+    settings.tools.builtinToolOptions[DELEGATE_SUBAGENT_TOOL_SHORT_NAME]
   const savedAllowedIds = options?.allowedModelIds
   const allowedModelIds = Array.isArray(savedAllowedIds)
     ? savedAllowedIds.filter((modelId, index, list) => {
@@ -47,7 +47,7 @@ export function normalizeSubagentModelOptions(
 ): YoloSettings {
   const resolved = resolveSubagentModelConfig(settings)
   const current =
-    settings.mcp.builtinToolOptions[DELEGATE_SUBAGENT_TOOL_SHORT_NAME]
+    settings.tools.builtinToolOptions[DELEGATE_SUBAGENT_TOOL_SHORT_NAME]
 
   if (
     current?.allowedModelIds &&
@@ -59,10 +59,10 @@ export function normalizeSubagentModelOptions(
 
   return {
     ...settings,
-    mcp: {
-      ...settings.mcp,
+    tools: {
+      ...settings.tools,
       builtinToolOptions: {
-        ...settings.mcp.builtinToolOptions,
+        ...settings.tools.builtinToolOptions,
         [DELEGATE_SUBAGENT_TOOL_SHORT_NAME]: {
           ...current,
           allowedModelIds: resolved.allowedModelIds,

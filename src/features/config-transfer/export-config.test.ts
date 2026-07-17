@@ -53,48 +53,6 @@ describe('redactSensitive', () => {
     expect(wsProviders[0].apiKey).not.toBe('key-ccc')
   })
 
-  it('redacts every value inside headers / env objects', () => {
-    const data = {
-      mcp: {
-        servers: [
-          {
-            id: 's1',
-            parameters: {
-              transport: 'http',
-              url: 'https://example.com',
-              headers: {
-                Authorization: 'Bearer real-token',
-                'X-Org': 'org-id',
-              },
-            },
-          },
-          {
-            id: 's2',
-            parameters: {
-              transport: 'stdio',
-              command: 'node',
-              env: { OPENAI_API_KEY: 'sk-env', NODE_ENV: 'production' },
-            },
-          },
-        ],
-      },
-    }
-    const result = redactSensitive(data) as Record<string, unknown>
-    const mcp = result.mcp as Record<string, unknown>
-    const servers = mcp.servers as Array<Record<string, unknown>>
-
-    const headers = (servers[0].parameters as Record<string, unknown>)
-      .headers as Record<string, string>
-    expect(headers.Authorization).not.toBe('Bearer real-token')
-    expect(headers.Authorization.length).toBe('Bearer real-token'.length)
-    expect(headers['X-Org']).not.toBe('org-id')
-
-    const env = (servers[1].parameters as Record<string, unknown>)
-      .env as Record<string, string>
-    expect(env.OPENAI_API_KEY).not.toBe('sk-env')
-    expect(env.NODE_ENV).not.toBe('production')
-  })
-
   it("redacts each customHeaders entry's value but preserves its key", () => {
     const data = {
       providers: [
@@ -145,16 +103,6 @@ describe('clearSensitive', () => {
         },
       ],
       webSearch: { password: 'pw' },
-      mcp: {
-        servers: [
-          {
-            parameters: {
-              headers: { Authorization: 'Bearer' },
-              env: { TOKEN: 'tok' },
-            },
-          },
-        ],
-      },
     }
     const result = clearSensitive(data) as Record<string, unknown>
     const providers = result.providers as Array<Record<string, unknown>>
@@ -163,12 +111,6 @@ describe('clearSensitive', () => {
     expect(ch[0].value).toBe('')
     expect(ch[0].key).toBe('Authorization')
     expect((result.webSearch as Record<string, unknown>).password).toBe('')
-    const mcpServers = (result.mcp as Record<string, unknown>).servers as Array<
-      Record<string, unknown>
-    >
-    const params = mcpServers[0].parameters as Record<string, unknown>
-    expect((params.headers as Record<string, string>).Authorization).toBe('')
-    expect((params.env as Record<string, string>).TOKEN).toBe('')
   })
 })
 
@@ -186,15 +128,6 @@ describe('hasNonEmptyCredentials', () => {
         providers: [{ id: 'a', apiKey: '' }],
       }),
     ).toBe(false)
-    expect(
-      hasNonEmptyCredentials({
-        mcp: {
-          servers: [
-            { parameters: { headers: { Authorization: '' }, env: {} } },
-          ],
-        },
-      }),
-    ).toBe(false)
   })
 
   it('returns true when apiKey contains a value', () => {
@@ -209,32 +142,6 @@ describe('hasNonEmptyCredentials', () => {
     expect(
       hasNonEmptyCredentials({
         providers: [{ type: 'searxng', password: 'pw' }],
-      }),
-    ).toBe(true)
-  })
-
-  it('returns true when any header value is non-empty', () => {
-    expect(
-      hasNonEmptyCredentials({
-        mcp: {
-          servers: [
-            {
-              parameters: {
-                headers: { Authorization: 'Bearer x' },
-              },
-            },
-          ],
-        },
-      }),
-    ).toBe(true)
-  })
-
-  it('returns true when any env value is non-empty', () => {
-    expect(
-      hasNonEmptyCredentials({
-        mcp: {
-          servers: [{ parameters: { env: { OPENAI_API_KEY: 'sk-env' } } }],
-        },
       }),
     ).toBe(true)
   })
@@ -260,22 +167,6 @@ describe('hasNonEmptyCredentials', () => {
             presetType: 'deepseek',
             baseUrl: 'https://api.deepseek.com',
             apiKey: '',
-          },
-        ],
-      }),
-    ).toBe(false)
-  })
-
-  it('returns false for stdio MCP server without env', () => {
-    expect(
-      hasNonEmptyCredentials({
-        servers: [
-          {
-            parameters: {
-              transport: 'stdio',
-              command: 'npx',
-              args: ['some-mcp'],
-            },
           },
         ],
       }),

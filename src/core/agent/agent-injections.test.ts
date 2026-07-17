@@ -3,14 +3,14 @@ import {
   ToolCallResponseStatus,
   createCompleteToolCallArguments,
 } from '../../types/tool-call.types'
-import { getLocalFileToolServerName } from '../mcp/localFileTools'
-import { getToolName } from '../mcp/tool-name-utils'
+import { getBuiltinToolNamespace } from '../tools/localFileTools'
+import { getToolName } from '../tools/tool-name-utils'
 
 import { composeAgentInjections } from './agent-injections'
 import type { TodoItem } from './todos-from-messages'
 
 const TODO_WRITE_TOOL_NAME = getToolName(
-  getLocalFileToolServerName(),
+  getBuiltinToolNamespace(),
   'todo_write',
 )
 

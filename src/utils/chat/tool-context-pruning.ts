@@ -1,17 +1,16 @@
-import { getLocalFileToolServerName } from '../../core/mcp/localFileTools'
-import { parseToolName } from '../../core/mcp/tool-name-utils'
+import { getBuiltinToolNamespace } from '../../core/tools/localFileTools'
+import { parseToolName } from '../../core/tools/tool-name-utils'
 import type { ChatMessage, ChatToolMessage } from '../../types/chat'
 import type { ToolCallRequest } from '../../types/tool-call.types'
 import { ToolCallResponseStatus } from '../../types/tool-call.types'
 
 const CONTEXT_PRUNE_TOOL_NAME = 'context_prune_tool_results'
 const CONTEXT_COMPACT_TOOL_NAME = 'context_compact'
-const LOAD_TOOL_SCHEMAS_TOOL_NAME = 'load_tool_schemas'
 
 const normalizeToolName = (toolName: string): string => {
   try {
     const parsed = parseToolName(toolName)
-    if (parsed.serverName === getLocalFileToolServerName()) {
+    if (parsed.namespace === getBuiltinToolNamespace()) {
       return parsed.toolName
     }
   } catch {
@@ -27,14 +26,9 @@ export const isContextPruneToolName = (toolName: string): boolean => {
 
 export const isContextPrunableToolName = (toolName: string): boolean => {
   const normalized = normalizeToolName(toolName)
-  // `load_tool_schemas` results carry the on-demand tool disclosure state for
-  // the rest of the conversation — pruning them would silently drop the
-  // schemas the model relies on to keep calling those tools. Compaction is the
-  // long-term fallback (it copies schemas into `loadedDeferredToolSchemas`).
   return (
     normalized !== CONTEXT_PRUNE_TOOL_NAME &&
-    normalized !== CONTEXT_COMPACT_TOOL_NAME &&
-    normalized !== LOAD_TOOL_SCHEMAS_TOOL_NAME
+    normalized !== CONTEXT_COMPACT_TOOL_NAME
   )
 }
 

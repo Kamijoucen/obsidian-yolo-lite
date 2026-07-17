@@ -25,7 +25,7 @@ import {
 import { stripHeavyProviderFeatures } from '../llm/lightweight-request-policy'
 import { ModelRequestTimeoutError } from '../llm/requestPolicy'
 import { ResponseDeliveryMode } from '../llm/responseDeliveryMode'
-import { isLocalFsWriteToolName } from '../mcp/localFileTools'
+import { isLocalFsWriteToolName } from '../tools/localFileTools'
 
 import { markRequestErrorNonRetryable } from './requestRetry'
 import {

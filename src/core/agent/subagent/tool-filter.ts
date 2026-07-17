@@ -1,3 +1,6 @@
+import { getBuiltinToolNamespace } from '../../tools/localFileTools'
+import { parseToolName } from '../../tools/tool-name-utils'
+
 import { SUBAGENT_BLOCKED_TOOL_NAMES } from './constants'
 
 const blockedSet = new Set(SUBAGENT_BLOCKED_TOOL_NAMES)
@@ -18,9 +21,16 @@ export function filterAllowedToolsForSubagent(
     return []
   }
 
-  const filtered = parentAllowedToolNames.filter(
-    (name) => !blockedSet.has(name),
-  )
+  const filtered = parentAllowedToolNames.filter((name) => {
+    try {
+      return (
+        parseToolName(name).namespace === getBuiltinToolNamespace() &&
+        !blockedSet.has(name)
+      )
+    } catch {
+      return false
+    }
+  })
   return filtered.length > 0 ? filtered : []
 }
 

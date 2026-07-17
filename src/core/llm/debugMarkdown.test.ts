@@ -143,12 +143,12 @@ describe('buildLLMDebugMarkdown', () => {
     expect(markdown).not.toContain('\narguments: {\n\narguments:')
   })
 
-  it('does not label mcp tool calls as LLM provider/model requests', () => {
+  it('does not label internal tool calls as LLM provider/model requests', () => {
     const trace = createTrace('{"ok":true}', 'application/json')
     trace.summary.providerId = 'openai'
     trace.summary.modelName = 'Main model'
-    trace.exchanges[0].transportMode = 'mcp'
-    trace.exchanges[0].request.url = 'mcp://server/tool'
+    trace.exchanges[0].transportMode = 'internal-tool'
+    trace.exchanges[0].request.url = 'tool://server/tool'
 
     const markdown = buildLLMDebugMarkdown([trace])
     const attemptSection = markdown.slice(markdown.indexOf('### #1'))

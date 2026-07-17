@@ -11,7 +11,7 @@ import type { ContextualInjection } from '../../utils/chat/contextual-injections
 import { RequestContextBuilder } from '../../utils/chat/requestContextBuilder'
 import { BaseLLMProvider } from '../llm/base'
 import type { ResponseDeliveryMode } from '../llm/responseDeliveryMode'
-import { McpManager } from '../mcp/mcpManager'
+import { ToolManager } from '../tools/toolManager'
 
 import type { AutoContextCompactionChatOptions } from './compaction'
 import type { ToolCapabilityMode } from './tool-capability-prompt'
@@ -44,7 +44,7 @@ export type AgentRuntimeRunInput = {
   /** Resume an interrupted assistant message during the first LLM turn. */
   continueAssistantMessageId?: string
   requestContextBuilder: RequestContextBuilder
-  mcpManager: McpManager
+  toolManager: ToolManager
   compaction?: ChatConversationCompactionLike | null
   abortSignal?: AbortSignal
   reasoningLevel?: ReasoningLevel
@@ -57,18 +57,10 @@ export type AgentRuntimeRunInput = {
     streamFallbackRecoveryEnabled?: boolean
   }
   allowedToolNames?: string[]
-  enableToolDisclosure?: boolean
   toolPreferences?: Record<
     string,
     {
       enabled?: boolean
-      approvalMode?: 'full_access' | 'require_approval'
-      disclosureMode?: 'always' | 'on_demand'
-    }
-  >
-  toolServerPreferences?: Record<
-    string,
-    {
       approvalMode?: 'full_access' | 'require_approval'
     }
   >

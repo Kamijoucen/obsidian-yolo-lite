@@ -98,27 +98,6 @@ const escapeXmlAttr = (raw: string): string =>
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
 
-/** Stable signature for the `<previously-loaded-tools>` compaction disclosure
- * message. The disclosure is built by `buildCompactionDisclosureInjection` and
- * always starts with this exact tag — used by section assembly to attribute it
- * to the Tools bucket without depending on object identity (which can be
- * broken by downstream message-transforming passes). */
-const COMPACTION_DISCLOSURE_PREFIX = '<previously-loaded-tools>'
-
-const messageStartsWith = (
-  message: RequestMessage,
-  prefix: string,
-): boolean => {
-  if (typeof message.content === 'string') {
-    return message.content.startsWith(prefix)
-  }
-  if (Array.isArray(message.content) && message.content.length > 0) {
-    const head = message.content[0]
-    if (head.type === 'text') return head.text.startsWith(prefix)
-  }
-  return false
-}
-
 /** Pull every `<user_selected_skills>...</user_selected_skills>` block out of a
  * RequestMessage. Returns the extracted block texts (joined with `\n\n` is
  * exactly what they contributed to the original message). The regex is global
@@ -456,7 +435,6 @@ export class RequestContextBuilder {
     messages: ChatMessage[]
     hasTools?: boolean
     hasMemoryTools?: boolean
-    hasOnDemandTools?: boolean
     model: ChatModel
     conversationId: string
     compaction?: ChatConversationCompactionLike | null
@@ -480,7 +458,6 @@ export class RequestContextBuilder {
     messages,
     hasTools = false,
     hasMemoryTools = false,
-    hasOnDemandTools = false,
     model: _model,
     conversationId,
     compaction,
@@ -492,7 +469,6 @@ export class RequestContextBuilder {
     messages: ChatMessage[]
     hasTools?: boolean
     hasMemoryTools?: boolean
-    hasOnDemandTools?: boolean
     model: ChatModel
     conversationId: string
     compaction?: ChatConversationCompactionLike | null
@@ -588,7 +564,6 @@ export class RequestContextBuilder {
           conversationId,
           hasTools,
           hasMemoryTools,
-          hasOnDemandTools,
           compaction,
           runtimeModePrompt,
           mode: systemPromptSnapshotMode,
@@ -598,12 +573,8 @@ export class RequestContextBuilder {
       content: systemContent,
     }
 
-    const compactionDisclosureMessage =
-      this.buildCompactionDisclosureInjection(compaction)
-
     const baseRequestMessages: RequestMessage[] = [
       systemMessage,
-      ...(compactionDisclosureMessage ? [compactionDisclosureMessage] : []),
       ...(await this.getChatHistoryMessages({
         messages: compiledMessages,
         snapshotEntries,
@@ -638,7 +609,6 @@ export class RequestContextBuilder {
     messages: ChatMessage[]
     hasTools?: boolean
     hasMemoryTools?: boolean
-    hasOnDemandTools?: boolean
     model: ChatModel
     conversationId: string
     compaction?: ChatConversationCompactionLike | null
@@ -675,12 +645,9 @@ export class RequestContextBuilder {
       }
     }
 
-    // Walk request messages. Three carve-outs:
+    // Walk request messages. Two carve-outs:
     //   1. Skip the system message (already emitted via systemSections).
-    //   2. Detect the `<previously-loaded-tools>` compaction disclosure by
-    //      content prefix (not identity — downstream passes may rebuild
-    //      the message object) and emit it under the Tools bucket.
-    //   3. Pull every `<user_selected_skills>` block out via regex and emit
+    //   2. Pull every `<user_selected_skills>` block out via regex and emit
     //      each one as a separate Skills section; strip them from the message
     //      so the same text isn't double-counted under Conversation. Extracting
     //      from the actually-built messages covers earlier user messages
@@ -688,15 +655,6 @@ export class RequestContextBuilder {
     for (let i = 0; i < requestMessages.length; i += 1) {
       const msg = requestMessages[i]
       if (msg.role === 'system') continue
-
-      if (messageStartsWith(msg, COMPACTION_DISCLOSURE_PREFIX)) {
-        sections.push({
-          bucket: 'tools',
-          id: 'tools.compaction-disclosure',
-          content: msg,
-        })
-        continue
-      }
 
       // Only user messages can carry a `<user_selected_skills>` block — the
       // generator (`buildSelectedSkillsPrompt`) only emits it into user
@@ -1434,54 +1392,6 @@ ${quotes
   }
 
   /**
-   * After compaction, the original `load_tool_schemas` results are gone. Re-inject
-   * full schemas for on-demand tools that were already disclosed so the model
-   * can keep calling them without redundant `load_tool_schemas` round-trips. Schemas
-   * over the per-tool budget are intentionally not persisted by compaction;
-   * the prompt tells the model to fall back to `load_tool_schemas` for those.
-   *
-   * Returned as a `user` message so it sticks to the request prefix without
-   * polluting the system prompt. It is built deterministically from the
-   * compaction payload, so this entry remains cache-stable across turns.
-   */
-  private buildCompactionDisclosureInjection(
-    compaction?: ChatConversationCompactionLike | null,
-  ): RequestMessage | null {
-    const latest = getLatestChatConversationCompaction(compaction)
-    const schemas = latest?.loadedDeferredToolSchemas
-    if (!schemas || schemas.length === 0) {
-      return null
-    }
-
-    const entries = schemas
-      .map((schema) => {
-        const description = (schema.description ?? '').trim()
-        let parameters: string
-        try {
-          parameters = JSON.stringify(schema.parameters, null, 2)
-        } catch {
-          parameters = '{}'
-        }
-        return `- ${schema.name}:\n  description: ${description}\n  parameters:\n${parameters
-          .split('\n')
-          .map((line) => `    ${line}`)
-          .join('\n')}`
-      })
-      .join('\n\n')
-
-    return {
-      role: 'user',
-      content: `<previously-loaded-tools>
-The following on-demand tools were already disclosed by yolo_local__load_tool_schemas earlier in this conversation. Their stubs remain registered in the tools list. You may call them directly using the schemas below without calling yolo_local__load_tool_schemas again.
-
-If you need an on-demand tool that is NOT listed here (for example because its schema was too large to persist across compaction), call yolo_local__load_tool_schemas with {"servers":["<server-name>"]} — where "<server-name>" is the prefix before "__" in the stub tool name — to re-disclose all on-demand tools under that MCP server.
-
-${entries}
-</previously-loaded-tools>`,
-    }
-  }
-
-  /**
    * Resolve the system prompt for this request, freezing it per conversation
    * when a snapshot store is injected.
    *
@@ -1499,7 +1409,6 @@ ${entries}
     conversationId,
     hasTools,
     hasMemoryTools,
-    hasOnDemandTools,
     compaction,
     runtimeModePrompt,
     mode,
@@ -1507,7 +1416,6 @@ ${entries}
     conversationId: string
     hasTools: boolean
     hasMemoryTools: boolean
-    hasOnDemandTools: boolean
     compaction?: ChatConversationCompactionLike | null
     runtimeModePrompt?: string
     mode: SystemPromptSnapshotMode
@@ -1516,7 +1424,6 @@ ${entries}
       const systemSections = await this.buildSystemPromptSections(
         hasTools,
         hasMemoryTools,
-        hasOnDemandTools,
         runtimeModePrompt,
       )
       const systemContent = systemSections
@@ -1536,7 +1443,6 @@ ${entries}
     const fingerprint = this.computeSystemPromptFingerprint(
       hasTools,
       hasMemoryTools,
-      hasOnDemandTools,
       compaction,
       runtimeModePrompt,
     )
@@ -1556,7 +1462,6 @@ ${entries}
   private computeSystemPromptFingerprint(
     hasTools: boolean,
     hasMemoryTools: boolean,
-    hasOnDemandTools: boolean,
     compaction?: ChatConversationCompactionLike | null,
     runtimeModePrompt?: string,
   ): string {
@@ -1586,7 +1491,6 @@ ${entries}
     return stableStringify({
       hasTools,
       hasMemoryTools,
-      hasOnDemandTools,
       runtimeModePrompt: runtimeModePrompt?.trim() ?? '',
       includeSkills: this.includeSkills,
       systemPrompt: this.settings.systemPrompt ?? '',
@@ -1634,7 +1538,6 @@ ${entries}
   private async buildSystemPromptSections(
     hasTools: boolean,
     hasMemoryTools: boolean,
-    hasOnDemandTools: boolean,
     runtimeModePrompt?: string,
   ): Promise<SystemPromptSections> {
     const sections: SystemPromptSections = []
@@ -1647,10 +1550,7 @@ ${entries}
       await this.buildCustomInstructionsSubsections(hasMemoryTools)
     sections.push(...customInstructionSubsections)
 
-    const baseBehaviorContent = this.buildDefaultBehaviorSection(
-      hasTools,
-      hasOnDemandTools,
-    )
+    const baseBehaviorContent = this.buildDefaultBehaviorSection(hasTools)
     if (baseBehaviorContent) {
       sections.push({
         bucket: 'system',
@@ -1884,10 +1784,7 @@ ${customInstruction}
     return sections
   }
 
-  private buildDefaultBehaviorSection(
-    hasTools: boolean,
-    hasOnDemandTools: boolean,
-  ): string {
+  private buildDefaultBehaviorSection(hasTools: boolean): string {
     let section = `- Format your responses in Markdown.
 - When writing mathematical notation, use Obsidian-compatible LaTeX delimiters: $...$ for inline math and $$...$$ for display math. Put opening and closing $$ delimiters on separate lines. Do not use \\(...\\) or \\[...\\].
 - Always reply in the same language as the user's message.
@@ -1899,12 +1796,6 @@ ${customInstruction}
 - When using tools, focus on providing clear results to the user. Only briefly mention tool usage if it helps understanding.
 - Prefer using content already provided in the current message. Only call file tools when the current message is insufficient, you need another file, or you need to verify the latest contents. Avoid repeatedly reading the same window.
 - If the current user message already includes <user_selected_skills>, treat them as user-selected context and avoid reloading the same skill again unless you need to verify something.`
-      if (hasOnDemandTools) {
-        section += `
-- Some tools are ON-DEMAND stubs. Do not call an ON-DEMAND tool until its full schema has been disclosed.
-- Before calling one, call yolo_local__load_tool_schemas with {"servers":["<server-name>"]}, where "<server-name>" is the prefix before "__" in the tool name.
-- After yolo_local__load_tool_schemas returns, call the target tool using the returned schema. If a <previously-loaded-tools> block lists the tool, treat it as already disclosed.`
-      }
     }
 
     return section

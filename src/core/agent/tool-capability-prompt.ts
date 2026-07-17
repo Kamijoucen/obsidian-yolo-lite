@@ -2,30 +2,30 @@ import {
   LOCAL_FS_EDIT_TOOL_NAMES,
   LOCAL_FS_PATH_OPERATION_TOOL_NAMES,
   TERMINAL_COMMAND_TOOL_NAME,
-  getLocalFileToolServerName,
-} from '../mcp/localFileTools'
-import { getToolName } from '../mcp/tool-name-utils'
+  getBuiltinToolNamespace,
+} from '../tools/localFileTools'
+import { getToolName } from '../tools/tool-name-utils'
 
 export type ToolCapabilityMode = 'ask' | 'agent'
 
-const localServerName = getLocalFileToolServerName()
+const builtinNamespace = getBuiltinToolNamespace()
 
 const ACTION_CAPABILITIES = [
   {
     label: 'file editing',
     toolNames: LOCAL_FS_EDIT_TOOL_NAMES.map((name) =>
-      getToolName(localServerName, name),
+      getToolName(builtinNamespace, name),
     ),
   },
   {
     label: 'path operations',
     toolNames: LOCAL_FS_PATH_OPERATION_TOOL_NAMES.map((name) =>
-      getToolName(localServerName, name),
+      getToolName(builtinNamespace, name),
     ),
   },
   {
     label: 'terminal commands',
-    toolNames: [getToolName(localServerName, TERMINAL_COMMAND_TOOL_NAME)],
+    toolNames: [getToolName(builtinNamespace, TERMINAL_COMMAND_TOOL_NAME)],
   },
 ] as const
 

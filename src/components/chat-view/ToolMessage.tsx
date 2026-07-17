@@ -12,13 +12,15 @@ import {
 } from '../../core/agent/builtinToolUiMeta'
 import { subagentTaskRegistry } from '../../core/agent/subagent/task-registry'
 import { ALWAYS_ALLOW_DISABLED_TOOL_NAMES } from '../../core/agent/tool-preferences'
-import { InvalidToolNameException } from '../../core/mcp/exception'
 import {
-  getLocalFileToolServerName,
+  getBuiltinToolNamespace,
   isAskUserQuestionToolName,
   parseLocalFsActionFromToolArgs,
-} from '../../core/mcp/localFileTools'
-import { parseToolName } from '../../core/mcp/tool-name-utils'
+} from '../../core/tools/localFileTools'
+import {
+  InvalidToolNameError,
+  parseToolName,
+} from '../../core/tools/tool-name-utils'
 import {
   ChatMessage,
   ChatSubagentResultMessage,
@@ -662,18 +664,18 @@ export const getHeadlineDisplayInfo = ({
 }): ToolDisplayInfo => {
   const displayInfo = getToolDisplayInfo(request, labels)
 
-  let parsedToolName: { serverName: string; toolName: string }
+  let parsedToolName: { namespace: string; toolName: string }
   try {
     parsedToolName = parseToolName(request.name)
   } catch (error) {
-    if (!(error instanceof InvalidToolNameException)) {
+    if (!(error instanceof InvalidToolNameError)) {
       throw error
     }
     return displayInfo
   }
 
-  const { serverName, toolName } = parsedToolName
-  if (serverName !== getLocalFileToolServerName()) {
+  const { namespace, toolName } = parsedToolName
+  if (namespace !== getBuiltinToolNamespace()) {
     return displayInfo
   }
 
@@ -851,16 +853,6 @@ const getLocalToolSummaryText = ({
     return preview ? truncateText(preview, 80) : undefined
   }
 
-  if (toolName === 'load_tool_schemas') {
-    const servers = asStringArray(argumentsObject?.servers)
-    if (!servers || servers.length === 0) {
-      return undefined
-    }
-    const head = servers.slice(0, 2).join(', ')
-    const rest = servers.length - 2
-    return rest > 0 ? `${head} +${rest}` : head
-  }
-
   if (toolName === 'fs_read') {
     const paths = asStringArray(argumentsObject?.paths)
     if (!paths || paths.length === 0) {
@@ -918,12 +910,12 @@ export const getToolDisplayInfo = (
   request: ToolRequestLike,
   labels: ToolLabels = getToolLabels(),
 ): ToolDisplayInfo => {
-  const localServerName = getLocalFileToolServerName()
+  const builtinNamespace = getBuiltinToolNamespace()
   const argumentsObject = parseToolArguments(request.arguments)
   try {
-    const { serverName, toolName } = parseToolName(request.name)
+    const { namespace, toolName } = parseToolName(request.name)
 
-    if (serverName === localServerName) {
+    if (namespace === builtinNamespace) {
       const action = parseLocalFsActionFromToolArgs({
         toolName,
         args: argumentsObject ?? undefined,
@@ -944,10 +936,10 @@ export const getToolDisplayInfo = (
     }
 
     return {
-      displayName: `${serverName}:${toolName}`,
+      displayName: `${namespace}:${toolName}`,
     }
   } catch (error) {
-    if (!(error instanceof InvalidToolNameException)) {
+    if (!(error instanceof InvalidToolNameError)) {
       throw error
     }
     return {

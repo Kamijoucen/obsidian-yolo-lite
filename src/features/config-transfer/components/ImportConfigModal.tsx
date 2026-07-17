@@ -113,10 +113,7 @@ function ImportConfigModalComponent({
         const relativePath = file.webkitRelativePath
         // 在外部笔记库中查找 YOLO 配置文件，需要匹配常见的配置目录名
         /* eslint-disable obsidianmd/hardcoded-config-path */
-        const configDirPatterns = [
-          '.obsidian/plugins/yolo/data.json',
-          '.obsidian/plugins/obsidian-yolo/data.json',
-        ]
+        const configDirPatterns = ['.obsidian/plugins/yolo/data.json']
         /* eslint-enable obsidianmd/hardcoded-config-path */
         if (
           configDirPatterns.some((pattern) => relativePath.includes(pattern))
@@ -130,7 +127,7 @@ function ImportConfigModalComponent({
         new Notice(
           t(
             'configTransfer.import.noticePluginNotFound',
-            '未在该目录找到 YOLO 插件配置',
+            '未在该目录找到 YOLO-Lite 插件配置',
           ),
           5000,
         )
@@ -292,7 +289,7 @@ function ImportConfigModalComponent({
               <span>
                 {t(
                   'configTransfer.import.sourceVaultDesc',
-                  '选择已安装 YOLO 的笔记库目录',
+                  '选择已安装 YOLO-Lite 的笔记库目录',
                 )}
               </span>
             </button>

@@ -6,7 +6,7 @@ import {
   validateAskUserQuestionArgs,
 } from './localFileTools'
 
-describe('local MCP tools', () => {
+describe('built-in tools', () => {
   it('exposes keyword-only vault search', () => {
     const search = getLocalFileTools().find((tool) => tool.name === 'fs_search')
     expect(search?.inputSchema.properties?.mode).toMatchObject({

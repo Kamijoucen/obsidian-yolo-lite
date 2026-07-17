@@ -6,7 +6,7 @@ import { RequestTransportMode } from '../../types/provider.types'
 
 export type LLMDebugTransportMode =
   | Extract<RequestTransportMode, 'browser' | 'node' | 'obsidian'>
-  | 'mcp'
+  | 'internal-tool'
   | 'web-search'
   | 'unknown'
 

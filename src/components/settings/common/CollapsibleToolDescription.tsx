@@ -32,7 +32,7 @@ export function CollapsibleToolDescription({ description, name }: Props) {
     <button
       type="button"
       className={
-        'yolo-mcp-tool-description-toggle clickable-icon' +
+        'yolo-tool-description-toggle clickable-icon' +
         (expanded ? ' is-expanded' : '')
       }
       onClick={() => setExpanded((v) => !v)}
@@ -47,17 +47,17 @@ export function CollapsibleToolDescription({ description, name }: Props) {
   ) : null
 
   return (
-    <div className="yolo-mcp-tool-description">
+    <div className="yolo-tool-description">
       {name !== undefined && (
-        <div className="yolo-mcp-tool-description-header">
-          <div className="yolo-mcp-tool-name">{name}</div>
+        <div className="yolo-tool-description-header">
+          <div className="yolo-tool-name">{name}</div>
           {toggleButton}
         </div>
       )}
       <div
         ref={textRef}
         className={
-          'yolo-mcp-tool-description-text' +
+          'yolo-tool-description-text' +
           (expanded ? ' is-expanded' : ' is-clamped')
         }
       >

@@ -9,9 +9,9 @@ import { AppProvider } from './contexts/app-context'
 import { DarkModeProvider } from './contexts/dark-mode-context'
 import { DialogContainerProvider } from './contexts/dialog-container-context'
 import { LanguageProvider } from './contexts/language-context'
-import { McpProvider } from './contexts/mcp-context'
 import { PluginProvider } from './contexts/plugin-context'
 import { SettingsProvider } from './contexts/settings-context'
+import { ToolProvider } from './contexts/tool-context'
 import YoloPlugin from './main'
 
 /**
@@ -162,7 +162,9 @@ export class LearningView extends ItemView {
               }
             >
               <DarkModeProvider>
-                <McpProvider getMcpManager={() => this.plugin.getMcpManager()}>
+                <ToolProvider
+                  getToolManager={() => this.plugin.getToolManager()}
+                >
                   <QueryClientProvider client={queryClient}>
                     <React.StrictMode>
                       <DialogContainerProvider
@@ -172,7 +174,7 @@ export class LearningView extends ItemView {
                       </DialogContainerProvider>
                     </React.StrictMode>
                   </QueryClientProvider>
-                </McpProvider>
+                </ToolProvider>
               </DarkModeProvider>
             </SettingsProvider>
           </AppProvider>

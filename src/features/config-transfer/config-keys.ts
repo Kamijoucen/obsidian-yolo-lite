@@ -8,7 +8,7 @@ import { ConfigKeyMeta } from './types'
  * 缺失时回退到 `fallbackLabel`，避免直接显示原始 key。
  *
  * "是否含凭证"由 `hasNonEmptyCredentials()` 对实际数据动态探测，
- * 不在此处用静态标记 —— 同一个类目（如 mcp / providers）在不同用户的
+ * 不在此处用静态标记 —— 同一个类目（如 providers）在不同用户的
  * 配置里可能有或没有真凭证，类目级别打标会误导。
  */
 export const EXPORTABLE_CONFIG_KEYS: ConfigKeyMeta[] = [
@@ -17,7 +17,6 @@ export const EXPORTABLE_CONFIG_KEYS: ConfigKeyMeta[] = [
   { key: 'chatModelId', fallbackLabel: '默认对话模型' },
   { key: 'chatTitleModelId', fallbackLabel: '标题生成模型' },
   { key: 'systemPrompt', fallbackLabel: '系统提示词' },
-  { key: 'mcp', fallbackLabel: 'MCP 工具' },
   { key: 'webSearch', fallbackLabel: '联网搜索' },
   { key: 'skills', fallbackLabel: '技能设置' },
   { key: 'yolo', fallbackLabel: '基础设置' },

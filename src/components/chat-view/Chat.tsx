@@ -17,9 +17,9 @@ import { v4 as uuidv4 } from 'uuid'
 
 import { useApp } from '../../contexts/app-context'
 import { useLanguage } from '../../contexts/language-context'
-import { useMcp } from '../../contexts/mcp-context'
 import { usePlugin } from '../../contexts/plugin-context'
 import { useSettings } from '../../contexts/settings-context'
+import { useTools } from '../../contexts/tool-context'
 import {
   resolveAssistantIncludeCurrentFileContent,
   resolveAssistantTimeContextEnabled,
@@ -30,8 +30,8 @@ import type { AgentConversationRunSummary } from '../../core/agent/service'
 import { materializeTextEditPlan } from '../../core/edits/textEditEngine'
 import { parseTextEditPlan } from '../../core/edits/textEditPlan'
 import { captureLLMDebugOperation } from '../../core/llm/debugCapture'
-import { getLocalFileToolServerName } from '../../core/mcp/localFileTools'
-import { parseToolName } from '../../core/mcp/tool-name-utils'
+import { getBuiltinToolNamespace } from '../../core/tools/localFileTools'
+import { parseToolName } from '../../core/tools/tool-name-utils'
 import { readEditReviewSnapshot } from '../../database/json/chat/editReviewSnapshotStore'
 import type { ChatLeafPlacement } from '../../features/chat/chatLeafSessionManager'
 import {
@@ -421,7 +421,7 @@ const isDelegateSubagentToolName = (name: string): boolean => {
   try {
     const parsed = parseToolName(name)
     return (
-      parsed.serverName === getLocalFileToolServerName() &&
+      parsed.namespace === getBuiltinToolNamespace() &&
       parsed.toolName === 'delegate_subagent'
     )
   } catch {
@@ -743,7 +743,7 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
   const agentService = plugin.getAgentService()
   const { settings, setSettings } = useSettings()
   const { t } = useLanguage()
-  const { getMcpManager } = useMcp()
+  const { getToolManager } = useTools()
 
   const {
     createOrUpdateConversation,
@@ -2044,7 +2044,7 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
     t,
   ])
 
-  // Auto-run when external agent results arrive for the current conversation
+  // Continue when a background task result arrives for the current conversation.
   useEffect(() => {
     const unsubscribe = agentService.subscribeToPendingBackgroundTaskResults(
       (conversationId) => {
@@ -3248,7 +3248,7 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
       const foregroundToolAbortController = new AbortController()
       let unregisterForegroundToolAborter: (() => void) | null = null
       try {
-        const mcpManager = await getMcpManager()
+        const toolManager = await getToolManager()
         const args = getToolCallArgumentsObject(request.arguments)
         unregisterForegroundToolAborter = plugin
           .getAgentService()
@@ -3257,12 +3257,12 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
             toolCallId: request.id,
             abort: () => {
               foregroundToolAbortController.abort()
-              mcpManager.abortToolCall(request.id)
+              toolManager.abortToolCall(request.id)
             },
           })
 
         if (allowForConversation) {
-          mcpManager.allowToolForConversation(
+          toolManager.allowToolForConversation(
             request.name,
             conversationId,
             args,
@@ -3275,8 +3275,8 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
 
         const result = await captureLLMDebugOperation({
           traceId: findDebugTraceIdForToolCall(runningMessages, request.id),
-          transportMode: 'mcp',
-          url: `mcp://${request.name}`,
+          transportMode: 'internal-tool',
+          url: `tool://${request.name}`,
           method: 'callTool',
           requestBody: {
             name: request.name,
@@ -3289,7 +3289,7 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
           },
           responseContentType: 'application/json',
           run: () =>
-            mcpManager.callTool({
+            toolManager.callTool({
               name: request.name,
               args,
               id: request.id,
@@ -3382,7 +3382,7 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
     [
       currentConversationId,
       effectiveCompactionState,
-      getMcpManager,
+      getToolManager,
       persistConversationImmediately,
       plugin,
       resolveReasoningLevelForMessages,
@@ -4218,13 +4218,13 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
       // This likely means a new message was submitted while this stream was running.
       // Abort the tool calls and keep the current chat history.
       void (async () => {
-        const mcpManager = await getMcpManager()
+        const toolManager = await getToolManager()
         toolMessage.toolCalls.forEach((toolCall) => {
-          mcpManager.abortToolCall(toolCall.request.id)
+          toolManager.abortToolCall(toolCall.request.id)
         })
       })()
     },
-    [getMcpManager, updateToolMessageInChatHistory],
+    [getToolManager, updateToolMessageInChatHistory],
   )
 
   const handleToolCallResponseUpdate = useCallback(
@@ -4264,12 +4264,12 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
 
       if (!didFindToolMessage || shouldAbortMissingToolCall) {
         void (async () => {
-          const mcpManager = await getMcpManager()
-          mcpManager.abortToolCall(toolCallId)
+          const toolManager = await getToolManager()
+          toolManager.abortToolCall(toolCallId)
         })()
       }
     },
-    [getMcpManager, updateToolMessageInChatHistory],
+    [getToolManager, updateToolMessageInChatHistory],
   )
 
   const handleContinueResponse = useCallback(() => {

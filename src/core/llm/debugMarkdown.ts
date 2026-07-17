@@ -935,7 +935,7 @@ function requestHasTools(value: Record<string, unknown> | null): boolean {
 function getToolNameFromExchange(
   exchange: LLMDebugHttpExchange,
 ): string | null {
-  if (!exchange.request.url.startsWith('mcp://')) {
+  if (!exchange.request.url.startsWith('tool://')) {
     return null
   }
 
@@ -944,7 +944,7 @@ function getToolNameFromExchange(
     const rawName = `${url.host}${url.pathname}`.replace(/^\/+/, '')
     return rawName ? decodeURIComponent(rawName) : null
   } catch {
-    return exchange.request.url.slice('mcp://'.length) || null
+    return exchange.request.url.slice('tool://'.length) || null
   }
 }
 
@@ -1019,7 +1019,7 @@ function getExchangeCategory(
   if (isTitleGenerationTrace(trace)) {
     return 'Title generation request'
   }
-  if (exchange.transportMode === 'mcp') {
+  if (exchange.transportMode === 'internal-tool') {
     const toolName = getToolNameFromExchange(exchange)
     return toolName ? `Tool request - ${toolName}` : 'Tool request'
   }
@@ -1046,7 +1046,8 @@ function getExchangeCategory(
 
 function isLlmTransportExchange(exchange: LLMDebugHttpExchange): boolean {
   return (
-    exchange.transportMode !== 'mcp' && exchange.transportMode !== 'web-search'
+    exchange.transportMode !== 'internal-tool' &&
+    exchange.transportMode !== 'web-search'
   )
 }
 

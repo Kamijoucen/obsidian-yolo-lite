@@ -1,7 +1,7 @@
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { BookOpen, Copy, Cpu, Plus, Trash2, Wrench } from 'lucide-react'
 import { App } from 'obsidian'
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo } from 'react'
 
 import { useLanguage } from '../../../contexts/language-context'
 import { usePlugin } from '../../../contexts/plugin-context'
@@ -16,22 +16,18 @@ import {
 } from '../../../core/agent/builtinToolUiMeta'
 import { isDefaultAssistantId } from '../../../core/agent/default-assistant'
 import { getEnabledAssistantToolNames } from '../../../core/agent/tool-preferences'
+import { humanizeSkillName } from '../../../core/skills/liteSkills'
+import { isSkillEnabledForAssistant } from '../../../core/skills/skillPolicy'
 import {
   LOCAL_FS_EDIT_TOOL_NAMES,
   LOCAL_FS_PATH_OPERATION_TOOL_NAMES,
   LOCAL_MEMORY_SPLIT_ACTION_TOOL_NAMES,
   getLocalFileTools,
-} from '../../../core/mcp/localFileTools'
-import { McpManager } from '../../../core/mcp/mcpManager'
-import { humanizeSkillName } from '../../../core/skills/liteSkills'
-import { isSkillEnabledForAssistant } from '../../../core/skills/skillPolicy'
+} from '../../../core/tools/localFileTools'
 import { useLiteSkillEntries } from '../../../hooks/useLiteSkillEntries'
 import { Assistant } from '../../../types/assistant.types'
-import { McpServerState, McpServerStatus } from '../../../types/mcp.types'
 import { renderAssistantIcon } from '../../../utils/assistant-icon'
 import { ObsidianButton } from '../../common/ObsidianButton'
-import { ObsidianSetting } from '../../common/ObsidianSetting'
-import { ObsidianToggle } from '../../common/ObsidianToggle'
 import { ConfirmModal } from '../../modals/ConfirmModal'
 import { AgentSkillsModal } from '../modals/AgentSkillsModal'
 import { AgentToolsModal } from '../modals/AgentToolsModal'
@@ -39,7 +35,6 @@ import { AssistantsModal } from '../modals/AssistantsModal'
 
 import { AgentAutoContextCompactionSection } from './AgentAutoContextCompactionSection'
 import { AgentImageReadingSection } from './AgentImageReadingSection'
-import { AgentMcpServerSection } from './AgentMcpServerSection'
 import { NotificationSettingsSection } from './NotificationSettingsSection'
 
 type AgentSectionProps = {
@@ -60,50 +55,6 @@ export function AgentSection({ app }: AgentSectionProps) {
   const { t } = useLanguage()
   const plugin = usePlugin()
   const assistants = settings.assistants || []
-  const [mcpManager, setMcpManager] = useState<McpManager | null>(null)
-  const [mcpServers, setMcpServers] = useState<McpServerState[]>([])
-  const [mcpManagerLoading, setMcpManagerLoading] = useState(true)
-
-  useEffect(() => {
-    let isMounted = true
-    setMcpManagerLoading(true)
-    void plugin
-      .getMcpManager()
-      .then((manager) => {
-        if (!isMounted) {
-          return
-        }
-        setMcpManager(manager)
-        setMcpServers(manager.getServers())
-        setMcpManagerLoading(false)
-      })
-      .catch((error: unknown) => {
-        if (isMounted) {
-          setMcpManagerLoading(false)
-        }
-        console.error(
-          'Failed to initialize MCP manager in Agent section',
-          error,
-        )
-      })
-
-    return () => {
-      isMounted = false
-    }
-  }, [plugin])
-
-  useEffect(() => {
-    if (!mcpManager) {
-      return
-    }
-    const unsubscribe = mcpManager.subscribeServersChange((servers) => {
-      setMcpServers(servers)
-    })
-    return () => {
-      unsubscribe()
-    }
-  }, [mcpManager])
-
   const handleOpenAssistantsModal = (
     initialAssistantId?: string,
     initialCreate?: boolean,
@@ -183,37 +134,8 @@ export function AgentSection({ app }: AgentSectionProps) {
     modal.open()
   }
 
-  const handleToggleToolDisclosure = async (value: boolean) => {
-    await setSettings({
-      ...settings,
-      mcp: {
-        ...settings.mcp,
-        enableToolDisclosure: value,
-      },
-    })
-  }
-
-  const mcpTools = useMemo(
-    () =>
-      mcpServers
-        .filter((server) => server.status === McpServerStatus.Connected)
-        .flatMap((server) =>
-          server.tools.map((tool) => {
-            const option = server.config.toolOptions[tool.name]
-            return {
-              id: `${server.name}:${tool.name}`,
-              name: tool.name,
-              source: server.name,
-              serverId: server.name,
-              enabled: !(option?.disabled ?? false),
-            }
-          }),
-        ),
-    [mcpServers],
-  )
-
   const builtinTools = useMemo(() => {
-    const toolOptions = settings.mcp.builtinToolOptions
+    const toolOptions = settings.tools.builtinToolOptions
     const tools = getLocalFileTools()
       .filter(
         (tool) =>
@@ -305,7 +227,7 @@ export function AgentSection({ app }: AgentSectionProps) {
     }
 
     return tools
-  }, [settings.mcp.builtinToolOptions, t])
+  }, [settings.tools.builtinToolOptions, t])
 
   const allSkillEntries = useLiteSkillEntries(app, { settings })
   const disabledSkillNames = settings.skills?.disabledSkillNames ?? []
@@ -325,54 +247,20 @@ export function AgentSection({ app }: AgentSectionProps) {
     .replace('{count}', String(allSkillEntries.length))
     .replace('{enabled}', String(globallyEnabledSkillEntries.length))
 
-  const enabledToolsCount =
-    builtinTools.filter((tool) => tool.enabled).length +
-    mcpTools.filter((tool) => tool.enabled).length
+  const enabledToolsCount = builtinTools.filter((tool) => tool.enabled).length
 
   const toolsCountLabel = t(
     'settings.agent.toolsCountWithEnabled',
     '{count} tools (enabled {enabled})',
   )
-    .replace('{count}', String(builtinTools.length + mcpTools.length))
+    .replace('{count}', String(builtinTools.length))
     .replace('{enabled}', String(enabledToolsCount))
-
-  const enabledConfiguredMcpServerCount = settings.mcp.servers.filter(
-    (server) => server.enabled,
-  ).length
-  const mcpLoadingCount = mcpManagerLoading
-    ? enabledConfiguredMcpServerCount
-    : mcpServers.filter(
-        (server) => server.status === McpServerStatus.Connecting,
-      ).length
-  const mcpErrorCount = mcpServers.filter(
-    (server) => server.status === McpServerStatus.Error,
-  ).length
-  const mcpToolStatusLabels = [
-    mcpLoadingCount > 0
-      ? t('settings.agent.mcpLoadingStatus', 'Loading {count} MCP...').replace(
-          '{count}',
-          String(mcpLoadingCount),
-        )
-      : null,
-    mcpErrorCount > 0
-      ? t(
-          'settings.agent.mcpErrorStatus',
-          '{count} MCP failed to connect',
-        ).replace('{count}', String(mcpErrorCount))
-      : null,
-  ].filter((label): label is string => Boolean(label))
-
-  const mcpCountLabel = t(
-    'settings.agent.mcpServerCount',
-    '{count} MCP servers connected',
-  ).replace('{count}', String(settings.mcp.servers.length))
 
   const toolTags = [
     ...builtinTools.map((tool) => ({
       key: `builtin:${tool.id}`,
       label: tool.label,
     })),
-    ...mcpTools.map((tool) => ({ key: tool.id, label: tool.name })),
   ]
 
   const TAG_DISPLAY_LIMIT = 20
@@ -402,7 +290,6 @@ export function AgentSection({ app }: AgentSectionProps) {
           <div className="yolo-settings-sub-header">
             {t('settings.agent.globalCapabilities', 'Global capabilities')}
           </div>
-          <div className="yolo-settings-desc">{mcpCountLabel}</div>
         </div>
 
         <div className="yolo-agent-cap-grid">
@@ -422,11 +309,6 @@ export function AgentSection({ app }: AgentSectionProps) {
             </div>
             <div className="yolo-agent-cap-count">
               <span>{toolsCountLabel}</span>
-              {mcpToolStatusLabels.map((label) => (
-                <span key={label} className="yolo-agent-cap-status">
-                  {label}
-                </span>
-              ))}
             </div>
             <div className="yolo-agent-cap-tags">
               {visibleToolTags.map((tool) => (
@@ -489,22 +371,6 @@ export function AgentSection({ app }: AgentSectionProps) {
             </div>
           </article>
         </div>
-
-        <ObsidianSetting
-          name={t(
-            'settings.agent.enableToolDisclosure',
-            'On-demand tool disclosure',
-          )}
-          desc={t(
-            'settings.agent.enableToolDisclosureDesc',
-            'Beta: expose large tool schemas only when the model asks for them.',
-          )}
-        >
-          <ObsidianToggle
-            value={settings.mcp.enableToolDisclosure}
-            onChange={(value) => void handleToggleToolDisclosure(value)}
-          />
-        </ObsidianSetting>
       </section>
 
       <section className="yolo-agent-block">
@@ -676,12 +542,6 @@ export function AgentSection({ app }: AgentSectionProps) {
             {t('settings.agent.autoContextCompactionBlockTitle')}
           </div>
           <AgentAutoContextCompactionSection />
-        </div>
-        <div className="yolo-agent-sub-card">
-          <div className="yolo-agent-sub-card-head">
-            {t('settings.agent.mcpServerBlockTitle')}
-          </div>
-          <AgentMcpServerSection />
         </div>
       </section>
 

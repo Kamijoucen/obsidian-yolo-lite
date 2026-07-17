@@ -1,57 +1,33 @@
-import { getLocalFileToolServerName } from '../../../core/mcp/localFileTools'
-import { getToolName } from '../../../core/mcp/tool-name-utils'
+import { getBuiltinToolNamespace } from '../../../core/tools/localFileTools'
+import { getToolName } from '../../../core/tools/tool-name-utils'
 
 import { normalizeToolPreferencesForPersistence } from './agentToolPersistence'
 
 describe('agentToolPersistence', () => {
-  const builtinToolName = getToolName(getLocalFileToolServerName(), 'fs_read')
-  const remoteToolName = getToolName('remote_mcp', 'search_docs')
+  const builtinToolName = getToolName(getBuiltinToolNamespace(), 'fs_read')
   const unknownBuiltinToolName = getToolName(
-    getLocalFileToolServerName(),
+    getBuiltinToolNamespace(),
     'removed_tool',
   )
 
-  it('keeps remote tool preferences when the MCP server is temporarily unavailable', () => {
+  it('keeps known built-in tool preferences', () => {
     expect(
-      normalizeToolPreferencesForPersistence(
-        {
-          [builtinToolName]: { enabled: true, approvalMode: 'full_access' },
-          [remoteToolName]: {
-            enabled: true,
-            approvalMode: 'require_approval',
-          },
-        },
-        [{ name: builtinToolName } as never],
-      ),
+      normalizeToolPreferencesForPersistence({
+        [builtinToolName]: { enabled: true, approvalMode: 'full_access' },
+      }),
     ).toEqual({
       [builtinToolName]: { enabled: true, approvalMode: 'full_access' },
-      [remoteToolName]: {
-        enabled: true,
-        approvalMode: 'require_approval',
-      },
     })
   })
 
   it('drops unknown built-in tool preferences during persistence', () => {
     expect(
-      normalizeToolPreferencesForPersistence(
-        {
-          [unknownBuiltinToolName]: {
-            enabled: true,
-            approvalMode: 'require_approval',
-          },
-          [remoteToolName]: {
-            enabled: true,
-            approvalMode: 'require_approval',
-          },
+      normalizeToolPreferencesForPersistence({
+        [unknownBuiltinToolName]: {
+          enabled: true,
+          approvalMode: 'require_approval',
         },
-        [],
-      ),
-    ).toEqual({
-      [remoteToolName]: {
-        enabled: true,
-        approvalMode: 'require_approval',
-      },
-    })
+      }),
+    ).toEqual({})
   })
 })

@@ -1,8 +1,8 @@
 import { App, FileSystemAdapter, MarkdownView, TFile } from 'obsidian'
 
 import type { JsSandboxSettings } from '../../settings/schema/setting.types'
-import { McpTool } from '../../types/mcp.types'
 import { ToolCallResponseStatus } from '../../types/tool-call.types'
+import type { ToolDefinition } from '../../types/tool.types'
 import { collectWikilinkPaths } from '../../utils/llm/annotate-wikilinks'
 
 import { buildJsSandboxToolDescription } from './jsSandboxSettings'
@@ -1382,7 +1382,9 @@ self.addEventListener('message', (event) => {
 postToParent({ type: 'ready' })
 `
 
-export function getJsSandboxTool(settings?: JsSandboxSettings | null): McpTool {
+export function getJsSandboxTool(
+  settings?: JsSandboxSettings | null,
+): ToolDefinition {
   const effectiveTimeoutCap = clampAgentTimeoutCap(settings?.timeoutMs)
   const effectiveTimeoutDefault = Math.min(
     JS_SANDBOX_DEFAULT_TIMEOUT_MS,

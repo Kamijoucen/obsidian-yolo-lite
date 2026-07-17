@@ -2,7 +2,7 @@
  * Shared helpers for honoring shell-supplied proxy env vars
  * (`HTTP_PROXY` / `HTTPS_PROXY` / `ALL_PROXY` / `NO_PROXY`, mixed case).
  *
- * MCP transports consume this helper through `core/mcp/desktopMcpFetch.ts`.
+ * Desktop network helpers consume this when they need proxy environment data.
  * The LLM transport keeps its own request setup because the two paths have
  * different lifecycle requirements.
  */

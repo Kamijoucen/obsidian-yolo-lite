@@ -319,7 +319,7 @@ describe('RequestContextBuilder compileUserMessagePrompt', () => {
       [
         folderFile.path,
         {
-          exported_from: 'YOLO',
+          exported_from: 'YOLO-Lite',
         },
       ],
     ])
@@ -359,7 +359,7 @@ describe('RequestContextBuilder compileUserMessagePrompt', () => {
       [
         '- `docs/from-folder.md`',
         '  - Properties:',
-        '    - `exported_from`: `YOLO`',
+        '    - `exported_from`: `YOLO-Lite`',
         '  - L1 ## Folder Heading',
       ].join('\n'),
     )
@@ -2087,38 +2087,6 @@ describe('RequestContextBuilder system prompt freezing', () => {
     })
 
     expect(getSystemContent(messages)).not.toContain('<workspace_scope>')
-  })
-
-  it('refreshes the frozen prompt when on-demand tool availability changes', async () => {
-    const store = new SystemPromptSnapshotStore()
-    const builder = new RequestContextBuilder(makeApp(), baseSettings, {
-      includeSkills: false,
-      systemPromptSnapshotStore: store,
-    })
-
-    memMock.mockResolvedValue({ global: null, assistant: null })
-
-    const withoutOnDemand = await builder.generateRequestMessages({
-      messages: userMessages,
-      model,
-      conversationId: 'conv-on-demand',
-      hasTools: true,
-      hasOnDemandTools: false,
-      systemPromptSnapshotMode: 'create',
-    })
-    expect(getSystemContent(withoutOnDemand)).not.toContain('ON-DEMAND')
-
-    const withOnDemand = await builder.generateRequestMessages({
-      messages: userMessages,
-      model,
-      conversationId: 'conv-on-demand',
-      hasTools: true,
-      hasOnDemandTools: true,
-      systemPromptSnapshotMode: 'create',
-    })
-    expect(getSystemContent(withOnDemand)).toContain(
-      'Some tools are ON-DEMAND stubs',
-    )
   })
 
   it('always includes the authoritative tool policy', async () => {

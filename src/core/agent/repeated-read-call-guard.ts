@@ -5,7 +5,7 @@ import {
   ToolCallResponseStatus,
   getToolCallArgumentsObject,
 } from '../../types/tool-call.types'
-import { parseToolName } from '../mcp/tool-name-utils'
+import { parseToolName } from '../tools/tool-name-utils'
 
 export type RepeatedReadCallStopReason = 'repeated_read_call'
 
@@ -28,7 +28,7 @@ export const createRepeatedReadCallGuardState =
     warningIssued: false,
   })
 
-const LOCAL_FILE_TOOL_SERVER_NAME = 'yolo_local'
+const BUILTIN_TOOL_NAMESPACE = 'yolo_local'
 const FS_READ_TOOL_NAME = 'fs_read'
 const WARNING_THRESHOLD = 3
 
@@ -36,7 +36,7 @@ const isFsReadToolName = (toolName: string): boolean => {
   try {
     const parsed = parseToolName(toolName)
     return (
-      parsed.serverName === LOCAL_FILE_TOOL_SERVER_NAME &&
+      parsed.namespace === BUILTIN_TOOL_NAMESPACE &&
       parsed.toolName === FS_READ_TOOL_NAME
     )
   } catch {

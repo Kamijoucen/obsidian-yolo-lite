@@ -168,7 +168,7 @@ export function NotificationSettingsSection() {
             )}
             desc={t(
               'settings.etc.notificationApprovalRequiredDesc',
-              '当 YOLO 暂停并等待你审批工具调用时发出提醒。',
+              '当 YOLO-Lite 暂停并等待你审批工具调用时发出提醒。',
             )}
             className="yolo-models-select-card"
           >

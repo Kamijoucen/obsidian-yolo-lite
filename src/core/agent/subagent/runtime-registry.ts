@@ -1,4 +1,4 @@
-import type { McpManager } from '../../mcp/mcpManager'
+import type { ToolManager } from '../../tools/toolManager'
 import type { NativeAgentRuntime } from '../native-runtime'
 
 /**
@@ -20,12 +20,12 @@ export type SubagentRuntimeEntry = {
   taskId: string
   runtime: NativeAgentRuntime
   /**
-   * The McpManager the subagent runs against (forwarded from the parent
+   * The ToolManager the subagent runs against (forwarded from the parent
    * context). The service uses this for `callTool` / `allowToolForConversation`
    * during approval handling.
    */
-  mcpManager: McpManager
-  /** Parent conversation id — used as the approval scope for `mcpManager`. */
+  toolManager: ToolManager
+  /** Parent conversation id — used as the approval scope for `toolManager`. */
   parentConversationId: string
   /** Parent toolCallId hosting this subagent's SubagentCard, for back-refs. */
   parentToolCallId: string

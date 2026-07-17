@@ -169,13 +169,13 @@ function TerminalLiveTaskCard({
   const isRunning = status === ToolCallResponseStatus.Running
 
   return (
-    <div className="yolo-external-agent-card yolo-external-agent-card--compact">
-      <div className="yolo-external-agent-card__compact-console-wrap">
-        <div className="yolo-external-agent-card__compact-status">
+    <div className="yolo-live-task-card yolo-live-task-card--compact">
+      <div className="yolo-live-task-card__compact-console-wrap">
+        <div className="yolo-live-task-card__compact-status">
           {isRunning && onAbort ? (
             <button
               type="button"
-              className="yolo-external-agent-card__compact-abort-btn"
+              className="yolo-live-task-card__compact-abort-btn"
               onClick={() => void onAbort()}
               title={t('chat.toolCall.abort', 'Abort')}
             >
@@ -190,7 +190,7 @@ function TerminalLiveTaskCard({
         ) : response.status === ToolCallResponseStatus.Aborted &&
           !response.data &&
           stream === null ? (
-          <div className="yolo-external-agent-card__no-output">
+          <div className="yolo-live-task-card__no-output">
             {t(
               'chat.liveTask.abortedBeforeOutput',
               'Aborted before any output was collected.',
@@ -219,17 +219,14 @@ function ConsoleBlock({
   return (
     <pre
       className={cx(
-        'yolo-external-agent-card__console',
-        tone === 'progress' && 'yolo-external-agent-card__console--progress',
+        'yolo-live-task-card__console',
+        tone === 'progress' && 'yolo-live-task-card__console--progress',
       )}
     >
       {lines.map((line, i) => (
         <span
           key={i}
-          className={cx(
-            'yolo-external-agent-card__line',
-            progressLineClass(line),
-          )}
+          className={cx('yolo-live-task-card__line', progressLineClass(line))}
         >
           {line}
         </span>
@@ -240,7 +237,7 @@ function ConsoleBlock({
 
 function progressLineClass(line: string): string | undefined {
   if (/\b(error|failed|denied|killed|timeout)\b/i.test(line)) {
-    return 'yolo-external-agent-card__line--parse-error'
+    return 'yolo-live-task-card__line--parse-error'
   }
   return undefined
 }
@@ -281,7 +278,7 @@ function TruncationNotice({
   if (!truncated) return null
 
   return (
-    <div className="yolo-external-agent-card__truncation-notice">
+    <div className="yolo-live-task-card__truncation-notice">
       {t(
         'chat.liveTask.truncated',
         `Output truncated: ${truncated.omittedBytes.toLocaleString()} bytes omitted.`,
@@ -302,8 +299,8 @@ function StatusBadge({
       return (
         <span
           className={cx(
-            'yolo-external-agent-card__badge',
-            'yolo-external-agent-card__badge--running',
+            'yolo-live-task-card__badge',
+            'yolo-live-task-card__badge--running',
           )}
         >
           <Loader2 size={12} className="yolo-spinner" />
@@ -314,8 +311,8 @@ function StatusBadge({
       return (
         <span
           className={cx(
-            'yolo-external-agent-card__badge',
-            'yolo-external-agent-card__badge--success',
+            'yolo-live-task-card__badge',
+            'yolo-live-task-card__badge--success',
           )}
         >
           <Check size={12} />
@@ -326,8 +323,8 @@ function StatusBadge({
       return (
         <span
           className={cx(
-            'yolo-external-agent-card__badge',
-            'yolo-external-agent-card__badge--aborted',
+            'yolo-live-task-card__badge',
+            'yolo-live-task-card__badge--aborted',
           )}
         >
           <X size={12} />
@@ -338,8 +335,8 @@ function StatusBadge({
       return (
         <span
           className={cx(
-            'yolo-external-agent-card__badge',
-            'yolo-external-agent-card__badge--error',
+            'yolo-live-task-card__badge',
+            'yolo-live-task-card__badge--error',
           )}
         >
           <X size={12} />

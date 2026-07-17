@@ -3,9 +3,9 @@ import { Platform, TFile } from 'obsidian'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { useApp } from '../../contexts/app-context'
-import { useMcp } from '../../contexts/mcp-context'
 import { usePlugin } from '../../contexts/plugin-context'
 import { useSettings } from '../../contexts/settings-context'
+import { useTools } from '../../contexts/tool-context'
 import { resolveAssistantIncludeCurrentFileContent } from '../../core/agent/assistant-capabilities'
 import { DEFAULT_BLOCKED_PREFIXES } from '../../core/agent/bash/command-classifier'
 import {
@@ -33,13 +33,13 @@ import {
 } from '../../core/llm/exception'
 import { getChatModelClient } from '../../core/llm/manager'
 import type { ResponseDeliveryMode } from '../../core/llm/responseDeliveryMode'
-import {
-  TERMINAL_COMMAND_TOOL_NAME,
-  getLocalFileToolServerName,
-} from '../../core/mcp/localFileTools'
-import { getToolName } from '../../core/mcp/tool-name-utils'
 import { listLiteSkillEntries } from '../../core/skills/liteSkills'
 import { isSkillEnabledForAssistant } from '../../core/skills/skillPolicy'
+import {
+  TERMINAL_COMMAND_TOOL_NAME,
+  getBuiltinToolNamespace,
+} from '../../core/tools/localFileTools'
+import { getToolName } from '../../core/tools/tool-name-utils'
 import type { AssistantToolPreference } from '../../types/assistant.types'
 import {
   ChatConversationCompaction,
@@ -112,14 +112,13 @@ type AssistantErrorContinuationRunTarget = {
 }
 
 const AUTO_CONTEXT_COMPACT_TOOL_FQN = getToolName(
-  getLocalFileToolServerName(),
+  getBuiltinToolNamespace(),
   CONTEXT_COMPACT_TOOL_NAME,
 )
 
 const AUTO_CONTEXT_COMPACT_TOOL_PREFERENCE: AssistantToolPreference = {
   enabled: true,
   approvalMode: 'full_access',
-  disclosureMode: 'always',
 }
 
 const enableAutoContextCompactionTool = (
@@ -290,7 +289,7 @@ export function useChatStreamManager({
   const app = useApp()
   const plugin = usePlugin()
   const { settings } = useSettings()
-  const { getMcpManager } = useMcp()
+  const { getToolManager } = useTools()
 
   const activeStreamAbortControllersRef = useRef<Map<string, AbortController>>(
     new Map(),
@@ -530,10 +529,6 @@ export function useChatStreamManager({
       const effectiveIncludeBuiltinTools =
         chatModeRuntime.loopConfig.includeBuiltinTools
       const effectiveAllowedToolNames = chatModeRuntime.allowedToolNames
-      const manualProvider = settings.providers.find(
-        (provider) => provider.id === effectiveModel.providerId,
-      )
-      const manualApiType = manualProvider?.apiType ?? null
       const manualContextualInjections = buildChatContextualInjections({
         app,
         includeFocusSync:
@@ -560,26 +555,18 @@ export function useChatStreamManager({
       // Path 2/3: rebuild a cache-warm prefix + tools that match what the main
       // line just sent, so the out-of-band summarize request can hit the
       // provider's prefix cache (same model, same serialized prefix, same tools).
-      const mcpManager = await getMcpManager()
+      const toolManager = await getToolManager()
       const availableTools = effectiveEnableTools
-        ? await mcpManager.listAvailableTools({
+        ? await toolManager.listAvailableTools({
             includeBuiltinTools: effectiveIncludeBuiltinTools,
           })
         : []
-      const {
-        filteredTools,
-        hasTools,
-        hasMemoryTools,
-        hasOnDemandTools,
-        requestTools,
-      } = await selectAllowedTools({
-        availableTools,
-        allowedToolNames: effectiveAllowedToolNames,
-        toolPreferences: chatModeRuntime.toolPreferences,
-        apiType: manualApiType,
-        enableToolDisclosure: settings.mcp.enableToolDisclosure,
-        jsSandboxSettings: mcpManager.getJsSandboxSettings(),
-      })
+      const { filteredTools, hasTools, hasMemoryTools, requestTools } =
+        await selectAllowedTools({
+          availableTools,
+          allowedToolNames: effectiveAllowedToolNames,
+          jsSandboxSettings: toolManager.getJsSandboxSettings(),
+        })
       const runtimeModePrompt = buildToolCapabilityPrompt({
         mode: chatModeRuntime.toolCapabilityMode,
         toolNames: filteredTools.map((tool) => tool.name),
@@ -589,7 +576,6 @@ export function useChatStreamManager({
           messages,
           hasTools,
           hasMemoryTools,
-          hasOnDemandTools,
           model: effectiveModel,
           conversationId: currentConversationId,
           compaction: manualCompaction,
@@ -621,17 +607,14 @@ export function useChatStreamManager({
         nextCompaction.estimatedNextContextTokens =
           await estimateContinuationRequestContextTokens({
             requestContextBuilder,
-            mcpManager,
+            toolManager,
             model: effectiveModel,
             messages,
             conversationId: currentConversationId,
             compaction: nextCompaction,
             enableTools: effectiveEnableTools,
             includeBuiltinTools: effectiveIncludeBuiltinTools,
-            apiType: manualApiType,
             allowedToolNames: effectiveAllowedToolNames,
-            enableToolDisclosure: settings.mcp.enableToolDisclosure,
-            toolPreferences: chatModeRuntime.toolPreferences,
             toolCapabilityMode: chatModeRuntime.toolCapabilityMode,
             contextualInjections: manualContextualInjections,
           })
@@ -664,7 +647,7 @@ export function useChatStreamManager({
       currentConversationId,
       currentFileOverride,
       currentFileViewState,
-      getMcpManager,
+      getToolManager,
       modelId,
       requestContextBuilder,
       settings,
@@ -790,7 +773,7 @@ export function useChatStreamManager({
           autoContextCompactionOptions.autoContextCompactionEnabled,
         )
 
-        const mcpManager = await getMcpManager()
+        const toolManager = await getToolManager()
 
         const loopConfig = chatModeRuntime.loopConfig
         const buildAutoContextCompactionInput = (
@@ -817,17 +800,15 @@ export function useChatStreamManager({
           messages: chatMessages,
           assistantId: selectedAssistant?.id,
           requestContextBuilder,
-          mcpManager,
+          toolManager,
           compaction: effectiveCompactionForRequest,
           apiType: currentProvider?.apiType ?? null,
           reasoningLevel,
           allowedToolNames: chatModeRuntime.allowedToolNames,
-          enableToolDisclosure: settings.mcp.enableToolDisclosure,
           toolPreferences: chatModeRuntime.toolPreferences,
-          toolServerPreferences: chatModeRuntime.toolServerPreferences,
           toolCapabilityMode: chatModeRuntime.toolCapabilityMode,
           bypassToolApproval: chatModeRuntime.bypassToolApproval,
-          blockedCommandPrefixes: settings.mcp.builtinToolOptions[
+          blockedCommandPrefixes: settings.tools.builtinToolOptions[
             TERMINAL_COMMAND_TOOL_NAME
           ]?.blockedPrefixes ?? [...DEFAULT_BLOCKED_PREFIXES],
           workspaceScope:
@@ -1068,24 +1049,17 @@ export function useChatStreamManager({
         assistantEnabledToolNames:
           getEnabledAssistantToolNames(selectedAssistant),
       })
-      const provider = settings.providers.find(
-        (p) => p.id === effectiveModel.providerId,
-      )
-
-      const mcpManager = await getMcpManager()
+      const toolManager = await getToolManager()
       return {
         requestContextBuilder,
-        mcpManager,
+        toolManager,
         model: effectiveModel,
         messages,
         conversationId: currentConversationId ?? '',
         compaction,
         enableTools: chatModeRuntime.loopConfig.enableTools,
         includeBuiltinTools: chatModeRuntime.loopConfig.includeBuiltinTools,
-        apiType: provider?.apiType ?? null,
         allowedToolNames: chatModeRuntime.allowedToolNames,
-        enableToolDisclosure: settings.mcp.enableToolDisclosure,
-        toolPreferences: chatModeRuntime.toolPreferences,
         toolCapabilityMode: chatModeRuntime.toolCapabilityMode,
         contextualInjections: buildChatContextualInjections({
           app,
@@ -1105,7 +1079,7 @@ export function useChatStreamManager({
       currentConversationId,
       currentFileOverride,
       currentFileViewState,
-      getMcpManager,
+      getToolManager,
       modelId,
       requestContextBuilder,
       settings,

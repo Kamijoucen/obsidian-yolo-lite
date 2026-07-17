@@ -62,13 +62,7 @@ export type TranslationKeys = {
     chatList?: {
       searchPlaceholder?: string
       empty?: string
-      noTaskConversations?: string
-      historySections?: string
       myConversations?: string
-      taskConversations?: string
-      taskConversationSources?: string
-      allSources?: string
-      externalAgent?: string
       current?: string
       pinConversation?: string
       unpinConversation?: string
@@ -98,7 +92,6 @@ export type TranslationKeys = {
     supportYolo: {
       name: string
       desc: string
-      buyMeACoffee: string
       reportBug: string
       featureRequest: string
     }
@@ -167,12 +160,9 @@ export type TranslationKeys = {
       title?: string
       desc?: string
       globalCapabilities?: string
-      mcpServerCount?: string
       tools?: string
       toolsCount?: string
       toolsCountWithEnabled?: string
-      mcpLoadingStatus?: string
-      mcpErrorStatus?: string
       skills?: string
       skillsCount?: string
       skillsCountWithEnabled?: string
@@ -250,16 +240,13 @@ export type TranslationKeys = {
       deleteConfirmMessagePrefix?: string
       deleteConfirmMessageSuffix?: string
       toolSourceBuiltin?: string
-      toolSourceMcp?: string
       toolsGroupBuiltinVault?: string
       toolsGroupBuiltinContext?: string
       toolsGroupBuiltinExternal?: string
-      noMcpTools?: string
+      noToolDefinitions?: string
       toolsEnabledCount?: string
       manageTools?: string
       manageSkills?: string
-      enableToolDisclosure?: string
-      enableToolDisclosureDesc?: string
       expandDescription?: string
       collapseDescription?: string
       viewAllTools?: string
@@ -277,8 +264,6 @@ export type TranslationKeys = {
       builtinContextPruneToolResultsDesc?: string
       builtinContextCompactLabel?: string
       builtinContextCompactDesc?: string
-      builtinToolSearchLabel?: string
-      builtinToolSearchDesc?: string
       builtinFsEditLabel?: string
       builtinFsEditDesc?: string
       fsEditReviewToggle?: string
@@ -412,15 +397,6 @@ export type TranslationKeys = {
       autoContextCompactionThresholdTokensDesc?: string
       autoContextCompactionThresholdRatioPercent?: string
       autoContextCompactionThresholdRatioPercentDesc?: string
-      mcpServerBlockTitle?: string
-      mcpServerDesc?: string
-      mcpServerDesktopOnly?: string
-      mcpServerEnabled?: string
-      mcpServerClientConfig?: string
-      mcpServerCopyConfig?: string
-      mcpServerError?: string
-      mcpServerConfigCopied?: string
-      mcpServerCopyFailed?: string
       jsSandboxExtTitle?: string
       jsSandboxAllowFetch?: string
       jsSandboxAllowFetchDesc?: string
@@ -688,56 +664,6 @@ export type TranslationKeys = {
       customParameterTypeBoolean?: string
       customParameterTypeJson?: string
       noChatModelsConfigured: string
-    }
-    mcp: {
-      title: string
-      desc: string
-      warning: string
-      notSupportedOnMobile: string
-      mcpServers: string
-      addServer: string
-      serverName: string
-      command: string
-      server: string
-      status: string
-      enabled: string
-      actions: string
-      noServersFound: string
-      tools: string
-      error: string
-      connected: string
-      connecting: string
-      disconnected: string
-      autoExecute: string
-      deleteServer: string
-      deleteServerConfirm: string
-      edit: string
-      delete: string
-      expand: string
-      collapse: string
-      addServerTitle?: string
-      editServerTitle?: string
-      serverNameField?: string
-      serverNameFieldDesc?: string
-      serverNamePlaceholder?: string
-      parametersField?: string
-      parametersFieldDesc?: string
-      parametersFieldDescShort?: string
-      parametersFormatHelp?: string
-      parametersTooltipDesc?: string
-      parametersTooltipTitle?: string
-      parametersTooltipPreferred?: string
-      parametersTooltipCompatible?: string
-      parametersTooltipTip?: string
-      serverNameRequired?: string
-      serverAlreadyExists?: string
-      parametersRequired?: string
-      parametersMustBeValidJson?: string
-      invalidJsonFormat?: string
-      invalidParameters?: string
-      validParameters?: string
-      failedToAddServer?: string
-      failedToDeleteServer?: string
     }
     editor: {
       snippets: {
@@ -1236,7 +1162,6 @@ export type TranslationKeys = {
     modelNotFound: string
     invalidApiKey: string
     networkError: string
-    mcpServerError: string
   }
 
   // Apply View
@@ -1381,7 +1306,6 @@ export type TranslationKeys = {
       chatModelId: string
       chatTitleModelId: string
       systemPrompt: string
-      mcp: string
       webSearch: string
       skills: string
       yolo: string

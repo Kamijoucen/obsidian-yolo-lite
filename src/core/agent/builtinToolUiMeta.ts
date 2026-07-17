@@ -51,12 +51,6 @@ export const BUILTIN_TOOL_UI_META: Record<string, BuiltinToolUiMeta> = {
     descFallback:
       'Compress earlier conversation history into a summary and continue in a fresh context window.',
   },
-  load_tool_schemas: {
-    labelKey: 'settings.agent.builtinToolSearchLabel',
-    descKey: 'settings.agent.builtinToolSearchDesc',
-    labelFallback: 'Load Tool',
-    descFallback: 'Load full schemas for on-demand tools.',
-  },
   fs_edit: {
     labelKey: 'settings.agent.builtinFsEditLabel',
     descKey: 'settings.agent.builtinFsEditDesc',
@@ -182,7 +176,6 @@ const BUILTIN_TOOL_CATEGORY_MAP: Record<string, BuiltinToolCategory> = {
   [FILE_OPS_GROUP_TOOL_NAME]: 'vault',
   context_prune_tool_results: 'context',
   context_compact: 'context',
-  load_tool_schemas: 'context',
   todo_write: 'context',
   ask_user_question: 'context',
   [MEMORY_OPS_GROUP_TOOL_NAME]: 'context',

@@ -4,9 +4,9 @@ export const zh: TranslationKeys = {
   commands: {
     openChatSidebar: '打开聊天（侧栏）',
     openLearningMode: '打开学习模式',
-    learningModeLabel: 'YOLO：学习模式',
+    learningModeLabel: 'YOLO-Lite：学习模式',
     newChatCurrentView: '新建聊天',
-    openYoloNewChat: 'YOLO:打开聊天窗口',
+    openYoloNewChat: 'YOLO-Lite：打开聊天窗口',
     openNewChatTab: '在新标签页打开新对话',
     openNewChatSplit: '在右侧分屏打开新对话',
     openNewChatWindow: '在新窗口打开新对话',
@@ -55,13 +55,7 @@ export const zh: TranslationKeys = {
     chatList: {
       searchPlaceholder: '搜索聊天记录',
       empty: '暂无聊天记录',
-      noTaskConversations: '暂无任务会话',
-      historySections: '会话分类',
       myConversations: '我的对话',
-      taskConversations: '任务会话',
-      taskConversationSources: '任务会话来源',
-      allSources: '全部',
-      externalAgent: '外部 Agent',
       current: '当前',
       pinConversation: '置顶',
       unpinConversation: '取消置顶',
@@ -151,7 +145,7 @@ export const zh: TranslationKeys = {
       sortCreated: '按创建时间',
       sortProgress: '按进度',
       newLearningProject: '新建学习项目',
-      newProjectHint: '告诉 YOLO 你想学什么，自动生成大纲',
+      newProjectHint: '告诉 YOLO-Lite 你想学什么，自动生成大纲',
       statusStudying: '学习中',
       statusBuilding: '生成中',
       statusOutlining: '规划中',
@@ -212,8 +206,8 @@ export const zh: TranslationKeys = {
     wizard: {
       title: '新建学习项目',
       createOutline: '创建并生成大纲',
-      heading: '告诉 YOLO 你想学什么',
-      description: '填写下面的信息，YOLO 会为你生成一份结构化的学习大纲。',
+      heading: '告诉 YOLO-Lite 你想学什么',
+      description: '填写下面的信息，YOLO-Lite 会为你生成一份结构化的学习大纲。',
       topicDefault: '学习 React',
       topicLabel: '学习主题',
       topicHint: '例如：学习 React、刑法总则、读懂一篇论文',
@@ -227,7 +221,7 @@ export const zh: TranslationKeys = {
       goalPlaceholder:
         '能够独立开发中等复杂度的 React 应用；两周内完成，偏实战，少讲纯理论',
       referencesLabel: '参考资料',
-      referencesHint: '上传后 YOLO 会据此定制大纲',
+      referencesHint: '上传后 YOLO-Lite 会据此定制大纲',
       optional: '（可选）',
       uploadTitle: '拖拽文件到此处，或点击上传',
       uploadHint: '支持 Markdown 文件，单个文件 ≤ 20MB',
@@ -393,7 +387,7 @@ export const zh: TranslationKeys = {
   },
 
   settings: {
-    title: 'YOLO 设置',
+    title: 'YOLO-Lite 设置',
     tabs: {
       models: '模型',
       agent: 'Agent',
@@ -401,9 +395,8 @@ export const zh: TranslationKeys = {
       others: '其他',
     },
     supportYolo: {
-      name: '支持 YOLO',
-      desc: '如果你觉得 YOLO 有价值，请考虑支持它的开发！',
-      buyMeACoffee: '爱发电',
+      name: 'YOLO-Lite 项目',
+      desc: '可在 GitHub 反馈问题或提交功能建议。',
       reportBug: '报 Bug',
       featureRequest: '提需求',
     },
@@ -472,18 +465,15 @@ export const zh: TranslationKeys = {
       title: 'Agent',
       desc: '管理工具的全局可用性。启用后，工具才可被各 Agent 选择；是否实际使用，仍需在对应 Agent 中开启。',
       globalCapabilities: '全局能力',
-      mcpServerCount: '已连接 {count} 个自定义工具服务器（MCP）',
       tools: '工具',
       toolsCount: '{count} 个工具',
       toolsCountWithEnabled: '{count} 个工具（已启用 {enabled} 个）',
-      mcpLoadingStatus: '正在加载 {count} 个 MCP…',
-      mcpErrorStatus: '{count} 个 MCP 连接失败',
       skills: '技能',
       skillsCount: '{count} 个技能',
       skillsCountWithEnabled: '{count} 个技能（已启用 {enabled} 个）',
       skillsGlobalDesc:
         '技能会从内置技能与 {path}/**/*.md 自动发现（适用时排除 Skills.md）。在这里禁用后，所有 Agent 都无法使用。',
-      yoloBaseDir: 'YOLO 根目录',
+      yoloBaseDir: '插件数据根目录',
       yoloBaseDirDesc:
         '填写库内相对路径（不要以 / 开头）。例如：放在库根目录填 YOLO；放在 setting 文件夹下填 setting/YOLO。',
       yoloBaseDirPlaceholder: 'YOLO',
@@ -562,17 +552,13 @@ export const zh: TranslationKeys = {
       deleteConfirmMessagePrefix: '确定要删除 Agent',
       deleteConfirmMessageSuffix: '？该操作不可撤销。',
       toolSourceBuiltin: '内置',
-      toolSourceMcp: 'MCP',
       toolsGroupBuiltinVault: '库内操作',
       toolsGroupBuiltinContext: '上下文与记忆',
       toolsGroupBuiltinExternal: '外部能力',
-      noMcpTools: '尚未发现自定义工具（MCP）',
+      noToolDefinitions: '没有可用的内置工具',
       toolsEnabledCount: '已启用 {count} 个',
       manageTools: '管理工具',
       manageSkills: '管理技能',
-      enableToolDisclosure: '启用工具按需加载（Beta）',
-      enableToolDisclosureDesc:
-        '可选工具集会先以简要说明提供，模型需要时再加载完整说明，推荐在启用了大量 MCP 工具时开启。注意：该机制依赖模型自身的工具调用能力，部分模型可能无法稳定识别已加载的工具。',
       expandDescription: '展开',
       collapseDescription: '收起',
       viewAllTools: '查看全部工具',
@@ -591,8 +577,6 @@ export const zh: TranslationKeys = {
         '从后续上下文中排除历史工具结果；注意，该工具可能会破坏上下文缓存，增加请求开销',
       builtinContextCompactLabel: '压缩上下文',
       builtinContextCompactDesc: '将较早对话压缩为摘要',
-      builtinToolSearchLabel: '加载工具',
-      builtinToolSearchDesc: '加载按需工具的完整说明',
       builtinFsEditLabel: '文本编辑',
       builtinFsEditDesc: '编辑单个文件的文本',
       safetyControls: '安全控制',
@@ -741,16 +725,6 @@ export const zh: TranslationKeys = {
       autoContextCompactionThresholdRatioPercent: '上下文窗口占用（%）',
       autoContextCompactionThresholdRatioPercentDesc:
         '当 prompt_tokens 除以当前聊天模型配置的最大上下文窗口达到该比例时触发（需在模型中填写 max context）。',
-      mcpServerBlockTitle: '外部 Agent 接入',
-      mcpServerEnabled: '允许外部 Agent 访问',
-      mcpServerDesc:
-        '允许外部 Agent 通过 MCP 搜索 Vault，并向已配置的 YOLO Agent 委派任务。',
-      mcpServerDesktopOnly: 'MCP 服务仅支持桌面端。',
-      mcpServerClientConfig: 'MCP 连接配置',
-      mcpServerCopyConfig: '复制',
-      mcpServerError: '启动失败',
-      mcpServerConfigCopied: '已复制 MCP 配置。',
-      mcpServerCopyFailed: '复制 MCP 配置失败。',
       jsSandboxExtTitle: '扩展能力',
       jsSandboxAllowFetch: '允许网络请求',
       jsSandboxAllowFetchDesc:
@@ -758,7 +732,7 @@ export const zh: TranslationKeys = {
       jsSandboxAllowFetchRisk:
         '风险：脚本可访问浏览器能到达的任何 URL —— 公开 API、你的本地网络、内网服务，乃至 LLM 服务本身。脚本中持有的任何数据（包括你传进来的 vault 内容）都可能被外发。仅在你完全信任此 Agent 时开启。',
       jsSandboxAllowFetchConfirm:
-        '开启后，脚本可以请求浏览器允许访问的网络地址；遇到浏览器跨域限制时，也可以使用单独的 YOLO 宿主请求。仅在你信任此 Agent 时继续。是否继续？',
+        '开启后，脚本可以请求浏览器允许访问的网络地址；遇到浏览器跨域限制时，也可以使用单独的 YOLO-Lite 宿主请求。仅在你信任此 Agent 时继续。是否继续？',
       jsSandboxAllowVaultRead: '允许读取库文件',
       jsSandboxAllowVaultReadDesc:
         '允许脚本列出库内路径，并按路径读取任意库文件。此能力不受 Agent 目录限制约束。风险：脚本可能将笔记内容传递给外部服务。',
@@ -1014,7 +988,7 @@ export const zh: TranslationKeys = {
         '选择推理强度：minimal（更快更省，仅 GPT-5）/ low / medium / high',
       builtinToolProvider: 'Provider 内置工具',
       builtinToolProviderDesc:
-        '由 Provider 提供的原生工具，与 YOLO 内置工具相互独立。具体能否生效取决于实际请求所走的服务端是否支持。',
+        '由 Provider 提供的原生工具，与 YOLO-Lite 内置工具相互独立。具体能否生效取决于实际请求所走的服务端是否支持。',
       builtinToolProviderNone: '不启用',
       builtinToolProviderGpt: 'OpenAI',
       builtinToolsGpt: 'OpenAI 内置工具',
@@ -1037,61 +1011,6 @@ export const zh: TranslationKeys = {
       customParameterTypeBoolean: '布尔',
       customParameterTypeJson: 'JSON',
       noChatModelsConfigured: '未配置聊天模型',
-    },
-    mcp: {
-      title: '自定义工具 (MCP)',
-      desc: '配置 MCP 服务器以管理自定义工具能力',
-      warning:
-        '使用工具时，工具响应会传递给语言模型(LLM)。如果工具结果包含大量内容，这可能会显著增加LLM使用量和相关成本。启用或使用可能返回长输出的工具时请注意。',
-      notSupportedOnMobile: '移动设备不支持自定义工具（MCP）',
-      mcpServers: 'MCP 服务器',
-      addServer: '添加MCP服务器',
-      serverName: '服务器名称',
-      command: '命令',
-      server: '服务器',
-      status: '状态',
-      enabled: '启用',
-      actions: '操作',
-      noServersFound: '未找到自定义工具服务器（MCP）',
-      tools: '工具',
-      error: '错误',
-      connected: '已连接',
-      connecting: '连接中...',
-      disconnected: '已断开',
-      autoExecute: '自动执行',
-      deleteServer: '删除自定义工具服务器（MCP）',
-      deleteServerConfirm: '确定要删除自定义工具服务器（MCP）',
-      edit: '编辑',
-      delete: '删除',
-      expand: '展开',
-      collapse: '收起',
-      addServerTitle: '添加服务器',
-      editServerTitle: '编辑服务器',
-      serverNameField: '名称',
-      serverNameFieldDesc: 'MCP 服务器名称',
-      serverNamePlaceholder: "例如：'github'",
-      parametersField: '参数',
-      parametersFieldDesc:
-        '用于定义 MCP 服务器传输方式的 JSON 配置。支持格式：\n- stdio：{"transport":"stdio","command":"npx","args":[...],"env":{...}}\n- http：{"transport":"http","url":"https://...","headers":{...}}\n- sse：{"transport":"sse","url":"https://...","headers":{...}}\n- ws：{"transport":"ws","url":"wss://..."}\n同时兼容包装格式：{"mcpServers":{"name":{...}}} 与 {"id":"name","parameters":{...}}',
-      parametersFieldDescShort:
-        'MCP 服务器的 JSON 配置，支持 stdio、http、sse、ws 传输方式。',
-      parametersFormatHelp: '格式说明',
-      parametersTooltipDesc:
-        '推荐格式：\n- stdio：{"transport":"stdio","command":"npx",...}\n- http/sse/ws：{"transport":"http|sse|ws","url":"..."}\n\n兼容包装格式：\n- {"mcpServers":{"name":{...}}}\n- {"id":"name","parameters":{...}}\n\n提示：当 mcpServers 只有一个服务时，名称会自动回填。',
-      parametersTooltipTitle: '格式示例',
-      parametersTooltipPreferred: '推荐',
-      parametersTooltipCompatible: '兼容',
-      parametersTooltipTip:
-        '提示：当 mcpServers 只有一个服务时，名称会自动回填。',
-      serverNameRequired: '名称不能为空',
-      serverAlreadyExists: '同名服务器已存在',
-      parametersRequired: '参数不能为空',
-      parametersMustBeValidJson: '参数必须是有效 JSON',
-      invalidJsonFormat: 'JSON 格式无效',
-      invalidParameters: '参数无效',
-      validParameters: '参数有效',
-      failedToAddServer: '添加自定义工具服务器（MCP）失败。',
-      failedToDeleteServer: '删除服务器失败。',
     },
     editor: {
       snippets: {
@@ -1156,13 +1075,13 @@ export const zh: TranslationKeys = {
       captureRawRequestDebug: '启用 LLM 请求调试',
       captureRawRequestDebugDesc:
         '开启后，每条模型消息的信息栏和更多操作菜单中会出现 Debug 按钮，可查看或导出该轮 LLM、工具调用与网络搜索的原始请求和响应。捕获仅保留在当前会话内存中，重启 Obsidian 后清空。导出内容已脱敏 API 密钥，但仍包含对话原文。',
-      yoloBaseDir: 'YOLO 根目录',
+      yoloBaseDir: '插件数据根目录',
       yoloBaseDirDesc:
         '填写库内相对路径（不要以 / 开头）。例如：放在库根目录填 YOLO；放在 setting 文件夹下填 setting/YOLO。当前技能目录：{path}。',
       yoloBaseDirPlaceholder: 'YOLO',
       ribbonClickAction: '侧边栏图标点击位置',
       ribbonClickActionDesc:
-        '选择点击左侧边栏 YOLO 图标时，Chat 视图在哪里打开。若选定位置已有 Chat 视图会直接激活复用，否则新建。',
+        '选择点击左侧边栏 YOLO-Lite 图标时，Chat 视图在哪里打开。若选定位置已有 Chat 视图会直接激活复用，否则新建。',
       ribbonClickActionSidebar: '右侧边栏',
       ribbonClickActionTab: '新标签页',
       ribbonClickActionSplit: '右侧分屏',
@@ -1206,7 +1125,7 @@ export const zh: TranslationKeys = {
       notificationTimingWhenUnfocused: '仅失焦时提醒',
       notificationApprovalRequired: '需要审批时提醒',
       notificationApprovalRequiredDesc:
-        '当 YOLO 暂停并等待你审批工具调用时发出提醒。',
+        '当 YOLO-Lite 暂停并等待你审批工具调用时发出提醒。',
       notificationTaskCompleted: '任务结束时提醒',
       notificationTaskCompletedDesc:
         '当当前 Agent 任务结束且不再等待审批时发出提醒。',
@@ -1594,16 +1513,16 @@ export const zh: TranslationKeys = {
       },
     },
     notification: {
-      approvalTitle: 'YOLO 需要你的确认',
+      approvalTitle: 'YOLO-Lite 需要你的确认',
       approvalBody: '当前任务暂停中，正在等待你审批一个工具调用。',
-      completedTitle: 'YOLO 任务已结束',
+      completedTitle: 'YOLO-Lite 任务已结束',
       completedBody: '当前 Agent 任务已完成，可以回来看结果了。',
       completedErrorBody: '当前 Agent 任务已结束，请回到窗口查看结果。',
     },
   },
 
   notices: {
-    openYoloNewChatFailed: '打开 YOLO 聊天窗口失败，请先用命令面板尝试',
+    openYoloNewChatFailed: '打开 YOLO-Lite 聊天窗口失败，请先用命令面板尝试',
   },
 
   statusBar: {
@@ -1622,8 +1541,8 @@ export const zh: TranslationKeys = {
     backgroundTasksRunning: '当前有 {count} 个后台任务正在运行',
     backgroundTasksNeedAttention: '有后台任务需要关注',
     learningTasksRunning: '学习模式有 {count} 个任务正在运行',
-    learningReviewLabel: 'YOLO Learning：今日有 {count} 张待复习卡片',
-    learningReviewTitle: 'YOLO Learning',
+    learningReviewLabel: 'YOLO-Lite Learning：今日有 {count} 张待复习卡片',
+    learningReviewTitle: 'YOLO-Lite Learning',
     learningReviewDetail: '{count} 张卡片待复习',
   },
 
@@ -1632,7 +1551,6 @@ export const zh: TranslationKeys = {
     modelNotFound: '未找到模型',
     invalidApiKey: 'API 密钥无效',
     networkError: '网络错误',
-    mcpServerError: 'MCP 服务器错误',
   },
 
   applyView: {
@@ -1732,7 +1650,7 @@ export const zh: TranslationKeys = {
       sourceFile: '从配置文件导入',
       sourceFileDesc: '选择之前导出的 .json 文件',
       sourceVault: '从其他笔记库导入',
-      sourceVaultDesc: '选择已安装 YOLO 的笔记库目录',
+      sourceVaultDesc: '选择已安装 YOLO-Lite 的笔记库目录',
       description: '选择要导入的配置项',
       selectAll: '全选',
       selectNone: '全不选',
@@ -1751,7 +1669,7 @@ export const zh: TranslationKeys = {
         '注意：该配置为脱敏导出，所有 API Key / 密码 / Header / 环境变量已被清空，需导入后手动补填。',
       noticeRedactedReminder:
         '注意：该配置为脱敏导出，所有 API Key / 密码 / Header / 环境变量已被清空，请前往设置补填。',
-      noticePluginNotFound: '未在该目录找到 YOLO 插件配置',
+      noticePluginNotFound: '未在该目录找到 YOLO-Lite 插件配置',
       noticeAtLeastOne: '请至少选择一项配置',
       noticeSuccess: '配置导入成功',
       noticeFailed: '配置导入失败',
@@ -1759,7 +1677,7 @@ export const zh: TranslationKeys = {
     errors: {
       errorNotJson: '文件内容不是有效的 JSON 对象',
       errorNotExportFile:
-        '该文件不是 YOLO 插件的配置导出文件，请选择通过「导出配置」功能生成的 .json 文件。',
+        '该文件不是 YOLO-Lite 插件的配置导出文件，请选择通过「导出配置」功能生成的 .json 文件。',
       errorInvalidFormatVersion: '配置文件格式版本不合法，可能已损坏。',
       errorInvalidSettingsVersion: '配置文件中的设置版本号不合法，可能已损坏。',
       errorSettingsVersionMismatch:
@@ -1784,7 +1702,6 @@ export const zh: TranslationKeys = {
       chatModelId: '默认对话模型',
       chatTitleModelId: '标题生成模型',
       systemPrompt: '系统提示词',
-      mcp: 'MCP 工具',
       webSearch: '联网搜索',
       skills: '技能设置',
       yolo: '基础设置',

@@ -16,9 +16,6 @@ describe('resolveChatModeRuntime', () => {
         approvalMode: 'require_approval' as const,
       },
     },
-    toolServerPreferences: {
-      playwright: { approvalMode: 'full_access' as const },
-    },
   }
 
   it('filters write tools in ask mode and disables bypass', () => {
@@ -30,7 +27,6 @@ describe('resolveChatModeRuntime', () => {
 
     expect(runtime.allowedToolNames).toEqual(['yolo_local__fs_read'])
     expect(runtime.toolPreferences).toBeUndefined()
-    expect(runtime.toolServerPreferences).toBeUndefined()
     expect(runtime.bypassToolApproval).toBe(false)
     expect(runtime.toolCapabilityMode).toBe('ask')
   })
@@ -44,9 +40,6 @@ describe('resolveChatModeRuntime', () => {
 
     expect(runtime.allowedToolNames).toEqual(assistantEnabledToolNames)
     expect(runtime.toolPreferences).toEqual(assistant.toolPreferences)
-    expect(runtime.toolServerPreferences).toEqual(
-      assistant.toolServerPreferences,
-    )
     expect(runtime.bypassToolApproval).toBe(false)
     expect(runtime.toolCapabilityMode).toBe('agent')
   })
@@ -61,9 +54,6 @@ describe('resolveChatModeRuntime', () => {
 
     expect(runtime.allowedToolNames).toEqual(assistantEnabledToolNames)
     expect(runtime.toolPreferences).toEqual(assistant.toolPreferences)
-    expect(runtime.toolServerPreferences).toEqual(
-      assistant.toolServerPreferences,
-    )
     expect(runtime.bypassToolApproval).toBe(true)
     expect(runtime.toolCapabilityMode).toBe('agent')
   })

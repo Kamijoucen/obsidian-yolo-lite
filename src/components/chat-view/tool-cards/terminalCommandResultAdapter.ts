@@ -1,5 +1,5 @@
-import { getLocalFileToolServerName } from '../../../core/mcp/localFileTools'
-import { getToolName } from '../../../core/mcp/tool-name-utils'
+import { getBuiltinToolNamespace } from '../../../core/tools/localFileTools'
+import { getToolName } from '../../../core/tools/tool-name-utils'
 import type {
   ChatTerminalCommandResultMessage,
   ChatToolMessage,
@@ -30,7 +30,7 @@ function buildSynthRequest(
 ): ToolCallRequest {
   return {
     id: `result-${message.taskId}`,
-    name: getToolName(getLocalFileToolServerName(), 'terminal_command'),
+    name: getToolName(getBuiltinToolNamespace(), 'terminal_command'),
     arguments: {
       kind: 'complete',
       value: {

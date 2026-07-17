@@ -14,10 +14,7 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 
 import { useLanguage } from '../../contexts/language-context'
 import type { AgentConversationRunSummary } from '../../core/agent/service'
-import {
-  type ChatConversationMetadata,
-  getChatConversationOrigin,
-} from '../../database/json/chat/types'
+import { type ChatConversationMetadata } from '../../database/json/chat/types'
 import { getConversationDisplayTitle } from '../../hooks/useChatHistory'
 import { useChatManager } from '../../hooks/useJsonManagers'
 import type { SerializedChatMessage } from '../../types/chat'
@@ -25,16 +22,8 @@ import type { ContentPart } from '../../types/llm/request'
 import { getNodeWindow } from '../../utils/dom/window-context'
 import { YoloPopoverContent } from '../common/popover'
 
-import {
-  type ChatHistorySection,
-  type TaskConversationOrigin,
-  type TaskOriginFilter,
-  partitionChatHistory,
-} from './chat-history-list'
+import { partitionChatHistory } from './chat-history-list'
 import { editorStateToPlainText } from './chat-input/utils/editor-state-to-plain-text'
-
-let rememberedHistorySection: ChatHistorySection = 'user'
-let rememberedTaskOriginFilter: TaskOriginFilter = 'all'
 
 function TitleInput({
   value,
@@ -523,12 +512,6 @@ export function ChatListDropdown({
     useState<string | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
-  const [activeSection, setActiveSection] = useState<ChatHistorySection>(
-    rememberedHistorySection,
-  )
-  const [taskOriginFilter, setTaskOriginFilter] = useState<TaskOriginFilter>(
-    rememberedTaskOriginFilter,
-  )
   const [showArchived, setShowArchived] = useState(false)
   const [isHoveringArchiveRow, setIsHoveringArchiveRow] = useState(false)
   const [updatingTitleIds, setUpdatingTitleIds] = useState<Set<string>>(
@@ -562,40 +545,7 @@ export function ChatListDropdown({
     [searchQuery],
   )
 
-  const userChatList = useMemo(
-    () => chatList.filter((chat) => getChatConversationOrigin(chat) === 'user'),
-    [chatList],
-  )
-  const taskChatList = useMemo(
-    () => chatList.filter((chat) => getChatConversationOrigin(chat) !== 'user'),
-    [chatList],
-  )
-  const taskOrigins = useMemo(
-    () =>
-      Array.from(
-        new Set(
-          taskChatList.map(
-            (chat) => getChatConversationOrigin(chat) as TaskConversationOrigin,
-          ),
-        ),
-      ),
-    [taskChatList],
-  )
-  const sectionChatList = activeSection === 'user' ? userChatList : taskChatList
-  const scopedChatList = useMemo(() => {
-    if (activeSection === 'user') return userChatList
-    if (taskOriginFilter === 'all') return taskChatList
-    return taskChatList.filter(
-      (chat) => getChatConversationOrigin(chat) === taskOriginFilter,
-    )
-  }, [activeSection, taskChatList, taskOriginFilter, userChatList])
-
-  useEffect(() => {
-    if (taskOriginFilter !== 'all' && !taskOrigins.includes(taskOriginFilter)) {
-      rememberedTaskOriginFilter = 'all'
-      setTaskOriginFilter('all')
-    }
-  }, [taskOriginFilter, taskOrigins])
+  const scopedChatList = chatList
 
   const untitledFallback = t('chat.untitledConversation', 'New chat')
   const getDisplayTitle = useCallback(
@@ -616,11 +566,10 @@ export function ChatListDropdown({
   }, [getDisplayTitle, normalizedQuery, scopedChatList])
 
   const pinnedSortedChatList = useMemo(() => {
-    if (sectionChatList.length === 0) return sectionChatList
-    const canPin = activeSection === 'user'
-    return [...sectionChatList].sort((a, b) => {
-      const aPinned = canPin && a.isPinned ? 1 : 0
-      const bPinned = canPin && b.isPinned ? 1 : 0
+    if (chatList.length === 0) return chatList
+    return [...chatList].sort((a, b) => {
+      const aPinned = a.isPinned ? 1 : 0
+      const bPinned = b.isPinned ? 1 : 0
       if (aPinned !== bPinned) {
         return bPinned - aPinned
       }
@@ -633,7 +582,7 @@ export function ChatListDropdown({
       }
       return b.updatedAt - a.updatedAt
     })
-  }, [activeSection, sectionChatList])
+  }, [chatList])
 
   const filteredChatList = useMemo(() => {
     if (!normalizedQuery) return scopedChatList
@@ -653,17 +602,9 @@ export function ChatListDropdown({
     return partitionChatHistory({
       chatList: baseDisplayChatList,
       currentConversationId,
-      section: activeSection,
-      originFilter: taskOriginFilter,
       useArchive: shouldUseArchive,
     })
-  }, [
-    activeSection,
-    taskOriginFilter,
-    baseDisplayChatList,
-    currentConversationId,
-    shouldUseArchive,
-  ])
+  }, [baseDisplayChatList, currentConversationId, shouldUseArchive])
 
   const renderedChatList = useMemo(() => {
     if (!shouldUseArchive) return activeChatList
@@ -686,8 +627,6 @@ export function ChatListDropdown({
   const handleOpenChange = useCallback(
     (nextOpen: boolean) => {
       if (nextOpen) {
-        setActiveSection(rememberedHistorySection)
-        setTaskOriginFilter(rememberedTaskOriginFilter)
         const nextFocusedConversationId =
           pinnedSortedChatList.find((chat) => chat.id === currentConversationId)
             ?.id ??
@@ -1025,102 +964,6 @@ export function ChatListDropdown({
             />
           </div>
         </div>
-        <div
-          className="yolo-chat-list-section-tabs"
-          role="group"
-          aria-label={t(
-            'sidebar.chatList.historySections',
-            'Conversation categories',
-          )}
-        >
-          <button
-            type="button"
-            aria-pressed={activeSection === 'user'}
-            className={`yolo-chat-list-section-tab${
-              activeSection === 'user' ? ' is-active' : ''
-            }`}
-            onClick={() => {
-              rememberedHistorySection = 'user'
-              setActiveSection('user')
-              setShowArchived(false)
-              setMoreMenuConversationId(null)
-              setActiveMenuId(null)
-              setMenuPosition(null)
-            }}
-          >
-            <span>
-              {t('sidebar.chatList.myConversations', 'My conversations')}
-            </span>
-            <span className="yolo-chat-list-section-count">
-              {userChatList.length}
-            </span>
-          </button>
-          <button
-            type="button"
-            aria-pressed={activeSection === 'task'}
-            className={`yolo-chat-list-section-tab${
-              activeSection === 'task' ? ' is-active' : ''
-            }`}
-            onClick={() => {
-              rememberedHistorySection = 'task'
-              setActiveSection('task')
-              setShowArchived(false)
-              setMoreMenuConversationId(null)
-              setActiveMenuId(null)
-              setMenuPosition(null)
-            }}
-          >
-            <span>
-              {t('sidebar.chatList.taskConversations', 'Task conversations')}
-            </span>
-            <span className="yolo-chat-list-section-count">
-              {taskChatList.length}
-            </span>
-          </button>
-        </div>
-        {activeSection === 'task' && taskOrigins.length > 1 ? (
-          <div
-            className="yolo-chat-list-origin-filters"
-            aria-label={t(
-              'sidebar.chatList.taskConversationSources',
-              'Task conversation sources',
-            )}
-          >
-            <button
-              type="button"
-              className={`yolo-chat-list-origin-filter${
-                taskOriginFilter === 'all' ? ' is-active' : ''
-              }`}
-              aria-pressed={taskOriginFilter === 'all'}
-              onClick={() => {
-                rememberedTaskOriginFilter = 'all'
-                setTaskOriginFilter('all')
-                setShowArchived(false)
-              }}
-            >
-              {t('sidebar.chatList.allSources', 'All')}
-            </button>
-            {taskOrigins.map((origin) => (
-              <button
-                key={origin}
-                type="button"
-                className={`yolo-chat-list-origin-filter${
-                  taskOriginFilter === origin ? ' is-active' : ''
-                }`}
-                aria-pressed={taskOriginFilter === origin}
-                onClick={() => {
-                  rememberedTaskOriginFilter = origin
-                  setTaskOriginFilter(origin)
-                  setShowArchived(false)
-                }}
-              >
-                {origin === 'external-agent'
-                  ? t('sidebar.chatList.externalAgent', 'External Agent')
-                  : origin}
-              </button>
-            ))}
-          </div>
-        ) : null}
         <ul
           ref={listRef}
           className="yolo-model-select-list"
@@ -1144,12 +987,7 @@ export function ChatListDropdown({
         >
           {scopedChatList.length === 0 ? (
             <li className="yolo-chat-list-dropdown-empty">
-              {activeSection === 'user'
-                ? t('sidebar.chatList.empty', 'No conversations')
-                : t(
-                    'sidebar.chatList.noTaskConversations',
-                    'No task conversations',
-                  )}
+              {t('sidebar.chatList.empty', 'No conversations')}
             </li>
           ) : filteredChatList.length === 0 ? (
             <li className="yolo-chat-list-dropdown-empty">
@@ -1175,7 +1013,7 @@ export function ChatListDropdown({
                   isEditing={editingId === chat.id}
                   isUpdatingTitle={updatingTitleIds.has(chat.id)}
                   isPinned={Boolean(chat.isPinned)}
-                  canPin={activeSection === 'user'}
+                  canPin
                   isRetrying={retryingConversationIds.has(chat.id)}
                   isMoreMenuOpen={moreMenuConversationId === chat.id}
                   isContextMenuOpen={activeMenuId === chat.id}
@@ -1354,31 +1192,29 @@ export function ChatListDropdown({
             aria-label={t('sidebar.chatList.moreActions', 'More actions')}
             onKeyDown={handleContextMenuKeyDown}
           >
-            {activeSection === 'user' ? (
-              <button
-                type="button"
-                role="menuitem"
-                data-act="pin"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setActiveMenuId(null)
-                  setMenuPosition(null)
-                  setMoreMenuConversationId(null)
-                  void Promise.resolve(onTogglePinned(activeMenuChat.id)).catch(
-                    (error) => {
-                      console.error('Failed to toggle pin', error)
-                    },
-                  )
-                }}
-              >
-                <Star size={16} />
-                <span>
-                  {activeMenuChat.isPinned
-                    ? t('sidebar.chatList.unpinConversation', 'Unpin')
-                    : t('sidebar.chatList.pinConversation', 'Pin')}
-                </span>
-              </button>
-            ) : null}
+            <button
+              type="button"
+              role="menuitem"
+              data-act="pin"
+              onClick={(e) => {
+                e.stopPropagation()
+                setActiveMenuId(null)
+                setMenuPosition(null)
+                setMoreMenuConversationId(null)
+                void Promise.resolve(onTogglePinned(activeMenuChat.id)).catch(
+                  (error) => {
+                    console.error('Failed to toggle pin', error)
+                  },
+                )
+              }}
+            >
+              <Star size={16} />
+              <span>
+                {activeMenuChat.isPinned
+                  ? t('sidebar.chatList.unpinConversation', 'Unpin')
+                  : t('sidebar.chatList.pinConversation', 'Pin')}
+              </span>
+            </button>
             <button
               type="button"
               role="menuitem"

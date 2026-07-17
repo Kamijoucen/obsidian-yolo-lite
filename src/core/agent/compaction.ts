@@ -11,54 +11,11 @@ import type { RequestMessage, RequestTool } from '../../types/llm/request'
 import type { LLMProvider } from '../../types/provider.types'
 import type { ReasoningLevel } from '../../types/reasoning'
 import { ToolCallResponseStatus } from '../../types/tool-call.types'
-import { estimateJsonTokens } from '../../utils/llm/contextTokenEstimate'
 import { isRequestErrorNonRetryable } from '../ai/requestRetry'
 import { executeSingleTurn } from '../ai/single-turn'
 import type { BaseLLMProvider } from '../llm/base'
 
-import {
-  type LoadedDeferredToolSchema,
-  extractLoadedDeferredToolNames,
-  extractLoadedDeferredToolSchemas,
-} from './tool-disclosure'
-
 export const CONTEXT_COMPACT_TOOL_NAME = 'context_compact'
-
-/**
- * Per-schema token ceiling for the compaction registry. Schemas bigger than
- * this are intentionally dropped — they bloat every post-compaction request,
- * and the model can always re-disclose them via `load_tool_schemas`. The injected
- * prompt in `requestContextBuilder` tells the model about this fallback.
- */
-const LOADED_DEFERRED_TOOL_SCHEMA_TOKEN_LIMIT = 2000
-
-const filterPersistableLoadedDeferredToolSchemas = async (
-  schemas: LoadedDeferredToolSchema[],
-): Promise<LoadedDeferredToolSchema[]> => {
-  const survivors: LoadedDeferredToolSchema[] = []
-  for (const schema of schemas) {
-    let tokens: number
-    try {
-      tokens = await estimateJsonTokens(schema)
-    } catch (error) {
-      console.warn(
-        '[YOLO][Compact] failed to estimate schema tokens; dropping',
-        schema.name,
-        error,
-      )
-      continue
-    }
-    if (tokens <= LOADED_DEFERRED_TOOL_SCHEMA_TOKEN_LIMIT) {
-      survivors.push(schema)
-    } else {
-      console.debug(
-        '[YOLO][Compact] dropping oversized on-demand tool schema from compaction registry',
-        { name: schema.name, tokens },
-      )
-    }
-  }
-  return survivors
-}
 
 export type AutoContextCompactionChatOptions = {
   autoContextCompactionEnabled: boolean
@@ -438,14 +395,6 @@ export const buildCompactedConversationState = async ({
     return null
   }
 
-  const loadedDeferredToolNames = [
-    ...extractLoadedDeferredToolNames({ messages }),
-  ].sort()
-  const loadedDeferredToolSchemas =
-    await filterPersistableLoadedDeferredToolSchemas(
-      extractLoadedDeferredToolSchemas({ messages }),
-    )
-
   return {
     anchorMessageId: trigger.anchorMessageId,
     triggerToolCallId: trigger.triggerToolCallId,
@@ -453,10 +402,6 @@ export const buildCompactedConversationState = async ({
     compactedAt: Date.now(),
     summaryModelId,
     compactedMessageCount: trigger.retainedStartIndex,
-    ...(loadedDeferredToolNames.length > 0 ? { loadedDeferredToolNames } : {}),
-    ...(loadedDeferredToolSchemas.length > 0
-      ? { loadedDeferredToolSchemas }
-      : {}),
   }
 }
 
@@ -474,24 +419,12 @@ export const buildManualCompactionState = async ({
     return null
   }
 
-  const loadedDeferredToolNames = [
-    ...extractLoadedDeferredToolNames({ messages }),
-  ].sort()
-  const loadedDeferredToolSchemas =
-    await filterPersistableLoadedDeferredToolSchemas(
-      extractLoadedDeferredToolSchemas({ messages }),
-    )
-
   return {
     anchorMessageId,
     summary,
     compactedAt: Date.now(),
     summaryModelId,
     compactedMessageCount: messages.length,
-    ...(loadedDeferredToolNames.length > 0 ? { loadedDeferredToolNames } : {}),
-    ...(loadedDeferredToolSchemas.length > 0
-      ? { loadedDeferredToolSchemas }
-      : {}),
   }
 }
 
@@ -513,7 +446,7 @@ const buildCompactionInstructionMessage = (
 - Respond with PLAIN TEXT ONLY: a <summary> block with the fixed sections below.
 - Write in the same language the conversation is currently using.
 - Summarize only the CONVERSATION facts needed to resume. Ignore the system
-  prompt, tool schemas, and tool-disclosure boilerplate — do not summarize them.
+  prompt and tool schemas — do not summarize them.
 
 Produce a high-signal summary that loses nothing needed to resume. Sections:
 

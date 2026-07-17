@@ -66,14 +66,14 @@ describe('repeated tool failure guard', () => {
     runGuard([
       {
         id: 'call-1',
-        name: 'server__tool_a',
+        name: 'yolo_local__tool_a',
         status: ToolCallResponseStatus.Error,
       },
     ])
     runGuard([
       {
         id: 'call-2',
-        name: 'server__tool_a',
+        name: 'yolo_local__tool_a',
         status: ToolCallResponseStatus.Error,
       },
     ])
@@ -81,14 +81,14 @@ describe('repeated tool failure guard', () => {
     const result = runGuard([
       {
         id: 'call-3',
-        name: 'server__tool_a',
+        name: 'yolo_local__tool_a',
         status: ToolCallResponseStatus.Error,
       },
     ])
 
     expect(result.forceStopReason).toBeUndefined()
     expect(getError(result.toolMessage)).toContain(
-      createRepeatedToolFailureWarning('server__tool_a'),
+      createRepeatedToolFailureWarning('yolo_local__tool_a'),
     )
   })
 
@@ -99,7 +99,7 @@ describe('repeated tool failure guard', () => {
       runGuard([
         {
           id: `call-${index}`,
-          name: 'server__tool_a',
+          name: 'yolo_local__tool_a',
           status: ToolCallResponseStatus.Error,
         },
       ])
@@ -108,14 +108,14 @@ describe('repeated tool failure guard', () => {
     const result = runGuard([
       {
         id: 'call-4',
-        name: 'server__tool_a',
+        name: 'yolo_local__tool_a',
         status: ToolCallResponseStatus.Error,
       },
     ])
 
     expect(result.forceStopReason).toBe('repeated_tool_failure')
     expect(getError(result.toolMessage)).toContain(
-      createRepeatedToolFailureTermination('server__tool_a'),
+      createRepeatedToolFailureTermination('yolo_local__tool_a'),
     )
   })
 
@@ -125,21 +125,21 @@ describe('repeated tool failure guard', () => {
     runGuard([
       {
         id: 'call-1',
-        name: 'server__tool_a',
+        name: 'yolo_local__tool_a',
         status: ToolCallResponseStatus.Error,
       },
     ])
     runGuard([
       {
         id: 'call-2',
-        name: 'server__tool_a',
+        name: 'yolo_local__tool_a',
         status: ToolCallResponseStatus.Error,
       },
     ])
     runGuard([
       {
         id: 'call-3',
-        name: 'server__tool_b',
+        name: 'yolo_local__tool_b',
         status: ToolCallResponseStatus.Error,
       },
     ])
@@ -147,13 +147,13 @@ describe('repeated tool failure guard', () => {
     const result = runGuard([
       {
         id: 'call-4',
-        name: 'server__tool_a',
+        name: 'yolo_local__tool_a',
         status: ToolCallResponseStatus.Error,
       },
     ])
 
     expect(getError(result.toolMessage)).not.toContain(
-      createRepeatedToolFailureWarning('server__tool_a'),
+      createRepeatedToolFailureWarning('yolo_local__tool_a'),
     )
     expect(result.forceStopReason).toBeUndefined()
   })
@@ -164,21 +164,21 @@ describe('repeated tool failure guard', () => {
     runGuard([
       {
         id: 'call-1',
-        name: 'server__tool_a',
+        name: 'yolo_local__tool_a',
         status: ToolCallResponseStatus.Error,
       },
     ])
     runGuard([
       {
         id: 'call-2',
-        name: 'server__tool_a',
+        name: 'yolo_local__tool_a',
         status: ToolCallResponseStatus.Error,
       },
     ])
     runGuard([
       {
         id: 'call-3',
-        name: 'server__tool_a',
+        name: 'yolo_local__tool_a',
         status: ToolCallResponseStatus.Success,
       },
     ])
@@ -186,13 +186,13 @@ describe('repeated tool failure guard', () => {
     const result = runGuard([
       {
         id: 'call-4',
-        name: 'server__tool_a',
+        name: 'yolo_local__tool_a',
         status: ToolCallResponseStatus.Error,
       },
     ])
 
     expect(getError(result.toolMessage)).not.toContain(
-      createRepeatedToolFailureWarning('server__tool_a'),
+      createRepeatedToolFailureWarning('yolo_local__tool_a'),
     )
     expect(result.forceStopReason).toBeUndefined()
   })
@@ -211,7 +211,7 @@ describe('repeated tool failure guard', () => {
       runGuard([
         {
           id: `call-${index}`,
-          name: 'server__tool_a',
+          name: 'yolo_local__tool_a',
           status,
         },
       ])
@@ -220,13 +220,13 @@ describe('repeated tool failure guard', () => {
     const result = runGuard([
       {
         id: 'call-error',
-        name: 'server__tool_a',
+        name: 'yolo_local__tool_a',
         status: ToolCallResponseStatus.Error,
       },
     ])
 
     expect(getError(result.toolMessage)).not.toContain(
-      createRepeatedToolFailureWarning('server__tool_a'),
+      createRepeatedToolFailureWarning('yolo_local__tool_a'),
     )
     expect(result.forceStopReason).toBeUndefined()
   })

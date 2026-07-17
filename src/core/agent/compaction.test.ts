@@ -12,7 +12,6 @@ import type { BaseLLMProvider } from '../llm/base'
 
 import {
   buildAutoContextCompactionNoticeMessage,
-  buildManualCompactionState,
   createConversationCompactionSummary,
   getAutoContextCompactionPromptTrigger,
   getLatestAssistantContextUsage,
@@ -585,123 +584,6 @@ describe('auto context compaction runtime notice', () => {
     })
 
     expect(trigger).toBeNull()
-  })
-})
-
-describe('buildManualCompactionState loadedDeferredToolSchemas persistence', () => {
-  const emptyArgs = createCompleteToolCallArguments({ value: {} })
-
-  it('persists disclosed on-demand tool schemas after manual compaction', async () => {
-    const messages: ChatMessage[] = [
-      userMsg('u1'),
-      {
-        role: 'tool' as const,
-        id: 't-search',
-        toolCalls: [
-          {
-            request: {
-              id: 'call-search',
-              name: 'yolo_local__load_tool_schemas',
-              arguments: emptyArgs,
-            },
-            response: {
-              status: ToolCallResponseStatus.Success,
-              data: {
-                type: 'text' as const,
-                text: JSON.stringify({
-                  tool: 'load_tool_schemas',
-                  loadedToolNames: ['server__tool_a'],
-                  matches: [
-                    {
-                      name: 'server__tool_a',
-                      description: 'Tool A description',
-                      parameters: {
-                        type: 'object',
-                        properties: { value: { type: 'string' } },
-                        required: ['value'],
-                      },
-                    },
-                  ],
-                }),
-              },
-            },
-          },
-        ],
-      },
-    ]
-
-    const state = await buildManualCompactionState({
-      messages,
-      summary: 'short summary',
-    })
-    expect(state?.loadedDeferredToolNames).toEqual(['server__tool_a'])
-    expect(state?.loadedDeferredToolSchemas).toEqual([
-      {
-        name: 'server__tool_a',
-        description: 'Tool A description',
-        parameters: {
-          type: 'object',
-          properties: { value: { type: 'string' } },
-          required: ['value'],
-        },
-      },
-    ])
-  })
-
-  it('drops oversized schemas from the compaction registry', async () => {
-    const hugeProperties: Record<string, unknown> = {}
-    // Inflate the schema well past the 2000-token guard.
-    for (let i = 0; i < 5000; i += 1) {
-      hugeProperties[`field_${i}`] = {
-        type: 'string',
-        description: 'x'.repeat(40),
-      }
-    }
-    const messages: ChatMessage[] = [
-      userMsg('u1'),
-      {
-        role: 'tool' as const,
-        id: 't-search',
-        toolCalls: [
-          {
-            request: {
-              id: 'call-search',
-              name: 'yolo_local__load_tool_schemas',
-              arguments: emptyArgs,
-            },
-            response: {
-              status: ToolCallResponseStatus.Success,
-              data: {
-                type: 'text' as const,
-                text: JSON.stringify({
-                  tool: 'load_tool_schemas',
-                  loadedToolNames: ['server__big_tool'],
-                  matches: [
-                    {
-                      name: 'server__big_tool',
-                      description: 'huge schema',
-                      parameters: {
-                        type: 'object',
-                        properties: hugeProperties,
-                      },
-                    },
-                  ],
-                }),
-              },
-            },
-          },
-        ],
-      },
-    ]
-
-    const state = await buildManualCompactionState({
-      messages,
-      summary: 's',
-    })
-    expect(state?.loadedDeferredToolSchemas ?? []).toEqual([])
-    // Loaded names list still tracks the tool by name, since the model is told
-    // to re-disclose it via load_tool_schemas.
-    expect(state?.loadedDeferredToolNames).toEqual(['server__big_tool'])
   })
 })
 

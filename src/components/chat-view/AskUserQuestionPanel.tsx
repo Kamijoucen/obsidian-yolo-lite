@@ -11,11 +11,11 @@ import type {
 import type {
   AskUserQuestionInputType,
   AskUserQuestionItem,
-} from '../../core/mcp/localFileTools'
+} from '../../core/tools/localFileTools'
 import {
   ASK_USER_QUESTION_OTHER_ID,
   validateAskUserQuestionArgs,
-} from '../../core/mcp/localFileTools'
+} from '../../core/tools/localFileTools'
 import { ChatMessage } from '../../types/chat'
 import {
   ToolCallRequest,

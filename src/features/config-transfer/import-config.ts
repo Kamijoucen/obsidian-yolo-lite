@@ -46,7 +46,7 @@ export async function validateExportFile(
   if (obj.$schema !== 'yolo-config-export') {
     return failure(
       'errorNotExportFile',
-      '该文件不是 YOLO 插件的配置导出文件，请选择通过「导出配置」功能生成的 .json 文件。',
+      '该文件不是 YOLO-Lite 插件的配置导出文件，请选择通过「导出配置」功能生成的 .json 文件。',
     )
   }
 
@@ -268,9 +268,9 @@ export function applyImport(options: ImportOptions): YoloSettings {
 
   const currentRaw = currentSettings as unknown as Record<string, unknown>
 
-  // 按合并策略合并到当前配置。脱敏导出时所有敏感字段（apiKey/password/
-  //    headers/env/customHeaders.value）已是随机字符串，导入前清空，
-  //    避免被当成真凭证写回 providers/webSearch/mcp。
+  // 按合并策略合并到当前配置。脱敏导出时所有敏感字段
+  // （apiKey/password/customHeaders.value）已是随机字符串，导入前清空，
+  //    避免被当成真凭证写回 providers/webSearch。
   const merged: Record<string, unknown> = { ...currentRaw }
 
   for (const key of selectedKeys) {

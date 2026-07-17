@@ -3,7 +3,7 @@ import {
   ToolCallResponseStatus,
   getToolCallArgumentsObject,
 } from '../../types/tool-call.types'
-import { parseToolName } from '../mcp/tool-name-utils'
+import { parseToolName } from '../tools/tool-name-utils'
 
 export type TodoStatus = 'pending' | 'in_progress' | 'completed'
 

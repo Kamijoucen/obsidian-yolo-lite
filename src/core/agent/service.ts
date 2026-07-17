@@ -21,9 +21,9 @@ import { formatErrorMessageWithCauses } from '../../utils/error-message'
 import { captureLLMDebugOperation } from '../llm/debugCapture'
 import {
   TERMINAL_COMMAND_TOOL_NAME,
-  getLocalFileToolServerName,
-} from '../mcp/localFileTools'
-import { parseToolName } from '../mcp/tool-name-utils'
+  getBuiltinToolNamespace,
+} from '../tools/localFileTools'
+import { parseToolName } from '../tools/tool-name-utils'
 
 import {
   type BackgroundTaskEvent,
@@ -580,7 +580,7 @@ const isBlockedTerminalCommandRequest = (
   try {
     const parsed = parseToolName(request.name)
     if (
-      parsed.serverName !== getLocalFileToolServerName() ||
+      parsed.namespace !== getBuiltinToolNamespace() ||
       parsed.toolName !== TERMINAL_COMMAND_TOOL_NAME
     ) {
       return false
@@ -1541,7 +1541,7 @@ export class AgentService {
     }
 
     if (allowForConversation) {
-      lastRunInput.mcpManager.allowToolForConversation(
+      lastRunInput.toolManager.allowToolForConversation(
         toolCall.request.name,
         conversationId,
         getToolCallArgumentsObject(toolCall.request.arguments),
@@ -1569,8 +1569,8 @@ export class AgentService {
     const result = await captureLLMDebugOperation({
       traceId: debugTraceId,
       signal: lastRunInput.abortSignal,
-      transportMode: 'mcp',
-      url: `mcp://${toolCall.request.name}`,
+      transportMode: 'internal-tool',
+      url: `tool://${toolCall.request.name}`,
       method: 'callTool',
       requestBody: {
         name: toolCall.request.name,
@@ -1582,7 +1582,7 @@ export class AgentService {
       },
       responseContentType: 'application/json',
       run: () =>
-        lastRunInput.mcpManager.callTool({
+        lastRunInput.toolManager.callTool({
           name: toolCall.request.name,
           args: toolArgs,
           id: toolCall.request.id,
@@ -1621,7 +1621,7 @@ export class AgentService {
 
   /**
    * Submit user-provided answers to an in-flight `ask_user_question` tool
-   * call. Mirrors `approveToolCall` but skips the MCP execution path: the
+   * call. Mirrors `approveToolCall` but skips normal tool execution: the
    * answers themselves are the tool's "result". When the current run still
    * has a live `runEntry` (active run path), we continue the loop directly.
    * When the run has already finalized (recovery path), we hand control back
@@ -1808,7 +1808,7 @@ export class AgentService {
 
   /**
    * Approve a tool call that belongs to a running subagent. Executes the tool
-   * via `mcpManager.callTool` (using the parent conversation as the approval
+   * via `toolManager.callTool` (using the parent conversation as the approval
    * scope so per-conversation allows persist there), patches the result back
    * into the subagent's runtime, then resumes the subagent's loop.
    *
@@ -1851,7 +1851,7 @@ export class AgentService {
       // Scope the per-conversation allow to the parent conversation so the
       // user's "allow for this chat" decision applies uniformly to both the
       // parent and any subagents it dispatches.
-      entry.mcpManager.allowToolForConversation(
+      entry.toolManager.allowToolForConversation(
         request.name,
         entry.parentConversationId,
         getToolCallArgumentsObject(request.arguments),
@@ -1865,7 +1865,7 @@ export class AgentService {
     const toolArgs = getToolCallArgumentsObject(request.arguments)
     let result: ToolCallResponse
     try {
-      result = await entry.mcpManager.callTool({
+      result = await entry.toolManager.callTool({
         name: request.name,
         args: toolArgs,
         id: request.id,
@@ -1930,7 +1930,7 @@ export class AgentService {
     if (!located) {
       return abortedForegroundTool
     }
-    located.runEntry?.lastRunInput?.mcpManager.abortToolCall(toolCallId)
+    located.runEntry?.lastRunInput?.toolManager.abortToolCall(toolCallId)
     return (
       Boolean(
         this.updateToolCallResponse({
@@ -2013,15 +2013,15 @@ export class AgentService {
   }
 
   private abortRuntimeToolCalls(runEntry: AgentRunEntry): void {
-    const mcpManager = runEntry.lastRunInput?.mcpManager
-    if (!mcpManager) {
+    const toolManager = runEntry.lastRunInput?.toolManager
+    if (!toolManager) {
       return
     }
     for (const message of runEntry.state.messages) {
       if (message.role !== 'tool') continue
       for (const toolCall of message.toolCalls) {
         if (toolCall.response.status === ToolCallResponseStatus.Running) {
-          mcpManager.abortToolCall(toolCall.request.id)
+          toolManager.abortToolCall(toolCall.request.id)
         }
       }
     }

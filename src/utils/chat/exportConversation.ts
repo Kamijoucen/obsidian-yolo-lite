@@ -457,7 +457,7 @@ export function conversationToMarkdown(
   lines.push(
     '---',
     `title: ${yamlDoubleQuotedString(title)}`,
-    'exported_from: YOLO',
+    'exported_from: YOLO-Lite',
     `exported_at: ${exportedAtIso}`,
     `conversation_id: ${id}`,
     '---',

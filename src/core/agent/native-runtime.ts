@@ -141,15 +141,12 @@ export class NativeAgentRuntime implements AgentRuntime {
       return
     }
 
-    const toolGateway = new AgentToolGateway(input.mcpManager, {
+    const toolGateway = new AgentToolGateway(input.toolManager, {
       toolsEnabled: this.loopConfig.enableTools,
       allowedToolNames: input.allowedToolNames,
-      enableToolDisclosure: input.enableToolDisclosure,
       toolPreferences: input.toolPreferences,
-      toolServerPreferences: input.toolServerPreferences,
       workspaceScope: input.workspaceScope,
       allowedSkillPaths: input.allowedSkillPaths,
-      apiType: input.apiType,
       subagentParentContext: input.systemPromptOverride
         ? undefined
         : buildSubagentParentContext(input, this.loopConfig),
@@ -225,7 +222,7 @@ export class NativeAgentRuntime implements AgentRuntime {
                   providerClient: input.providerClient,
                   model: input.model,
                   requestContextBuilder: input.requestContextBuilder,
-                  mcpManager: input.mcpManager,
+                  toolManager: input.toolManager,
                   conversationId: input.conversationId,
                   messages: conversationMessages,
                   branchId: input.branchId,
@@ -236,7 +233,6 @@ export class NativeAgentRuntime implements AgentRuntime {
                   includeBuiltinTools: this.loopConfig.includeBuiltinTools,
                   apiType: input.apiType,
                   allowedToolNames: input.allowedToolNames,
-                  enableToolDisclosure: input.enableToolDisclosure,
                   toolPreferences: input.toolPreferences,
                   allowedSkillPaths: input.allowedSkillPaths,
                   abortSignal,
@@ -331,7 +327,6 @@ export class NativeAgentRuntime implements AgentRuntime {
                         ...ongoingRequestMessages,
                         ...this.messages,
                       ],
-                      conversationCompaction: this.compactionState,
                       signal: abortSignal,
                       chatModelId: input.model.id,
                       debugTraceId: currentDebugTraceId,
@@ -407,7 +402,7 @@ export class NativeAgentRuntime implements AgentRuntime {
                         nextCompaction.estimatedNextContextTokens =
                           await estimateContinuationRequestContextTokens({
                             requestContextBuilder: input.requestContextBuilder,
-                            mcpManager: input.mcpManager,
+                            toolManager: input.toolManager,
                             model: input.model,
                             messages: conversationMessages,
                             conversationId: input.conversationId,
@@ -415,10 +410,7 @@ export class NativeAgentRuntime implements AgentRuntime {
                             enableTools: this.loopConfig.enableTools,
                             includeBuiltinTools:
                               this.loopConfig.includeBuiltinTools,
-                            apiType: input.apiType,
                             allowedToolNames: input.allowedToolNames,
-                            enableToolDisclosure: input.enableToolDisclosure,
-                            toolPreferences: input.toolPreferences,
                             contextualInjections: composeAgentInjections({
                               baseInjections: input.contextualInjections,
                               messages: conversationMessages,
@@ -589,7 +581,7 @@ export class NativeAgentRuntime implements AgentRuntime {
       providerClient: input.providerClient,
       model: input.model,
       requestContextBuilder: input.requestContextBuilder,
-      mcpManager: input.mcpManager,
+      toolManager: input.toolManager,
       conversationId: input.conversationId,
       messages: [...requestMessages, ...this.messages],
       enableTools: false,

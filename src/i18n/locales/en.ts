@@ -4,9 +4,9 @@ export const en: TranslationKeys = {
   commands: {
     openChatSidebar: 'Open chat (sidebar)',
     openLearningMode: 'Open learning mode',
-    learningModeLabel: 'YOLO: Learning mode',
+    learningModeLabel: 'YOLO-Lite: Learning mode',
     newChatCurrentView: 'New chat',
-    openYoloNewChat: 'YOLO: Open chat window',
+    openYoloNewChat: 'YOLO-Lite: Open chat window',
     openNewChatTab: 'Open new chat (new tab)',
     openNewChatSplit: 'Open new chat (right split)',
     openNewChatWindow: 'Open new chat (new window)',
@@ -55,13 +55,7 @@ export const en: TranslationKeys = {
     chatList: {
       searchPlaceholder: 'Search conversations',
       empty: 'No conversations',
-      noTaskConversations: 'No task conversations',
-      historySections: 'Conversation categories',
       myConversations: 'My conversations',
-      taskConversations: 'Task conversations',
-      taskConversationSources: 'Task conversation sources',
-      allSources: 'All',
-      externalAgent: 'External Agent',
       current: 'Current',
       pinConversation: 'Pin',
       unpinConversation: 'Unpin',
@@ -153,7 +147,7 @@ export const en: TranslationKeys = {
       sortProgress: 'Progress',
       newLearningProject: 'New learning project',
       newProjectHint:
-        'Tell YOLO what you want to learn and generate an outline',
+        'Tell YOLO-Lite what you want to learn and generate an outline',
       statusStudying: 'Learning',
       statusBuilding: 'Generating',
       statusOutlining: 'Planning',
@@ -216,9 +210,9 @@ export const en: TranslationKeys = {
     wizard: {
       title: 'New learning project',
       createOutline: 'Create and generate outline',
-      heading: 'Tell YOLO what you want to learn',
+      heading: 'Tell YOLO-Lite what you want to learn',
       description:
-        'Fill in the details below and YOLO will generate a structured learning outline.',
+        'Fill in the details below and YOLO-Lite will generate a structured learning outline.',
       topicDefault: 'Learn React',
       topicLabel: 'Learning topic',
       topicHint:
@@ -233,7 +227,8 @@ export const en: TranslationKeys = {
       goalPlaceholder:
         'Build medium-complexity React apps independently; finish in two weeks, focus on practice, less pure theory',
       referencesLabel: 'Reference materials',
-      referencesHint: 'YOLO will customize the outline based on uploaded files',
+      referencesHint:
+        'YOLO-Lite will customize the outline based on uploaded files',
       optional: '(Optional)',
       uploadTitle: 'Drop files here or click to upload',
       uploadHint: 'Supports Markdown files. Max 20 MB per file.',
@@ -404,7 +399,7 @@ export const en: TranslationKeys = {
   },
 
   settings: {
-    title: 'Yolo settings',
+    title: 'YOLO-Lite settings',
     tabs: {
       models: 'Models',
       agent: 'Agent',
@@ -412,9 +407,8 @@ export const en: TranslationKeys = {
       others: 'Others',
     },
     supportYolo: {
-      name: 'Support the project',
-      desc: 'If you find this plugin valuable, consider supporting its development!',
-      buyMeACoffee: 'Buy me a coffee',
+      name: 'YOLO-Lite project',
+      desc: 'Report issues or suggest features on GitHub.',
       reportBug: 'Report Bug',
       featureRequest: 'Feature Request',
     },
@@ -484,18 +478,15 @@ export const en: TranslationKeys = {
       title: 'Agent',
       desc: 'Manage global tool availability. Enabled tools become selectable by agents; actual use must still be enabled in each agent.',
       globalCapabilities: 'Global capabilities',
-      mcpServerCount: '{count} custom tool servers (MCP) connected',
       tools: 'Tools',
       toolsCount: '{count} tools',
       toolsCountWithEnabled: '{count} tools (enabled {enabled})',
-      mcpLoadingStatus: 'Loading {count} MCP…',
-      mcpErrorStatus: '{count} MCP failed to connect',
       skills: 'Skills',
       skillsCount: '{count} skills',
       skillsCountWithEnabled: '{count} skills (enabled {enabled})',
       skillsGlobalDesc:
         'Skills are discovered from built-in skills and {path}/**/*.md (excluding Skills.md where applicable). Disable a skill here to block it for all agents.',
-      yoloBaseDir: 'YOLO base folder',
+      yoloBaseDir: 'Plugin data folder',
       yoloBaseDirDesc:
         'Enter a vault-relative path (without a leading /). Example: use YOLO at vault root, or setting/YOLO under the setting folder.',
       yoloBaseDirPlaceholder: 'YOLO',
@@ -585,17 +576,13 @@ export const en: TranslationKeys = {
       deleteConfirmMessagePrefix: 'Are you sure you want to delete agent',
       deleteConfirmMessageSuffix: '? This action cannot be undone.',
       toolSourceBuiltin: 'Built-in',
-      toolSourceMcp: 'MCP',
       toolsGroupBuiltinVault: 'Vault',
       toolsGroupBuiltinContext: 'Context & Memory',
       toolsGroupBuiltinExternal: 'External',
-      noMcpTools: 'No custom tools (MCP) discovered yet',
+      noToolDefinitions: 'No built-in tools available',
       toolsEnabledCount: '{count} enabled',
       manageTools: 'Manage tools',
       manageSkills: 'Manage skills',
-      enableToolDisclosure: 'Enable on-demand tool loading (Beta)',
-      enableToolDisclosureDesc:
-        "Optional tools start as short descriptions, then load full details when needed. Recommended when you have many MCP tools enabled. Note: this mechanism relies on the model's own tool-use capability — some models may not reliably recognize tools loaded this way.",
       expandDescription: 'Expand',
       collapseDescription: 'Collapse',
       viewAllTools: 'View all tools',
@@ -615,8 +602,6 @@ export const en: TranslationKeys = {
         'Exclude past tool results from future context. Note: this tool may break the prompt cache and increase request cost.',
       builtinContextCompactLabel: 'Compact Context',
       builtinContextCompactDesc: 'Compress earlier conversation into a summary',
-      builtinToolSearchLabel: 'Load Tool',
-      builtinToolSearchDesc: 'Load full schemas for on-demand tools',
       builtinFsEditLabel: 'Text Editing',
       builtinFsEditDesc: 'Edit text in a single file',
       safetyControls: 'Safety Controls',
@@ -774,24 +759,14 @@ export const en: TranslationKeys = {
       autoContextCompactionThresholdRatioPercent: 'Context window usage (%)',
       autoContextCompactionThresholdRatioPercentDesc:
         "Trigger when prompt_tokens divided by the chat model's max context window reaches this percentage. Requires max context tokens on the model.",
-      mcpServerBlockTitle: 'External agent access',
-      mcpServerEnabled: 'Allow external agent access',
-      mcpServerDesc:
-        'Allow external agents to search the Vault through MCP and delegate tasks to configured YOLO agents.',
-      mcpServerDesktopOnly: 'The MCP service is available on desktop only.',
-      mcpServerClientConfig: 'MCP connection configuration',
-      mcpServerCopyConfig: 'Copy',
-      mcpServerError: 'Failed to start',
-      mcpServerConfigCopied: 'MCP configuration copied.',
-      mcpServerCopyFailed: 'Failed to copy MCP configuration.',
       jsSandboxExtTitle: 'Extension capabilities',
       jsSandboxAllowFetch: 'Allow Network Fetch',
       jsSandboxAllowFetchDesc:
-        'Allow browser network requests, plus a separate $fetch helper for requests that need YOLO to bypass cross-origin limits. Also enabled automatically when external scripts are enabled.',
+        'Allow browser network requests, plus a separate $fetch helper for requests that need YOLO-Lite to bypass cross-origin limits. Also enabled automatically when external scripts are enabled.',
       jsSandboxAllowFetchRisk:
         'Risk: scripts can reach any URL the browser can — public APIs, your local network, internal services, and the LLM provider itself. Data in the script (including vault contents you pass in) can be exfiltrated. Only enable for agents you fully trust.',
       jsSandboxAllowFetchConfirm:
-        'Enabling network requests lets scripts contact browser-accessible addresses and use a separate YOLO host request helper when browser cross-origin limits block a response. Only enable this for an agent you trust. Continue?',
+        'Enabling network requests lets scripts contact browser-accessible addresses and use a separate YOLO-Lite host request helper when browser cross-origin limits block a response. Only enable this for an agent you trust. Continue?',
       jsSandboxAllowVaultRead: 'Allow Vault Read',
       jsSandboxAllowVaultReadDesc:
         'Let scripts list vault paths and read any vault file by path. This capability is not constrained by the agent directory scope. Risk: scripts could pass note contents to external services.',
@@ -1064,7 +1039,7 @@ export const en: TranslationKeys = {
         'Choose effort: minimal (gpt-5 only) / low / medium / high',
       builtinToolProvider: 'Built-in provider tools',
       builtinToolProviderDesc:
-        'Native tools provided by the model provider. Independent of YOLO built-in tools. Whether they actually take effect depends on the gateway the request runs through.',
+        'Native tools provided by the model provider. Independent of YOLO-Lite built-in tools. Whether they actually take effect depends on the gateway the request runs through.',
       builtinToolProviderNone: 'Disabled',
       builtinToolProviderGpt: 'OpenAI',
       builtinToolsGpt: 'OpenAI built-in tools',
@@ -1088,62 +1063,6 @@ export const en: TranslationKeys = {
       customParameterTypeBoolean: 'Boolean',
       customParameterTypeJson: 'JSON',
       noChatModelsConfigured: 'No chat models configured',
-    },
-    mcp: {
-      title: 'Custom tools (MCP)',
-      desc: 'Configure MCP servers to manage custom tool capabilities',
-      warning:
-        'When using tools, the tool response is passed to the language model; if the tool result contains a large amount of content, this can significantly increase model usage and associated costs, so please be mindful when enabling or using tools that may return long outputs.',
-      notSupportedOnMobile:
-        'Custom tools (MCP) are not supported on mobile devices',
-      mcpServers: 'MCP servers',
-      addServer: 'Add custom tool server (MCP)',
-      serverName: 'Server name',
-      command: 'Command',
-      server: 'Server',
-      status: 'Status',
-      enabled: 'Enabled',
-      actions: 'Actions',
-      noServersFound: 'No custom tool servers (MCP) found',
-      tools: 'Tools',
-      error: 'Error',
-      connected: 'Connected',
-      connecting: 'Connecting...',
-      disconnected: 'Disconnected',
-      autoExecute: 'Auto-execute',
-      deleteServer: 'Delete custom tool server',
-      deleteServerConfirm: 'Are you sure you want to delete custom tool server',
-      edit: 'Edit',
-      delete: 'Delete',
-      expand: 'Expand',
-      collapse: 'Collapse',
-      addServerTitle: 'Add server',
-      editServerTitle: 'Edit server',
-      serverNameField: 'Name',
-      serverNameFieldDesc: 'The name of the MCP server',
-      serverNamePlaceholder: "e.g. 'github'",
-      parametersField: 'Parameters',
-      parametersFieldDesc:
-        'JSON config for MCP server transport. Supported formats:\n- stdio: {"transport":"stdio","command":"npx","args":[...],"env":{...}}\n- http: {"transport":"http","url":"https://...","headers":{...}}\n- sse: {"transport":"sse","url":"https://...","headers":{...}}\n- ws: {"transport":"ws","url":"wss://..."}\nAlso supports wrapper formats: {"mcpServers": {"name": {...}}} and {"id":"name","parameters": {...}}',
-      parametersFieldDescShort:
-        'JSON config for the MCP server. Supports stdio, http, sse, ws transports.',
-      parametersFormatHelp: 'Format help',
-      parametersTooltipDesc:
-        'Preferred:\n- stdio: {"transport":"stdio","command":"npx",...}\n- http/sse/ws: {"transport":"http|sse|ws","url":"..."}\n\nCompatible wrappers:\n- {"mcpServers": {"name": {...}}}\n- {"id":"name","parameters": {...}}\n\nTip: if mcpServers contains one server, Name will auto-fill.',
-      parametersTooltipTitle: 'Format examples',
-      parametersTooltipPreferred: 'Preferred',
-      parametersTooltipCompatible: 'Compatible',
-      parametersTooltipTip:
-        'Tip: if mcpServers contains one server, Name will auto-fill.',
-      serverNameRequired: 'Name is required',
-      serverAlreadyExists: 'Server with same name already exists',
-      parametersRequired: 'Parameters are required',
-      parametersMustBeValidJson: 'Parameters must be valid JSON',
-      invalidJsonFormat: 'Invalid JSON format',
-      invalidParameters: 'Invalid parameters',
-      validParameters: 'Valid parameters',
-      failedToAddServer: 'Failed to add custom tool server (MCP).',
-      failedToDeleteServer: 'Failed to delete server.',
     },
     editor: {
       snippets: {
@@ -1214,13 +1133,13 @@ export const en: TranslationKeys = {
       captureRawRequestDebug: 'Enable LLM request debugging',
       captureRawRequestDebugDesc:
         'When enabled, each AI response shows a Debug button (in the info bar and the more-actions menu) that lets you view or export the raw LLM, tool-call, and web-search requests and responses for that turn. Captured data is kept in memory for the current Obsidian session only and is cleared on restart. API keys are redacted in the export, but the original conversation content is included.',
-      yoloBaseDir: 'YOLO base folder',
+      yoloBaseDir: 'Plugin data folder',
       yoloBaseDirDesc:
         'Enter a vault-relative path (without a leading /). Example: use YOLO at vault root, or setting/YOLO under the setting folder. Current skills directory: {path}.',
       yoloBaseDirPlaceholder: 'YOLO',
       ribbonClickAction: 'Ribbon icon opens chat in',
       ribbonClickActionDesc:
-        'Where the YOLO ribbon icon opens the Chat view. If a chat already exists in the chosen location it is activated; otherwise a new one is created.',
+        'Where the YOLO-Lite ribbon icon opens the Chat view. If a chat already exists in the chosen location it is activated; otherwise a new one is created.',
       ribbonClickActionSidebar: 'Right sidebar',
       ribbonClickActionTab: 'New tab',
       ribbonClickActionSplit: 'Right split',
@@ -1266,7 +1185,7 @@ export const en: TranslationKeys = {
       notificationTimingWhenUnfocused: 'Only when unfocused',
       notificationApprovalRequired: 'Notify when approval is required',
       notificationApprovalRequiredDesc:
-        'Alert you when YOLO pauses and needs you to approve a tool call.',
+        'Alert you when YOLO-Lite pauses and needs you to approve a tool call.',
       notificationTaskCompleted: 'Notify when a task finishes',
       notificationTaskCompletedDesc:
         'Alert you after the current Agent run finishes without waiting for more approvals.',
@@ -1682,10 +1601,10 @@ export const en: TranslationKeys = {
       },
     },
     notification: {
-      approvalTitle: 'YOLO needs your confirmation',
+      approvalTitle: 'YOLO-Lite needs your confirmation',
       approvalBody:
         'The current task is paused and waiting for you to approve a tool call.',
-      completedTitle: 'YOLO task finished',
+      completedTitle: 'YOLO-Lite task finished',
       completedBody:
         'The current Agent run has finished. You can come back to review the result.',
       completedErrorBody:
@@ -1695,7 +1614,7 @@ export const en: TranslationKeys = {
 
   notices: {
     openYoloNewChatFailed:
-      'Failed to open the YOLO chat window; try the command palette first.',
+      'Failed to open the YOLO-Lite chat window; try the command palette first.',
   },
 
   statusBar: {
@@ -1716,8 +1635,8 @@ export const en: TranslationKeys = {
       'There are currently {count} background tasks running',
     backgroundTasksNeedAttention: 'A background task needs attention',
     learningTasksRunning: 'Learning mode has {count} running tasks',
-    learningReviewLabel: 'YOLO Learning: {count} cards due today',
-    learningReviewTitle: 'YOLO Learning',
+    learningReviewLabel: 'YOLO-Lite Learning: {count} cards due today',
+    learningReviewTitle: 'YOLO-Lite Learning',
     learningReviewDetail: '{count} cards to review',
   },
 
@@ -1726,7 +1645,6 @@ export const en: TranslationKeys = {
     modelNotFound: 'Model not found',
     invalidApiKey: 'Invalid API key',
     networkError: 'Network error',
-    mcpServerError: 'Server error',
   },
 
   applyView: {
@@ -1830,7 +1748,7 @@ export const en: TranslationKeys = {
       sourceFile: 'Import from file',
       sourceFileDesc: 'Choose a previously exported .json file',
       sourceVault: 'Import from another vault',
-      sourceVaultDesc: 'Choose a vault directory with YOLO installed',
+      sourceVaultDesc: 'Choose a vault directory with YOLO-Lite installed',
       description: 'Select the settings to import',
       selectAll: 'Select all',
       selectNone: 'Select none',
@@ -1851,7 +1769,7 @@ export const en: TranslationKeys = {
       noticeRedactedReminder:
         'Note: this export was redacted. All API keys / passwords / headers / env vars have been cleared — please re-enter them in settings.',
       noticePluginNotFound:
-        'No YOLO plugin settings found in the selected directory.',
+        'No YOLO-Lite plugin settings found in the selected directory.',
       noticeAtLeastOne: 'Please select at least one item',
       noticeSuccess: 'Settings imported successfully',
       noticeFailed: 'Failed to import settings',
@@ -1859,7 +1777,7 @@ export const en: TranslationKeys = {
     errors: {
       errorNotJson: 'File content is not a valid JSON object.',
       errorNotExportFile:
-        'This file is not a YOLO plugin export file. Please pick a .json produced by the "Export settings" feature.',
+        'This file is not a YOLO-Lite plugin export file. Please pick a .json produced by the "Export settings" feature.',
       errorInvalidFormatVersion:
         'Invalid export format version — the file may be corrupted.',
       errorInvalidSettingsVersion:
@@ -1891,7 +1809,6 @@ export const en: TranslationKeys = {
       chatModelId: 'Default chat model',
       chatTitleModelId: 'Title-generation model',
       systemPrompt: 'System prompt',
-      mcp: 'MCP tools',
       webSearch: 'Web search',
       skills: 'Skills',
       yolo: 'Base settings',

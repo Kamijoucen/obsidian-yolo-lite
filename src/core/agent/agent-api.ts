@@ -19,9 +19,9 @@ import type {
 import { ToolCallResponseStatus } from '../../types/tool-call.types'
 import { RequestContextBuilder } from '../../utils/chat/requestContextBuilder'
 import { getChatModelClient } from '../llm/manager'
-import type { McpManager } from '../mcp/mcpManager'
 import { listLiteSkillEntries } from '../skills/liteSkills'
 import { isSkillEnabledForAssistant } from '../skills/skillPolicy'
+import type { ToolManager } from '../tools/toolManager'
 
 import { resolveAgentApiContext } from './agent-api-context'
 import { DEFAULT_ASSISTANT_ID } from './default-assistant'
@@ -138,7 +138,7 @@ export type YoloAgentApiServiceOptions = {
   app: App
   getSettings: () => YoloSettings
   getAgentService: () => AgentService
-  getMcpManager: () => Promise<McpManager>
+  getToolManager: () => Promise<ToolManager>
 }
 
 export class YoloAgentApiService implements YoloAgentApi {
@@ -198,7 +198,7 @@ export class YoloAgentApiService implements YoloAgentApi {
         app: this.options.app,
         settings: this.options.getSettings(),
         agentService: this.options.getAgentService(),
-        mcpManager: await this.options.getMcpManager(),
+        toolManager: await this.options.getToolManager(),
       })
 
       for await (const event of streamResolvedAgentRunEvents({
@@ -314,7 +314,7 @@ export async function resolveAgentApiRunInput({
   app,
   settings,
   agentService,
-  mcpManager,
+  toolManager,
 }: {
   request: YoloAgentRunRequest
   conversationId: string
@@ -322,7 +322,7 @@ export async function resolveAgentApiRunInput({
   app: App
   settings: YoloSettings
   agentService: AgentService
-  mcpManager: McpManager
+  toolManager: ToolManager
 }): Promise<AgentApiRunInput> {
   const assistantId =
     request.assistantId ?? settings.currentAssistantId ?? DEFAULT_ASSISTANT_ID
@@ -426,13 +426,11 @@ export async function resolveAgentApiRunInput({
       assistantId: assistant?.id,
       sourceUserMessageId,
       requestContextBuilder,
-      mcpManager,
+      toolManager,
       abortSignal,
       allowedToolNames,
       systemPromptOverride: request.systemPromptOverride,
-      enableToolDisclosure: settings.mcp.enableToolDisclosure,
       toolPreferences: chatModeRuntime.toolPreferences,
-      toolServerPreferences: chatModeRuntime.toolServerPreferences,
       toolCapabilityMode: chatModeRuntime.toolCapabilityMode,
       bypassToolApproval: chatModeRuntime.bypassToolApproval,
       workspaceScope:

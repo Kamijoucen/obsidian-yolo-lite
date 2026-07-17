@@ -354,7 +354,7 @@ describe('AgentService abort handling', () => {
       input: {
         conversationId: 'conversation-parallel',
         messages: [createStreamingMessages()[0]],
-        mcpManager: { abortToolCall: mcpAbortToolCall },
+        toolManager: { abortToolCall: mcpAbortToolCall },
       } as never,
     })
 
@@ -879,7 +879,7 @@ describe('AgentService dropConversation', () => {
       input: {
         conversationId: 'conv-running-drop',
         messages: [userMessage],
-        mcpManager: { abortToolCall },
+        toolManager: { abortToolCall },
       } as unknown as AgentRuntimeRunInput,
     })
     const runtime = runtimeInstances[0]
@@ -1168,7 +1168,7 @@ const waitForRuntimeCount = async (count: number): Promise<void> => {
 const makeAssistantToolMessages = ({
   userMessage,
   responseStatus,
-  toolName = 'server__tool',
+  toolName = 'yolo_local__tool',
 }: {
   userMessage: ChatUserMessage
   responseStatus:
@@ -1241,7 +1241,7 @@ describe('AgentService continuation input', () => {
         model: {
           id: 'model-1',
         },
-        mcpManager: {
+        toolManager: {
           callTool,
         },
       } as unknown as AgentRuntimeRunInput,
@@ -1702,12 +1702,12 @@ describe('AgentService subagent approval routing', () => {
     }
   }
 
-  type FakeMcpManager = {
+  type FakeToolManager = {
     callTool: jest.Mock
     allowToolForConversation: jest.Mock
   }
 
-  const makeFakeMcpManager = (): FakeMcpManager => ({
+  const makeFakeToolManager = (): FakeToolManager => ({
     callTool: jest.fn().mockResolvedValue({
       status: ToolCallResponseStatus.Success,
       data: { type: 'text', text: 'ok' },
@@ -1720,21 +1720,21 @@ describe('AgentService subagent approval routing', () => {
     toolCallId = 'tool-call-x',
   }: { taskId?: string; toolCallId?: string } = {}) => {
     const runtime = makeFakeRuntime(toolCallId)
-    const mcpManager = makeFakeMcpManager()
+    const toolManager = makeFakeToolManager()
     const resumeRun = jest.fn().mockResolvedValue(undefined)
     subagentRuntimeRegistry.register({
       taskId,
       runtime: runtime as unknown as Parameters<
         typeof subagentRuntimeRegistry.register
       >[0]['runtime'],
-      mcpManager: mcpManager as unknown as Parameters<
+      toolManager: toolManager as unknown as Parameters<
         typeof subagentRuntimeRegistry.register
-      >[0]['mcpManager'],
+      >[0]['toolManager'],
       parentConversationId: 'conv-parent',
       parentToolCallId: 'parent-call-1',
       resumeRun,
     })
-    return { taskId, toolCallId, runtime, mcpManager, resumeRun }
+    return { taskId, toolCallId, runtime, toolManager, resumeRun }
   }
 
   afterEach(() => {
@@ -1745,7 +1745,7 @@ describe('AgentService subagent approval routing', () => {
   })
 
   it('approveToolCall routes to the subagent runtime, executes, and resumes', async () => {
-    const { toolCallId, runtime, mcpManager, resumeRun } = registerEntry()
+    const { toolCallId, runtime, toolManager, resumeRun } = registerEntry()
     const service = new AgentService()
 
     const ok = await service.approveToolCall({
@@ -1754,7 +1754,7 @@ describe('AgentService subagent approval routing', () => {
     })
 
     expect(ok).toBe(true)
-    expect(mcpManager.callTool).toHaveBeenCalledWith(
+    expect(toolManager.callTool).toHaveBeenCalledWith(
       expect.objectContaining({
         name: 'yolo_local__fs_edit',
         id: toolCallId,
@@ -1775,7 +1775,7 @@ describe('AgentService subagent approval routing', () => {
   })
 
   it('approveToolCall with allowForConversation scopes the allow to the parent conv', async () => {
-    const { toolCallId, mcpManager } = registerEntry()
+    const { toolCallId, toolManager } = registerEntry()
     const service = new AgentService()
 
     await service.approveToolCall({
@@ -1784,7 +1784,7 @@ describe('AgentService subagent approval routing', () => {
       allowForConversation: true,
     })
 
-    expect(mcpManager.allowToolForConversation).toHaveBeenCalledWith(
+    expect(toolManager.allowToolForConversation).toHaveBeenCalledWith(
       'yolo_local__fs_edit',
       'conv-parent',
       undefined,
@@ -1792,7 +1792,7 @@ describe('AgentService subagent approval routing', () => {
   })
 
   it('rejectToolCall routes to the subagent runtime and resumes', () => {
-    const { toolCallId, runtime, mcpManager, resumeRun } = registerEntry()
+    const { toolCallId, runtime, toolManager, resumeRun } = registerEntry()
     const service = new AgentService()
 
     const ok = service.rejectToolCall({
@@ -1805,13 +1805,13 @@ describe('AgentService subagent approval routing', () => {
       status: ToolCallResponseStatus.Rejected,
       reason: 'The user rejected this tool call.',
     })
-    expect(mcpManager.callTool).not.toHaveBeenCalled()
+    expect(toolManager.callTool).not.toHaveBeenCalled()
     expect(resumeRun).toHaveBeenCalledTimes(1)
   })
 
   it('approveToolCall surfaces callTool errors as Error response', async () => {
-    const { toolCallId, runtime, mcpManager } = registerEntry()
-    mcpManager.callTool.mockRejectedValueOnce(new Error('boom'))
+    const { toolCallId, runtime, toolManager } = registerEntry()
+    toolManager.callTool.mockRejectedValueOnce(new Error('boom'))
     const service = new AgentService()
 
     await service.approveToolCall({

@@ -1,5 +1,5 @@
-import { getLocalFileToolServerName } from '../../mcp/localFileTools'
-import { getToolName } from '../../mcp/tool-name-utils'
+import { getBuiltinToolNamespace } from '../../tools/localFileTools'
+import { getToolName } from '../../tools/tool-name-utils'
 
 /** Matches parent agent default loop cap (`DEFAULT_AGENT_MAX_AUTO_ITERATIONS`). */
 export const SUBAGENT_MAX_AUTO_ITERATIONS = 100
@@ -34,5 +34,5 @@ export const SUBAGENT_BLOCKED_TOOL_SHORT_NAMES: readonly string[] = [
 
 export const SUBAGENT_BLOCKED_TOOL_NAMES: readonly string[] =
   SUBAGENT_BLOCKED_TOOL_SHORT_NAMES.map((shortName) =>
-    getToolName(getLocalFileToolServerName(), shortName),
+    getToolName(getBuiltinToolNamespace(), shortName),
   )

@@ -1,4 +1,4 @@
-import { parseToolName } from '../../../core/mcp/tool-name-utils'
+import { parseToolName } from '../../../core/tools/tool-name-utils'
 import {
   type ToolCallRequest,
   getToolCallArgumentsObject,

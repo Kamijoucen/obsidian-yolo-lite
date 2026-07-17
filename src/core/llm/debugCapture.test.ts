@@ -152,8 +152,8 @@ describe('debugCapture', () => {
       await expect(
         captureLLMDebugOperation({
           traceId: trace.id,
-          transportMode: 'mcp',
-          url: 'mcp://yolo_local/fs_read',
+          transportMode: 'internal-tool',
+          url: 'tool://yolo_local/fs_read',
           method: 'callTool',
           requestBody: { name: 'fs_read' },
           responseContentType: 'application/json',
@@ -182,8 +182,8 @@ describe('debugCapture', () => {
       await expect(
         captureLLMDebugOperation({
           traceId: trace.id,
-          transportMode: 'mcp',
-          url: 'mcp://yolo_local/fs_read',
+          transportMode: 'internal-tool',
+          url: 'tool://yolo_local/fs_read',
           method: 'callTool',
           requestBody: { name: 'fs_read' },
           responseContentType: 'application/json',

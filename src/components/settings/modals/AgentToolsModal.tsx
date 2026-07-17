@@ -22,19 +22,18 @@ import {
   getBuiltinToolUiMeta,
 } from '../../../core/agent/builtinToolUiMeta'
 import { DELEGATE_SUBAGENT_TOOL_SHORT_NAME } from '../../../core/agent/subagent/constants'
-import { JS_SANDBOX_TOOL_NAME } from '../../../core/mcp/jsSandboxTool'
+import { JS_SANDBOX_TOOL_NAME } from '../../../core/tools/jsSandboxTool'
 import {
   LOCAL_FS_EDIT_TOOL_NAMES,
   LOCAL_FS_PATH_OPERATION_TOOL_NAMES,
   LOCAL_MEMORY_SPLIT_ACTION_TOOL_NAMES,
   TERMINAL_COMMAND_TOOL_NAME,
   getLocalFileTools,
-} from '../../../core/mcp/localFileTools'
+} from '../../../core/tools/localFileTools'
 import YoloPlugin from '../../../main'
 import { ObsidianToggle } from '../../common/ObsidianToggle'
 import { ReactModal } from '../../common/ReactModal'
 import { CollapsibleToolDescription } from '../common/CollapsibleToolDescription'
-import { McpSection } from '../sections/McpSection'
 
 import { JsSandboxConfigModal } from './JsSandboxConfigModal'
 import { SubagentConfigModal } from './SubagentConfigModal'
@@ -99,7 +98,7 @@ function AgentToolsModalContent({
   const { settings, setSettings } = useSettings()
 
   const builtinToolGroups = useMemo(() => {
-    const toolOptions = settings.mcp.builtinToolOptions
+    const toolOptions = settings.tools.builtinToolOptions
     const tools = getLocalFileTools()
       .filter(
         (tool) =>
@@ -222,7 +221,7 @@ function AgentToolsModalContent({
         )
       }),
     })).filter((group) => group.tools.length > 0)
-  }, [settings.mcp.builtinToolOptions, t])
+  }, [settings.tools.builtinToolOptions, t])
 
   const handleToggleBuiltinTool = (toolName: string, enabled: boolean) => {
     const targets =
@@ -238,18 +237,18 @@ function AgentToolsModalContent({
             : toolName === WEB_OPS_GROUP_TOOL_NAME
               ? [WEB_OPS_GROUP_TOOL_NAME, ...WEB_OPS_SPLIT_ACTION_TOOL_NAMES]
               : [toolName]
-    const nextBuiltinToolOptions = { ...settings.mcp.builtinToolOptions }
+    const nextBuiltinToolOptions = { ...settings.tools.builtinToolOptions }
     for (const target of targets) {
       nextBuiltinToolOptions[target] = {
-        ...settings.mcp.builtinToolOptions[target],
+        ...settings.tools.builtinToolOptions[target],
         disabled: !enabled,
       }
     }
 
     void setSettings({
       ...settings,
-      mcp: {
-        ...settings.mcp,
+      tools: {
+        ...settings.tools,
         builtinToolOptions: nextBuiltinToolOptions,
       },
     })
@@ -271,21 +270,20 @@ function AgentToolsModalContent({
               <span>{group.title}</span>
             </span>
           </div>
-          <div className="yolo-mcp-servers-container yolo-builtin-tools-table">
-            <div className="yolo-mcp-servers-header yolo-builtin-tools-table-header">
-              <div>{t('settings.mcp.tools', 'Tools')}</div>
+          <div className="yolo-builtin-tools-table">
+            <div className="yolo-builtin-tools-table-header">
+              <div>{t('settings.agent.tools', 'Tools')}</div>
               <div>{t('settings.agent.descriptionColumn', 'Description')}</div>
               <div />
-              <div>{t('settings.mcp.enabled', 'Enabled')}</div>
+              <div>{t('common.enabled', 'Enabled')}</div>
             </div>
-            <div className="yolo-mcp-server yolo-builtin-tools-table-body">
+            <div className="yolo-builtin-tools-table-body">
               {group.tools.map((tool) => (
-                <div
-                  key={tool.id}
-                  className="yolo-mcp-server-row yolo-builtin-tools-table-row"
-                >
-                  <div className="yolo-mcp-server-name">{tool.label}</div>
-                  <div className="yolo-mcp-server-status yolo-builtin-tools-table-description">
+                <div key={tool.id} className="yolo-builtin-tools-table-row">
+                  <div className="yolo-builtin-tools-table-name">
+                    {tool.label}
+                  </div>
+                  <div className="yolo-builtin-tools-table-description">
                     <CollapsibleToolDescription
                       description={tool.description}
                     />
@@ -339,7 +337,7 @@ function AgentToolsModalContent({
                                 'settings.terminalCommand.openSettings',
                                 'Configure terminal command',
                               ),
-                              value: settings.mcp.builtinToolOptions[
+                              value: settings.tools.builtinToolOptions[
                                 TERMINAL_COMMAND_TOOL_NAME
                               ]?.blockedPrefixes ?? [
                                 ...DEFAULT_BLOCKED_PREFIXES,
@@ -347,12 +345,12 @@ function AgentToolsModalContent({
                               onChange: (next) =>
                                 void setSettings({
                                   ...settings,
-                                  mcp: {
-                                    ...settings.mcp,
+                                  tools: {
+                                    ...settings.tools,
                                     builtinToolOptions: {
-                                      ...settings.mcp.builtinToolOptions,
+                                      ...settings.tools.builtinToolOptions,
                                       [TERMINAL_COMMAND_TOOL_NAME]: {
-                                        ...settings.mcp.builtinToolOptions[
+                                        ...settings.tools.builtinToolOptions[
                                           TERMINAL_COMMAND_TOOL_NAME
                                         ],
                                         blockedPrefixes: next,
@@ -371,18 +369,18 @@ function AgentToolsModalContent({
                               ),
                               settings,
                               value:
-                                settings.mcp.builtinToolOptions[
+                                settings.tools.builtinToolOptions[
                                   DELEGATE_SUBAGENT_TOOL_SHORT_NAME
                                 ] ?? {},
                               onChange: (next) =>
                                 void setSettings({
                                   ...settings,
-                                  mcp: {
-                                    ...settings.mcp,
+                                  tools: {
+                                    ...settings.tools,
                                     builtinToolOptions: {
-                                      ...settings.mcp.builtinToolOptions,
+                                      ...settings.tools.builtinToolOptions,
                                       [DELEGATE_SUBAGENT_TOOL_SHORT_NAME]: {
-                                        ...settings.mcp.builtinToolOptions[
+                                        ...settings.tools.builtinToolOptions[
                                           DELEGATE_SUBAGENT_TOOL_SHORT_NAME
                                         ],
                                         ...next,
@@ -412,8 +410,6 @@ function AgentToolsModalContent({
           </div>
         </div>
       ))}
-
-      <McpSection app={app} plugin={plugin} embedded />
     </div>
   )
 }

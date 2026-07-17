@@ -1,8 +1,8 @@
 import { FILE_EDIT_GROUP_TOOL_NAME } from '../../core/agent/builtinToolUiMeta'
 import type { ToolCapabilityMode } from '../../core/agent/tool-capability-prompt'
 import type { AgentRuntimeLoopConfig } from '../../core/agent/types'
-import { getLocalFileToolServerName } from '../../core/mcp/localFileTools'
-import { getToolName } from '../../core/mcp/tool-name-utils'
+import { getBuiltinToolNamespace } from '../../core/tools/localFileTools'
+import { getToolName } from '../../core/tools/tool-name-utils'
 import type { Assistant } from '../../types/assistant.types'
 
 import type { ChatMode } from './chat-input/ChatModeSelect'
@@ -10,31 +10,27 @@ import { isAgentChatMode } from './chat-input/ChatModeSelect'
 
 type AssistantRuntimeOptions = Pick<
   Assistant,
-  | 'enableTools'
-  | 'includeBuiltinTools'
-  | 'toolPreferences'
-  | 'toolServerPreferences'
+  'enableTools' | 'includeBuiltinTools' | 'toolPreferences'
 >
 
 export const DEFAULT_AGENT_MAX_AUTO_ITERATIONS = 100
 
 export const CHAT_BLOCKED_TOOL_NAMES: readonly string[] = [
-  getToolName(getLocalFileToolServerName(), 'fs_file_ops'),
-  getToolName(getLocalFileToolServerName(), FILE_EDIT_GROUP_TOOL_NAME),
-  getToolName(getLocalFileToolServerName(), 'fs_edit'),
-  getToolName(getLocalFileToolServerName(), 'fs_write'),
-  getToolName(getLocalFileToolServerName(), 'fs_delete'),
-  getToolName(getLocalFileToolServerName(), 'fs_create_dir'),
-  getToolName(getLocalFileToolServerName(), 'fs_move'),
-  getToolName(getLocalFileToolServerName(), 'terminal_command'),
-  getToolName(getLocalFileToolServerName(), 'todo_write'),
+  getToolName(getBuiltinToolNamespace(), 'fs_file_ops'),
+  getToolName(getBuiltinToolNamespace(), FILE_EDIT_GROUP_TOOL_NAME),
+  getToolName(getBuiltinToolNamespace(), 'fs_edit'),
+  getToolName(getBuiltinToolNamespace(), 'fs_write'),
+  getToolName(getBuiltinToolNamespace(), 'fs_delete'),
+  getToolName(getBuiltinToolNamespace(), 'fs_create_dir'),
+  getToolName(getBuiltinToolNamespace(), 'fs_move'),
+  getToolName(getBuiltinToolNamespace(), 'terminal_command'),
+  getToolName(getBuiltinToolNamespace(), 'todo_write'),
 ]
 
 export type ChatModeRuntime = {
   loopConfig: AgentRuntimeLoopConfig
   allowedToolNames: string[] | undefined
   toolPreferences: Assistant['toolPreferences']
-  toolServerPreferences: Assistant['toolServerPreferences']
   bypassToolApproval: boolean
   toolCapabilityMode: ToolCapabilityMode
 }
@@ -77,9 +73,6 @@ export function resolveChatModeRuntime({
     },
     allowedToolNames,
     toolPreferences: isAgentMode ? assistant?.toolPreferences : undefined,
-    toolServerPreferences: isAgentMode
-      ? assistant?.toolServerPreferences
-      : undefined,
     bypassToolApproval: isAgentMode && yoloEnabled,
     toolCapabilityMode: isAgentMode ? 'agent' : 'ask',
   }

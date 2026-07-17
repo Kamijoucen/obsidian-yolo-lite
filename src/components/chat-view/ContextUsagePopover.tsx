@@ -46,7 +46,7 @@ export type ContextUsagePopoverProps = {
    * the input box (not just the ring). */
   anchorRef: RefObject<HTMLElement | null>
   /** Returns the inputs required to compute the breakdown, or null when the
-   * estimator can't run (e.g. mcpManager not ready yet). Called lazily on open.
+   * estimator can't run (e.g. toolManager not ready yet). Called lazily on open.
    * May be async — the popover shows a skeleton until resolution + tokenize
    * both finish. */
   buildInputs: () =>

@@ -28,9 +28,9 @@ import {
 import type { ResponseDeliveryMode } from '../llm/responseDeliveryMode'
 import {
   LOCAL_FILE_TOOL_SHORT_NAMES,
-  getLocalFileToolServerName,
-} from '../mcp/localFileTools'
-import { McpManager } from '../mcp/mcpManager'
+  getBuiltinToolNamespace,
+} from '../tools/localFileTools'
+import { ToolManager } from '../tools/toolManager'
 
 import { CONTEXT_COMPACT_TOOL_NAME } from './compaction'
 import {
@@ -43,7 +43,7 @@ type AgentLlmTurnExecutorInput = {
   providerClient: BaseLLMProvider<LLMProvider>
   model: ChatModel
   requestContextBuilder: RequestContextBuilder
-  mcpManager: McpManager
+  toolManager: ToolManager
   conversationId: string
   messages: ChatMessage[]
   branchId?: string
@@ -55,7 +55,6 @@ type AgentLlmTurnExecutorInput = {
   includeBuiltinTools: boolean
   apiType?: LLMProviderApiType | null
   allowedToolNames?: string[]
-  enableToolDisclosure?: boolean
   toolPreferences?: Record<string, AssistantToolPreference>
   allowedSkillPaths?: string[]
   abortSignal?: AbortSignal
@@ -105,7 +104,7 @@ export class AgentLlmTurnExecutor {
 
   async run(): Promise<AgentLlmTurnExecutorOutput> {
     const availableTools = this.input.enableTools
-      ? await this.input.mcpManager.listAvailableTools({
+      ? await this.input.toolManager.listAvailableTools({
           includeBuiltinTools: this.input.includeBuiltinTools,
         })
       : []
@@ -113,16 +112,12 @@ export class AgentLlmTurnExecutor {
       filteredTools,
       hasTools,
       hasMemoryTools,
-      hasOnDemandTools,
       requestTools: tools,
     } = await selectAllowedTools({
       availableTools,
       allowedToolNames: this.input.allowedToolNames,
-      toolPreferences: this.input.toolPreferences,
-      apiType: this.input.apiType,
-      enableToolDisclosure: this.input.enableToolDisclosure,
-      jsSandboxSettings: this.input.mcpManager.getJsSandboxSettings(),
-      settings: this.input.mcpManager.getSettingsSnapshot(),
+      jsSandboxSettings: this.input.toolManager.getJsSandboxSettings(),
+      settings: this.input.toolManager.getSettingsSnapshot(),
     })
     const runtimeModePrompt = buildToolCapabilityPrompt({
       mode: this.input.toolCapabilityMode ?? 'agent',
@@ -133,7 +128,6 @@ export class AgentLlmTurnExecutor {
         messages: this.input.messages,
         hasTools,
         hasMemoryTools,
-        hasOnDemandTools,
         model: this.input.model,
         conversationId: this.input.conversationId,
         compaction: this.input.compaction,
@@ -364,12 +358,12 @@ export class AgentLlmTurnExecutor {
   }
 
   private normalizeToolCallName(toolName: string): string {
-    if (toolName.includes(McpManager.TOOL_NAME_DELIMITER)) {
+    if (toolName.includes(ToolManager.TOOL_NAME_DELIMITER)) {
       return toolName
     }
     if (!AgentLlmTurnExecutor.LOCAL_TOOL_NAMES.has(toolName)) {
       return toolName
     }
-    return `${getLocalFileToolServerName()}${McpManager.TOOL_NAME_DELIMITER}${toolName}`
+    return `${getBuiltinToolNamespace()}${ToolManager.TOOL_NAME_DELIMITER}${toolName}`
   }
 }

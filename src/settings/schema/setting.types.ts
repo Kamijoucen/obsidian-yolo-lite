@@ -1,15 +1,11 @@
 import { z } from 'zod'
 
-import { DEFAULT_LOCAL_MCP_SERVER_PORT } from '../../core/mcp/localMcpServerConfig'
 import { webSearchSettingsSchema } from '../../core/web-search/types'
 import { assistantSchema } from '../../types/assistant.types'
 import { chatModelSchema } from '../../types/chat-model.types'
-import {
-  mcpServerConfigSchema,
-  mcpServerToolOptionsSchema,
-} from '../../types/mcp.types'
 import { llmProviderSchema } from '../../types/provider.types'
 import { REASONING_LEVELS } from '../../types/reasoning'
+import { builtinToolOptionsSchema } from '../../types/tool.types'
 import { DEFAULT_CHAT_QUICK_ACCESS_ENTRIES } from '../chatQuickAccess'
 
 import { SETTINGS_SCHEMA_VERSION } from './version'
@@ -94,38 +90,13 @@ export const yoloSettingsSchema = z.object({
   // System Prompt
   systemPrompt: z.string().catch(''),
 
-  // MCP configuration
-  mcp: z
+  // Built-in Agent tools
+  tools: z
     .object({
-      servers: resilientArraySchema(mcpServerConfigSchema),
-      builtinToolOptions: mcpServerToolOptionsSchema.catch({}),
-      enableToolDisclosure: z.boolean().catch(false),
-      localServer: z
-        .object({
-          enabled: z.boolean().catch(false),
-          port: z
-            .number()
-            .int()
-            .min(1024)
-            .max(65535)
-            .catch(DEFAULT_LOCAL_MCP_SERVER_PORT),
-          token: z.string().catch(''),
-        })
-        .catch({
-          enabled: false,
-          port: DEFAULT_LOCAL_MCP_SERVER_PORT,
-          token: '',
-        }),
+      builtinToolOptions: builtinToolOptionsSchema.catch({}),
     })
     .catch({
-      servers: [],
       builtinToolOptions: {},
-      enableToolDisclosure: false,
-      localServer: {
-        enabled: false,
-        port: DEFAULT_LOCAL_MCP_SERVER_PORT,
-        token: '',
-      },
     }),
 
   // JS sandbox (js_eval) capability configuration is global; execution

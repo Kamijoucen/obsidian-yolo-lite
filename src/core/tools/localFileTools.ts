@@ -15,12 +15,12 @@ import type { ApplyViewState } from '../../types/apply-view.types'
 import type { AssistantWorkspaceScope } from '../../types/assistant.types'
 import type { ChatMessage } from '../../types/chat'
 import type { ContentPart } from '../../types/llm/request'
-import { McpTool } from '../../types/mcp.types'
 import {
   ToolCallResponseStatus,
   type ToolEditSummary,
   type ToolFsReadOperationSummary,
 } from '../../types/tool-call.types'
+import type { ToolDefinition } from '../../types/tool.types'
 import {
   createToolEditSummary,
   deriveToolEditUndoStatus,
@@ -106,7 +106,7 @@ import { parseToolName } from './tool-name-utils'
 
 export { recoverLikelyEscapedBackslashSequences }
 
-const LOCAL_FILE_TOOL_SERVER = 'yolo_local'
+const BUILTIN_TOOL_NAMESPACE = 'yolo_local'
 export const TERMINAL_COMMAND_TOOL_NAME = 'terminal_command'
 const MAX_FILE_SIZE_BYTES = 2 * 1024 * 1024
 const OFFICE_READ_MAX_BYTES = 10 * 1024 * 1024
@@ -175,21 +175,12 @@ export const LOCAL_FILE_TOOL_SHORT_NAMES = [
   JS_SANDBOX_TOOL_NAME,
   TERMINAL_COMMAND_TOOL_NAME,
   'delegate_subagent',
-  'load_tool_schemas',
   'todo_write',
   'ask_user_question',
 ] as const
 
-/**
- * Subset of {@link LOCAL_FILE_TOOL_SHORT_NAMES} that the user actually
- * configures via the Agent settings panel. `load_tool_schemas` is a protocol
- * tool — it exists for the on-demand disclosure mechanism, not as a user-
- * facing capability — so it is excluded here. The runtime still dispatches and
- * normalizes it through `LOCAL_FILE_TOOL_SHORT_NAMES`; it just isn't part of
- * the per-agent tool preference surface.
- */
 export const USER_FACING_LOCAL_TOOL_SHORT_NAMES: readonly string[] =
-  LOCAL_FILE_TOOL_SHORT_NAMES.filter((name) => name !== 'load_tool_schemas')
+  LOCAL_FILE_TOOL_SHORT_NAMES
 type LocalFileToolName = (typeof LOCAL_FILE_TOOL_SHORT_NAMES)[number]
 type FsSearchScope = 'files' | 'dirs' | 'content' | 'all'
 type FsSearchItem =
@@ -549,40 +540,11 @@ const sliceLinesForFsReadOperation = (
   }
 }
 
-export function getLocalFileToolServerName(): string {
-  return LOCAL_FILE_TOOL_SERVER
+export function getBuiltinToolNamespace(): string {
+  return BUILTIN_TOOL_NAMESPACE
 }
 
-export const LOAD_TOOL_SCHEMAS_LOCAL_TOOL_NAME = 'load_tool_schemas'
-
-/**
- * Standalone tool definition for `load_tool_schemas`. Used by the runtime to
- * inject the loader on demand (when `enableToolDisclosure=true` AND the
- * filtered tool set contains any `on_demand` tool). Not surfaced through
- * `getLocalFileTools()` to keep it out of the user-facing tool list.
- */
-export function getLoadToolSchemasTool(): McpTool {
-  return {
-    name: LOAD_TOOL_SCHEMAS_LOCAL_TOOL_NAME,
-    description:
-      'Load full schemas for all on-demand tools belonging to the given MCP servers, making them callable in the next turn. Pass MCP server names (the prefix before "__" in any stub tool name) — batch multiple servers when needed.',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        servers: {
-          type: 'array',
-          items: { type: 'string' },
-          minItems: 1,
-          description:
-            'MCP server names whose on-demand tools should be loaded (e.g. "context7", "deepwiki").',
-        },
-      },
-      required: ['servers'],
-    },
-  }
-}
-
-export function getLocalFileTools(): McpTool[] {
+export function getLocalFileTools(): ToolDefinition[] {
   return [
     {
       name: 'fs_list',
@@ -2224,7 +2186,7 @@ export function isAskUserQuestionToolName(toolName: string): boolean {
   try {
     const parsed = parseToolName(toolName)
     return (
-      parsed.serverName === LOCAL_FILE_TOOL_SERVER &&
+      parsed.namespace === BUILTIN_TOOL_NAMESPACE &&
       parsed.toolName === ASK_USER_QUESTION_TOOL_NAME
     )
   } catch {
@@ -3898,12 +3860,6 @@ export async function callLocalFileTool({
             ? { truncated: result.truncated }
             : undefined,
         }
-      }
-
-      case LOAD_TOOL_SCHEMAS_LOCAL_TOOL_NAME: {
-        throw new Error(
-          'load_tool_schemas is only available through the Agent runtime.',
-        )
       }
 
       case 'todo_write': {

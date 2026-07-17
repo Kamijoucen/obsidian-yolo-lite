@@ -1,9 +1,9 @@
 import type { Assistant } from '../../types/assistant.types'
-import type { McpTool } from '../../types/mcp.types'
+import type { ToolDefinition } from '../../types/tool.types'
 
 import { countEnabledVisibleAssistantTools } from './tool-display-count'
 
-const tool = (name: string): McpTool => ({
+const tool = (name: string): ToolDefinition => ({
   name,
   description: name,
   inputSchema: { type: 'object' },
@@ -23,7 +23,6 @@ describe('countEnabledVisibleAssistantTools', () => {
   it('excludes saved tools that are not currently available', () => {
     const assistant = assistantWithTools([
       'yolo_local__fs_list',
-      'disabled_mcp__stale_tool',
       'yolo_local__removed_tool',
     ])
 
@@ -59,24 +58,6 @@ describe('countEnabledVisibleAssistantTools', () => {
         [tool('yolo_local__fs_edit'), tool('yolo_local__fs_write')],
       ),
     ).toBe(0)
-  })
-
-  it('counts available remote MCP tools individually', () => {
-    const assistant = assistantWithTools([
-      'server__enabled_tool',
-      'server__disabled_tool',
-    ])
-    assistant.toolPreferences = {
-      ...assistant.toolPreferences,
-      server__disabled_tool: { enabled: false },
-    }
-
-    expect(
-      countEnabledVisibleAssistantTools(assistant, [
-        tool('server__enabled_tool'),
-        tool('server__disabled_tool'),
-      ]),
-    ).toBe(1)
   })
 
   it('excludes built-in tools when the assistant disables them', () => {

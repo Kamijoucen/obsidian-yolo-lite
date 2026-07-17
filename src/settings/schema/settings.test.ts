@@ -5,7 +5,7 @@ describe('settings schema', () => {
     const settings = parseYoloSettings({})
 
     expect(settings.version).toBe(1)
-    expect(settings.mcp.servers).toEqual([])
+    expect(settings.tools.builtinToolOptions).toEqual({})
     expect(settings.requestPolicy).toEqual({
       primaryRequestTimeoutMs: 60000,
       streamFallbackRecoveryEnabled: true,

@@ -194,7 +194,7 @@ const FILES = [
   'src/components/chat-view/ChatTimelineList.tsx',
   'src/components/chat-view/AssistantToolMessageGroupItem.tsx',
   'src/core/agent/service.ts',
-  'src/core/mcp/localFileTools.ts',
+  'src/core/tools/localFileTools.ts',
   'docs/plans/anchored-timeline.md',
   'README.md',
 ]

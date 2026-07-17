@@ -4,8 +4,6 @@
  * 敏感字段覆盖范围（来自当前 settings schema 实际可能存放凭证的位置）：
  * - `apiKey: string`：providers、各 webSearch provider 都用这个字段名
  * - `password: string`：webSearch.searxng
- * - `headers: { [k]: string }` 内所有 value：mcp http/sse transport
- * - `env: { [k]: string }` 内所有 value：mcp stdio transport
  * - `customHeaders: [{ key, value }]` 中每项的 value：providers 的自定义请求头
  *
  * 走单一 walker，导出用 replace（随机字符串），导入用 strip（清空字符串）。
@@ -15,7 +13,6 @@
 type WalkOp = (value: string) => string
 
 const SENSITIVE_STRING_FIELDS = new Set(['apiKey', 'password'])
-const SENSITIVE_RECORD_FIELDS = new Set(['headers', 'env'])
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return (
@@ -24,21 +21,6 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
     !Array.isArray(value) &&
     Object.getPrototypeOf(value) === Object.prototype
   )
-}
-
-function transformRecord(
-  record: Record<string, unknown>,
-  op: WalkOp,
-): Record<string, unknown> {
-  const out: Record<string, unknown> = {}
-  for (const [k, v] of Object.entries(record)) {
-    if (typeof v === 'string') {
-      out[k] = op(v)
-    } else {
-      out[k] = v
-    }
-  }
-  return out
 }
 
 function transformCustomHeaders(items: unknown[], op: WalkOp): unknown[] {
@@ -64,10 +46,6 @@ export function mapSensitiveValues(data: unknown, op: WalkOp): unknown {
   for (const [key, value] of Object.entries(data)) {
     if (SENSITIVE_STRING_FIELDS.has(key) && typeof value === 'string') {
       result[key] = op(value)
-      continue
-    }
-    if (SENSITIVE_RECORD_FIELDS.has(key) && isPlainObject(value)) {
-      result[key] = transformRecord(value, op)
       continue
     }
     if (key === 'customHeaders' && Array.isArray(value)) {
@@ -101,7 +79,7 @@ export function clearSensitive(data: unknown): unknown {
  * 探测对象树中是否实际存在任意"非空字符串"的敏感值。
  * 用于 UI 动态判定某个顶层 key 的实例是否真的含凭证，
  * 替代过去基于类目的静态 `sensitive: true` 标记，
- * 避免给没有凭证的服务商或 MCP 配置误打标。
+ * 避免给没有凭证的服务商配置误打标。
  */
 export function hasNonEmptyCredentials(data: unknown): boolean {
   if (Array.isArray(data)) {
@@ -112,12 +90,6 @@ export function hasNonEmptyCredentials(data: unknown): boolean {
   for (const [key, value] of Object.entries(data)) {
     if (SENSITIVE_STRING_FIELDS.has(key)) {
       if (typeof value === 'string' && value.length > 0) return true
-      continue
-    }
-    if (SENSITIVE_RECORD_FIELDS.has(key) && isPlainObject(value)) {
-      for (const inner of Object.values(value)) {
-        if (typeof inner === 'string' && inner.length > 0) return true
-      }
       continue
     }
     if (key === 'customHeaders' && Array.isArray(value)) {

@@ -16,9 +16,9 @@ import { ChatViewProvider } from './contexts/chat-view-context'
 import { DarkModeProvider } from './contexts/dark-mode-context'
 import { DialogContainerProvider } from './contexts/dialog-container-context'
 import { LanguageProvider } from './contexts/language-context'
-import { McpProvider } from './contexts/mcp-context'
 import { PluginProvider } from './contexts/plugin-context'
 import { SettingsProvider } from './contexts/settings-context'
+import { ToolProvider } from './contexts/tool-context'
 import type { PendingChatOpenPayload } from './features/chat/chatLeafSessionManager'
 import { getConversationDisplayTitle } from './hooks/useChatHistory'
 import YoloPlugin from './main'
@@ -259,8 +259,8 @@ export class ChatView extends ItemView {
                 }
               >
                 <DarkModeProvider>
-                  <McpProvider
-                    getMcpManager={() => this.plugin.getMcpManager()}
+                  <ToolProvider
+                    getToolManager={() => this.plugin.getToolManager()}
                   >
                     <QueryClientProvider client={queryClient}>
                       <React.StrictMode>
@@ -295,7 +295,7 @@ export class ChatView extends ItemView {
                         </DialogContainerProvider>
                       </React.StrictMode>
                     </QueryClientProvider>
-                  </McpProvider>
+                  </ToolProvider>
                 </DarkModeProvider>
               </SettingsProvider>
             </AppProvider>

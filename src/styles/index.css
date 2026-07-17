@@ -1,7 +1,7 @@
 @import './settings/base.css';
 @import './settings/providers-models.css';
 @import './settings/provider-picker.css';
-@import './settings/mcp.css';
+@import './settings/builtin-tools.css';
 @import './settings/assistants.css';
 @import './settings/tabs.css';
 @import './settings/agent.css';
@@ -17,7 +17,7 @@
 @import './chat/input.css';
 @import './chat/message.css';
 @import './chat/popover.css';
-@import './chat/external-agent-card.css';
+@import './chat/live-task-card.css';
 @import './chat/subagent-card.css';
 @import './chat/todo-list-panel.css';
 @import './chat/ask-user-question-panel.css';

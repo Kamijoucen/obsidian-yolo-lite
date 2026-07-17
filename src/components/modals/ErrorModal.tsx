@@ -56,7 +56,7 @@ function ErrorModalComponent({
             onClick={() => {
               onClose()
               window.open(
-                'https://github.com/Lapis0x0/obsidian-yolo/issues',
+                'https://github.com/Kamijoucen/obsidian-yolo-lite/issues',
                 '_blank',
               )
             }}
@@ -72,7 +72,7 @@ function ErrorModalComponent({
               // @ts-expect-error: setting property exists in Obsidian's App but is not typed
               app.setting.open()
               // @ts-expect-error: setting property exists in Obsidian's App but is not typed
-              app.setting.openTabById('next-composer')
+              app.setting.openTabById('yolo')
             }}
           >
             Open Settings

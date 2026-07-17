@@ -184,7 +184,7 @@ function StepOne({
           <p className="yolo-learning-wizard-description">
             {t(
               'learning.wizard.description',
-              '填写下面的信息，YOLO 会为你生成一份结构化的学习大纲。',
+              '填写下面的信息，YOLO-Lite 会为你生成一份结构化的学习大纲。',
             )}
           </p>
         </div>
@@ -269,7 +269,10 @@ function StepOne({
       <Field
         label={t('learning.wizard.referencesLabel', '参考资料')}
         optional
-        hint={t('learning.wizard.referencesHint', '上传后 YOLO 会据此定制大纲')}
+        hint={t(
+          'learning.wizard.referencesHint',
+          '上传后 YOLO-Lite 会据此定制大纲',
+        )}
         optionalLabel={t('learning.wizard.optional', '（可选）')}
       >
         <LearningFileDropzone

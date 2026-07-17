@@ -2,15 +2,15 @@ import { shouldBypassProxy } from './proxyBypass'
 
 describe('shouldBypassProxy', () => {
   it.each([
-    'http://localhost/mcp',
-    'http://localhost:3005/mcp',
+    'http://localhost/api',
+    'http://localhost:3005/api',
     'http://foo.localhost/',
     'http://my-printer.local/',
     'http://127.0.0.1:8080',
     'http://127.42.10.5/',
     'http://10.0.0.1/',
     'http://10.255.255.255/',
-    'http://192.168.1.21:3005/mcp',
+    'http://192.168.1.21:3005/api',
     'http://172.16.0.1/',
     'http://172.31.255.254/',
     'http://169.254.169.254/',
