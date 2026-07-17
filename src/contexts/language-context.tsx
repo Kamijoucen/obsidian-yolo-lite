@@ -14,7 +14,6 @@ const resolveObsidianLanguage = (): Language => {
     .trim()
     .toLowerCase()
   if (rawLanguage.startsWith('zh')) return 'zh'
-  if (rawLanguage.startsWith('it')) return 'it'
   return 'en'
 }
 

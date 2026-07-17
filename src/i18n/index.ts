@@ -11,10 +11,6 @@ export async function loadLocale(language: Language): Promise<void> {
     translations.zh = (await import('./locales/zh')).zh
     return
   }
-  if (language === 'it') {
-    translations.it = (await import('./locales/it')).it
-    return
-  }
   translations.en = (await import('./locales/en')).en
 }
 

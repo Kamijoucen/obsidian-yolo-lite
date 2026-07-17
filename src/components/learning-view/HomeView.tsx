@@ -35,6 +35,7 @@ import type {
   ProjectStatus,
   Project as VaultProject,
 } from '../../core/learning/types'
+import type { Language } from '../../i18n'
 import { YoloPopoverContent } from '../common/popover/YoloPopoverContent'
 import { ConfirmModal } from '../modals/ConfirmModal'
 
@@ -546,7 +547,7 @@ function ProjectCard({
   pending: boolean
   paused: boolean
   stats?: LearningProjectStats
-  language: 'en' | 'it' | 'zh'
+  language: Language
   t: (keyPath: string, fallback?: string) => string
 }) {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -834,10 +835,9 @@ function formatProjectActionTitle(
   return formatLearningText(template, { point: action.knowledgePointTitle })
 }
 
-function formatRelativeTime(timestamp: number, language: 'en' | 'it' | 'zh') {
+function formatRelativeTime(timestamp: number, language: Language) {
   if (timestamp <= 0) return '—'
-  const locale =
-    language === 'zh' ? 'zh-CN' : language === 'it' ? 'it-IT' : 'en-US'
+  const locale = language === 'zh' ? 'zh-CN' : 'en-US'
   const elapsed = Date.now() - timestamp
   const formatter = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' })
   const minute = 60_000

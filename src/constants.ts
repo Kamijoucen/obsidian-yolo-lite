@@ -24,7 +24,6 @@ export const RECOMMENDED_MODELS_FOR_CHAT_TITLE = ['openai/gpt-4.1-mini']
 export const DEFAULT_CHAT_TITLE_PROMPT = {
   en: 'You are a title generator. Generate a concise conversation title based on the first user message. Output the title only.',
   zh: '你是一个标题生成器。请基于用户首条消息生成一个简洁的会话标题，直接输出标题本身。',
-  it: "Sei un generatore di titoli. Genera un titolo di conversazione conciso in base al primo messaggio dell'utente. Restituisci solo il titolo.",
 } as const
 
 const REQUEST_TRANSPORT_MODE_SETTING = {

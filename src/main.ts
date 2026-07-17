@@ -480,7 +480,6 @@ export default class YoloPlugin extends Plugin {
       .trim()
       .toLowerCase()
     if (rawLanguage.startsWith('zh')) return 'zh'
-    if (rawLanguage.startsWith('it')) return 'it'
     return 'en'
   }
 

@@ -5,7 +5,7 @@ import { ConfigKeyMeta } from './types'
  * 按 data.json 第一层级 key 划分。
  *
  * 显示用文案优先通过 i18n key `configTransfer.keyLabels.<key>` 查找，
- * 缺失时回退到 `fallbackLabel`（避免 Italian 等未翻译语种直接显示 raw key）。
+ * 缺失时回退到 `fallbackLabel`，避免直接显示原始 key。
  *
  * "是否含凭证"由 `hasNonEmptyCredentials()` 对实际数据动态探测，
  * 不在此处用静态标记 —— 同一个类目（如 mcp / providers）在不同用户的

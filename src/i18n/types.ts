@@ -1,4 +1,4 @@
-export type Language = 'en' | 'zh' | 'it'
+export type Language = 'en' | 'zh'
 
 type TranslationBranch = {
   [key: string]: string | TranslationBranch
