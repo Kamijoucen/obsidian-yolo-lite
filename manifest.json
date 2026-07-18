@@ -3,7 +3,7 @@
   "name": "YOLO-Lite",
   "version": "1.6.0.3",
   "minAppVersion": "1.8.0",
-  "description": "Lightweight AI agent chat, Vault tools, Skills, web search, and learning workflows.",
+  "description": "Lightweight AI agent chat with Vault tools, Skills, and web search.",
   "author": "kamijoucen",
   "authorUrl": "https://github.com/Kamijoucen",
   "isDesktopOnly": false

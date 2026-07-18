@@ -6,21 +6,13 @@ import {
   Plugin,
   TFile,
   TFolder,
-  type WorkspaceLeaf,
   addIcon,
   getLanguage,
   normalizePath,
-  setIcon,
 } from 'obsidian'
 
 import { ChatView } from './ChatView'
-import {
-  type ActionToastController,
-  type ActionToastOptions,
-  mountActionToast,
-} from './components/ActionToast'
-import { AcknowledgementModal } from './components/modals/AcknowledgementModal'
-import { CHAT_VIEW_TYPE, LEARNING_VIEW_TYPE } from './constants'
+import { CHAT_VIEW_TYPE } from './constants'
 import type { YoloAgentApi, YoloAgentApiService } from './core/agent/agent-api'
 import type {
   AgentConversationRunSummary,
@@ -38,17 +30,6 @@ import {
 } from './core/background/backgroundActivityRegistry'
 import { buildBackgroundStatusModel } from './core/background/backgroundStatusModel'
 import { noteWebviewLeafFocus } from './core/browser/activeWebviewProbe'
-import type {
-  LearningNavigationHandler,
-  LearningNavigationTarget,
-} from './core/learning/learningNavigation'
-import {
-  LearningStatsService,
-  getTotalDueCards,
-} from './core/learning/learningStatsService'
-import type { LearningStatsSnapshot } from './core/learning/learningStatsService'
-import type { ProjectEventBus } from './core/learning/projectEventBus'
-import { LearningSrsStore } from './core/learning/srs/srsStore'
 import { setLLMDebugCaptureEnabled } from './core/llm/debugCapture'
 import { AgentNotificationCoordinator } from './core/notifications/agentNotificationCoordinator'
 import { NotificationService } from './core/notifications/notificationService'
@@ -58,7 +39,6 @@ import {
   relocateYoloManagedData,
   stampYoloDataMeta,
 } from './core/paths/yoloManagedData'
-import { getYoloLearningDir } from './core/paths/yoloPaths'
 import { ToolManager } from './core/tools/toolManager'
 import { ChatManager } from './database/json/chat/ChatManager'
 import { pruneImageCache } from './database/json/chat/imageCacheStore'
@@ -74,7 +54,6 @@ import {
   countModifiedBlocks,
 } from './features/editor/diff-review/review-model'
 import { type Language, createTranslationFunction, loadLocale } from './i18n'
-import { LearningView } from './LearningView'
 import {
   YoloSettings,
   yoloSettingsSchema,
@@ -100,28 +79,19 @@ export type {
 } from './core/agent/agent-api'
 
 type TranslateFn = (keyPath: string, fallback?: string) => string
-type BackgroundStatusPanelAction =
-  | BackgroundActivityAction
-  | { type: 'open-learning-home' }
+type BackgroundStatusPanelAction = BackgroundActivityAction
 
 export default class YoloPlugin extends Plugin {
   settings: YoloSettings
   settingsChangeListeners: ((newSettings: YoloSettings) => void)[] = []
   private deviceId: string | null = null
   private currentSettingsMeta: YoloDataMeta | null = null
-  private actionToastController: ActionToastController | null = null
   toolManager: ToolManager | null = null
   private timeoutIds: ReturnType<typeof setTimeout>[] = [] // Use ReturnType instead of number
-  private learningGenerationAbortControllers: Set<AbortController> = new Set()
   private diffReviewController: DiffReviewController | null = null
   private chatViewNavigator: ChatViewNavigator | null = null
   private chatLeafSessionManager: ChatLeafSessionManager | null = null
   private newTabEmptyStateEnhancer: NewTabEmptyStateEnhancer | null = null
-  private learningEventBus: ProjectEventBus | null = null
-  private learningSrsStore: LearningSrsStore | null = null
-  private learningStatsService: LearningStatsService | null = null
-  private learningNavigationHandler: LearningNavigationHandler | null = null
-  private pendingLearningNavigation: LearningNavigationTarget | null = null
   // Model list cache for provider model fetching
   private modelListCache: Map<string, { models: string[]; timestamp: number }> =
     new Map()
@@ -138,7 +108,6 @@ export default class YoloPlugin extends Plugin {
   private backgroundStatusPanelList: HTMLElement | null = null
   private backgroundStatusPanelEmpty: HTMLElement | null = null
   private latestBackgroundActivities = new Map<string, BackgroundActivity>()
-  private latestLearningStats: LearningStatsSnapshot | null = null
   private backgroundStatusPanelRenderVersion = 0
   private isUnloaded = false
   private backgroundStatusPanelItems = new Map<
@@ -196,134 +165,6 @@ export default class YoloPlugin extends Plugin {
       this.chatLeafSessionManager = new ChatLeafSessionManager(this.app)
     }
     return this.chatLeafSessionManager
-  }
-
-  /**
-   * Registers (or clears) the active LearningView's ProjectEventBus. The
-   * workspace component calls this on mount / unmount so plugin-level
-   * commands (e.g. mock replay) can reach the bus that's currently driving
-   * the on-screen graph.
-   */
-  setLearningEventBus(bus: ProjectEventBus | null): void {
-    this.learningEventBus = bus
-  }
-
-  setLearningNavigationHandler(
-    handler: LearningNavigationHandler | null,
-  ): void {
-    this.learningNavigationHandler = handler
-    this.flushLearningNavigation()
-  }
-
-  showActionToast(toast: ActionToastOptions): void {
-    this.actionToastController?.show(toast)
-  }
-
-  trackLearningGeneration(controller: AbortController): void {
-    this.learningGenerationAbortControllers.add(controller)
-  }
-
-  releaseLearningGeneration(controller: AbortController): void {
-    this.learningGenerationAbortControllers.delete(controller)
-  }
-
-  private flushLearningNavigation(): void {
-    if (!this.learningNavigationHandler || !this.pendingLearningNavigation) {
-      return
-    }
-    const target = this.pendingLearningNavigation
-    this.pendingLearningNavigation = null
-    this.learningNavigationHandler(target)
-  }
-
-  getLearningSrsStore(): LearningSrsStore {
-    if (!this.learningSrsStore) {
-      this.learningSrsStore = new LearningSrsStore(
-        this.app,
-        () => this.settings,
-      )
-    }
-    return this.learningSrsStore
-  }
-
-  getLearningStatsService(): LearningStatsService {
-    if (!this.learningStatsService) {
-      this.learningStatsService = new LearningStatsService({
-        app: this.app,
-        getLearningBaseDir: () => getYoloLearningDir(this.settings),
-        srsStore: this.getLearningSrsStore(),
-      })
-    }
-    return this.learningStatsService
-  }
-
-  /**
-   * Opens the LearningView in the main workspace (new tab). Activates an
-   * existing leaf if one is already open.
-   */
-  async openLearningView(target?: LearningNavigationTarget): Promise<void> {
-    const leaf = await this.revealLearningView(target)
-
-    if (!this.settings.learningOptions.betaNoticeAcknowledged) {
-      new AcknowledgementModal(this.app, {
-        title: this.t(
-          'learning.betaNotice.title',
-          'Learning mode public beta notice',
-        ),
-        messages: [
-          this.t(
-            'learning.betaNotice.description',
-            'Learning mode is currently in public beta. Some features are still being refined and may be unstable or contain bugs. Some learning mode features will become part of paid plans in the future. Free users will still be able to use learning mode, but limits may apply to the number of learning projects they can create. Existing projects beyond the free allowance may become read-only, but they will not be deleted automatically.',
-          ),
-        ],
-        centered: true,
-        confirmText: this.t(
-          'learning.betaNotice.confirm',
-          'I understand, enter learning mode',
-        ),
-        cancelText: this.t('learning.betaNotice.cancel', 'Not now'),
-        onConfirm: () => {
-          void this.acknowledgeLearningBetaNotice()
-        },
-        onDismiss: () => {
-          if (leaf.view.getViewType() === LEARNING_VIEW_TYPE) leaf.detach()
-        },
-      }).open()
-    }
-  }
-
-  private async acknowledgeLearningBetaNotice(): Promise<void> {
-    try {
-      await this.setSettings({
-        ...this.settings,
-        learningOptions: {
-          ...this.settings.learningOptions,
-          betaNoticeAcknowledged: true,
-        },
-      })
-    } catch (error: unknown) {
-      console.error(
-        'Failed to persist learning beta notice confirmation',
-        error,
-      )
-    }
-  }
-
-  private async revealLearningView(
-    target?: LearningNavigationTarget,
-  ): Promise<WorkspaceLeaf> {
-    if (target) this.pendingLearningNavigation = target
-    const existing = this.app.workspace.getLeavesOfType(LEARNING_VIEW_TYPE)[0]
-    if (existing) {
-      this.app.workspace.revealLeaf(existing)
-      this.flushLearningNavigation()
-      return existing
-    }
-    const leaf = this.app.workspace.getLeaf('tab')
-    await leaf.setViewState({ type: LEARNING_VIEW_TYPE, active: true })
-    this.app.workspace.revealLeaf(leaf)
-    this.flushLearningNavigation()
-    return leaf
   }
 
   // Get cached model list for a provider
@@ -588,12 +429,6 @@ export default class YoloPlugin extends Plugin {
         this.latestBackgroundActivities = new Map(activities)
         this.updateBackgroundStatusBar()
       })
-    const unsubscribeLearningStats = this.getLearningStatsService().subscribe(
-      (snapshot) => {
-        this.latestLearningStats = snapshot
-        this.updateBackgroundStatusBar()
-      },
-    )
     let isActive = true
     let unsubscribeAgentSummaries: (() => void) | null = null
     void this.warmupAgentService()
@@ -613,7 +448,6 @@ export default class YoloPlugin extends Plugin {
     this.register(() => {
       isActive = false
       unsubscribeActivities()
-      unsubscribeLearningStats()
       unsubscribeAgentSummaries?.()
       this.backgroundStatusBarItem = null
       this.backgroundStatusBarRing = null
@@ -624,7 +458,6 @@ export default class YoloPlugin extends Plugin {
       this.backgroundStatusPanelRenderVersion += 1
       this.backgroundStatusPanelItems.clear()
       this.latestBackgroundActivities.clear()
-      this.latestLearningStats = null
       this.backgroundActivityRegistry?.clear()
       this.backgroundActivityRegistry = null
     })
@@ -645,27 +478,20 @@ export default class YoloPlugin extends Plugin {
       nextActivityIds.add(id)
       registry.upsert({
         id,
-        kind: summary.activity?.kind ?? 'agent',
-        title:
-          summary.activity?.title ??
-          this.t(
-            'statusBar.agentStatusFallbackConversationTitle',
-            '运行中的对话',
-          ),
-        detail:
-          summary.activity?.detail ??
-          (summary.isWaitingApproval
-            ? this.t('statusBar.agentStatusWaitingApproval', '待审批')
-            : this.t('statusBar.agentStatusRunning', '运行中')),
+        kind: 'agent',
+        title: this.t(
+          'statusBar.agentStatusFallbackConversationTitle',
+          '运行中的对话',
+        ),
+        detail: summary.isWaitingApproval
+          ? this.t('statusBar.agentStatusWaitingApproval', '待审批')
+          : this.t('statusBar.agentStatusRunning', '运行中'),
         status: summary.isWaitingApproval ? 'waiting' : 'running',
         updatedAt: Date.now(),
-        action:
-          summary.activity?.action === 'open-learning-view'
-            ? { type: 'open-learning-view' }
-            : {
-                type: 'open-agent-conversation',
-                conversationId: summary.conversationId,
-              },
+        action: {
+          type: 'open-agent-conversation',
+          conversationId: summary.conversationId,
+        },
       })
     }
 
@@ -690,12 +516,8 @@ export default class YoloPlugin extends Plugin {
     }
     this.backgroundStatusPanelRenderVersion += 1
 
-    const dueCards = this.latestLearningStats
-      ? getTotalDueCards(this.latestLearningStats)
-      : 0
     const model = buildBackgroundStatusModel(
       this.latestBackgroundActivities.values(),
-      dueCards,
     )
 
     if (!model.visible) {
@@ -708,13 +530,7 @@ export default class YoloPlugin extends Plugin {
       return
     }
 
-    const label =
-      model.activities.length > 0
-        ? this.buildBackgroundStatusBarLabel(model.activities)
-        : this.t(
-            'statusBar.learningReviewLabel',
-            'YOLO-Lite Learning：今日有 {count} 张待复习卡片',
-          ).replace('{count}', String(dueCards))
+    const label = this.buildBackgroundStatusBarLabel(model.activities)
 
     this.backgroundStatusBarLabel.setText(label)
     this.backgroundStatusBarItem.removeAttribute('title')
@@ -723,13 +539,9 @@ export default class YoloPlugin extends Plugin {
       'is-running',
       'is-waiting',
       'is-failed',
-      'is-review',
     )
     if (model.tone) {
       this.backgroundStatusBarRing.classList.add(`is-${model.tone}`)
-    }
-    if (model.tone === 'review') {
-      setIcon(this.backgroundStatusBarRing, 'graduation-cap')
     }
     this.backgroundStatusBarItem.show()
 
@@ -745,51 +557,22 @@ export default class YoloPlugin extends Plugin {
       (activity) =>
         activity.status === 'running' || activity.status === 'waiting',
     )
-    const agentActivities = runningActivities.filter(
-      (activity) => activity.kind === 'agent',
-    )
-    const learningActivities = runningActivities.filter(
-      (activity) => activity.kind === 'learning-agent',
-    )
     const waitingApprovalCount = runningActivities.filter(
       (activity) => activity.status === 'waiting',
     ).length
 
-    if (
-      runningActivities.length > 0 &&
-      learningActivities.length === runningActivities.length
-    ) {
-      if (learningActivities.length === 1) {
-        return learningActivities[0].detail || learningActivities[0].title
-      }
-      return this.t(
-        'statusBar.learningTasksRunning',
-        '学习模式有 {count} 个任务正在运行',
-      ).replace('{count}', String(learningActivities.length))
-    }
-
-    if (
-      runningActivities.length > 0 &&
-      agentActivities.length === runningActivities.length
-    ) {
+    if (runningActivities.length > 0) {
       return waitingApprovalCount > 0
         ? this.t(
             'statusBar.agentRunningWithApproval',
             '当前有 {count} 个 agent 正在运行（{approvalCount} 个待审批）',
           )
-            .replace('{count}', String(agentActivities.length))
+            .replace('{count}', String(runningActivities.length))
             .replace('{approvalCount}', String(waitingApprovalCount))
         : this.t(
             'statusBar.agentRunning',
             '当前有 {count} 个 agent 正在运行',
-          ).replace('{count}', String(agentActivities.length))
-    }
-
-    if (runningActivities.length > 0) {
-      return this.t(
-        'statusBar.backgroundTasksRunning',
-        '当前有 {count} 个后台任务正在运行',
-      ).replace('{count}', String(runningActivities.length))
+          ).replace('{count}', String(runningActivities.length))
     }
 
     return this.t(
@@ -852,12 +635,8 @@ export default class YoloPlugin extends Plugin {
     }
 
     const renderVersion = ++this.backgroundStatusPanelRenderVersion
-    const dueCards = this.latestLearningStats
-      ? getTotalDueCards(this.latestLearningStats)
-      : 0
     const model = buildBackgroundStatusModel(
       this.latestBackgroundActivities.values(),
-      dueCards,
     )
     const activities = model.activities
 
@@ -925,49 +704,10 @@ export default class YoloPlugin extends Plugin {
         'is-running',
         'is-waiting',
         'is-failed',
-        'is-review',
       )
       itemRecord.indicator.empty()
       itemRecord.indicator.classList.add(`is-${activity.status}`)
 
-      if (itemRecord.item !== insertBeforeNode) {
-        this.backgroundStatusPanelList.insertBefore(
-          itemRecord.item,
-          insertBeforeNode,
-        )
-      }
-      insertBeforeNode = itemRecord.item.nextSibling
-    }
-
-    if (model.showReviewReminder) {
-      const reminderId = 'reminder:learning-review'
-      nextActivityIds.add(reminderId)
-      const title = this.t(
-        'statusBar.learningReviewTitle',
-        'YOLO-Lite Learning',
-      )
-      const detail = this.t(
-        'statusBar.learningReviewDetail',
-        '{count} 张卡片待复习',
-      ).replace('{count}', String(dueCards))
-      const itemRecord =
-        this.backgroundStatusPanelItems.get(reminderId) ??
-        this.createBackgroundStatusPanelItem(reminderId, {
-          type: 'open-learning-home',
-        })
-      itemRecord.action = { type: 'open-learning-home' }
-      itemRecord.title.setText(title)
-      itemRecord.title.setAttribute('title', title)
-      itemRecord.detail.setText(detail)
-      itemRecord.detail.hidden = false
-      itemRecord.indicator.classList.remove(
-        'is-running',
-        'is-waiting',
-        'is-failed',
-      )
-      itemRecord.indicator.classList.add('is-review')
-      itemRecord.indicator.empty()
-      setIcon(itemRecord.indicator, 'graduation-cap')
       if (itemRecord.item !== insertBeforeNode) {
         this.backgroundStatusPanelList.insertBefore(
           itemRecord.item,
@@ -1041,13 +781,6 @@ export default class YoloPlugin extends Plugin {
           forceNewLeaf: true,
         })
         return
-      }
-      if (currentAction.type === 'open-learning-view') {
-        void this.openLearningView()
-        return
-      }
-      if (currentAction.type === 'open-learning-home') {
-        void this.openLearningView({ type: 'home' })
       }
     }
 
@@ -1192,14 +925,7 @@ export default class YoloPlugin extends Plugin {
     this.syncOAuthRuntimesFromSettings()
     // Prune stale image cache entries (>30 days) on startup
     void pruneImageCache(this.app, 30, this.settings)
-    this.app.workspace.onLayoutReady(() => {
-      this.getLearningStatsService().start()
-    })
     this.registerView(CHAT_VIEW_TYPE, (leaf) => new ChatView(leaf, this))
-    this.registerView(
-      LEARNING_VIEW_TYPE,
-      (leaf) => new LearningView(leaf, this),
-    )
     this.newTabEmptyStateEnhancer = new NewTabEmptyStateEnhancer(this)
     this.newTabEmptyStateEnhancer.enable()
 
@@ -1207,16 +933,7 @@ export default class YoloPlugin extends Plugin {
     this.addRibbonIcon(YOLO_ICON_ID, 'YOLO-Lite Chat', () => {
       void this.openChatView({ placement: this.resolveRibbonPlacement() })
     })
-    this.addRibbonIcon(
-      'graduation-cap',
-      this.t('commands.learningModeLabel'),
-      () => {
-        void this.openLearningView()
-      },
-    )
-
     this.setupBackgroundActivityStatusBar()
-    this.actionToastController = mountActionToast()
     let shouldStartAgentNotifications = true
     void this.warmupAgentService()
       .then(() => {
@@ -1282,14 +999,6 @@ export default class YoloPlugin extends Plugin {
           openNewChat: true,
           forceNewLeaf: true,
         })
-      },
-    })
-
-    this.addCommand({
-      id: 'open-learning-mode',
-      name: this.t('commands.openLearningMode'),
-      callback: () => {
-        void this.openLearningView()
       },
     })
 
@@ -1373,16 +1082,6 @@ export default class YoloPlugin extends Plugin {
 
   onunload() {
     this.isUnloaded = true
-    for (const controller of this.learningGenerationAbortControllers) {
-      controller.abort()
-    }
-    this.learningGenerationAbortControllers.clear()
-    this.actionToastController?.destroy()
-    this.actionToastController = null
-    this.learningNavigationHandler = null
-    this.pendingLearningNavigation = null
-    this.learningStatsService?.dispose()
-    this.learningStatsService = null
     this.chatViewNavigator = null
     this.newTabEmptyStateEnhancer = null
     this.diffReviewController?.destroy()
@@ -1584,13 +1283,7 @@ export default class YoloPlugin extends Plugin {
     const baseDirChanged =
       previousSettings?.yolo?.baseDir !== normalizedSettings.yolo.baseDir
 
-    if (baseDirChanged && this.learningSrsStore) {
-      await this.learningSrsStore.runExclusive(async () => {
-        this.settings = normalizedSettings
-      })
-    } else {
-      this.settings = normalizedSettings
-    }
+    this.settings = normalizedSettings
     this.currentSettingsMeta = incomingMeta
     this.markPromptSourceSettingsChange(previousSettings, normalizedSettings)
 
@@ -1604,7 +1297,6 @@ export default class YoloPlugin extends Plugin {
       new Notice(
         'YOLO: detected a `baseDir` change in data.json. Reloaded settings against the new path.',
       )
-      this.learningStatsService?.restart()
     }
 
     this.syncOAuthRuntimesFromSettings(normalizedSettings)
@@ -1720,13 +1412,7 @@ ${validationResult.error.issues.map((v) => v.message).join('\n')}`)
           fromSettings: previousSettings,
           toSettings: normalizedSettings,
         })
-      const relocated = this.learningSrsStore
-        ? await this.learningSrsStore.runExclusive(async () => {
-            const succeeded = await relocate()
-            if (succeeded) this.settings = normalizedSettings
-            return succeeded
-          })
-        : await relocate()
+      const relocated = await relocate()
       if (!relocated) {
         new Notice(
           'Failed to move YOLO managed data. Keeping previous YOLO root folder.',
@@ -1736,7 +1422,6 @@ ${validationResult.error.issues.map((v) => v.message).join('\n')}`)
     }
 
     this.settings = normalizedSettings
-    if (yoloBaseDirChanged) this.learningStatsService?.restart()
     await this.persistPluginDirSettings(normalizedSettings)
     this.markPromptSourceSettingsChange(previousSettings, normalizedSettings)
     setLLMDebugCaptureEnabled(

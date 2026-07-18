@@ -5,9 +5,6 @@ export const YOLO_SKILLS_SUBDIR = 'skills'
 export const YOLO_SKILLS_INDEX_FILE_NAME = 'Skills.md'
 export const YOLO_SNIPPETS_FILE_NAME = 'snippets.md'
 export const YOLO_JSON_DB_DIR_NAME = '.yolo_json_db'
-export const YOLO_LEARNING_SUBDIR = 'learning'
-export const YOLO_LEARNING_SRS_DIR_NAME = 'learning-srs'
-export const YOLO_ANKI_IMPORT_JOURNAL_DIR_NAME = 'anki-import-journals'
 
 type YoloSettingsLike = {
   yolo?: {
@@ -65,12 +62,6 @@ export const getYoloSnippetsPath = (
   settings?: YoloSettingsLike | null,
 ): string => {
   return normalizePath(`${getYoloBaseDir(settings)}/${YOLO_SNIPPETS_FILE_NAME}`)
-}
-
-export const getYoloLearningDir = (
-  settings?: YoloSettingsLike | null,
-): string => {
-  return normalizePath(`${getYoloBaseDir(settings)}/${YOLO_LEARNING_SUBDIR}`)
 }
 
 export const getYoloJsonDbRootDir = (

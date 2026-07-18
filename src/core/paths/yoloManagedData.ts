@@ -111,8 +111,6 @@ export const ensureJsonDbRootDir = async (
   return root
 }
 
-export const ensureLearningJsonDbRootDir = ensureJsonDbRootDir
-
 export const relocateYoloManagedData = async ({
   app,
   fromSettings,

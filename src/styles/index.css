@@ -11,7 +11,6 @@
 
 @import './popover/index.css';
 
-@import './action-toast.css';
 @import './acknowledgement-modal.css';
 @import './yolo-icon.css';
 @import './chat/input.css';
@@ -22,19 +21,5 @@
 @import './chat/todo-list-panel.css';
 @import './chat/ask-user-question-panel.css';
 @import './chat/new-tab-action.css';
-
-@import './learning/tokens.css';
-@import './learning/primitives.css';
-@import './learning/shell.css';
-@import './learning/home.css';
-@import './learning/modal.css';
-@import './learning/anki-import.css';
-@import './learning/wizard.css';
-@import './learning/outline-builder.css';
-@import './learning/outline.css';
-@import './learning/cards.css';
-@import './learning/exercises.css';
-@import './learning/workspace.css';
-@import './learning/knowledge-graph.css';
 
 @import './config-transfer.css';

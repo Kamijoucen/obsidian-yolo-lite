@@ -1,17 +1,15 @@
 import type { BackgroundActivity } from './backgroundActivityRegistry'
 
-export type BackgroundStatusTone = 'running' | 'waiting' | 'failed' | 'review'
+export type BackgroundStatusTone = 'running' | 'waiting' | 'failed'
 
 export type BackgroundStatusModel = {
   activities: BackgroundActivity[]
-  showReviewReminder: boolean
   tone: BackgroundStatusTone | null
   visible: boolean
 }
 
 export function buildBackgroundStatusModel(
   activities: Iterable<BackgroundActivity>,
-  dueCards: number,
 ): BackgroundStatusModel {
   const visibleActivities = Array.from(activities)
     .filter(
@@ -24,7 +22,6 @@ export function buildBackgroundStatusModel(
       const priorityDelta = priority(left) - priority(right)
       return priorityDelta || left.id.localeCompare(right.id)
     })
-  const showReviewReminder = dueCards > 0
   let tone: BackgroundStatusTone | null = null
   if (visibleActivities.some((activity) => activity.status === 'running')) {
     tone = 'running'
@@ -36,15 +33,12 @@ export function buildBackgroundStatusModel(
     visibleActivities.some((activity) => activity.status === 'failed')
   ) {
     tone = 'failed'
-  } else if (showReviewReminder) {
-    tone = 'review'
   }
 
   return {
     activities: visibleActivities,
-    showReviewReminder,
     tone,
-    visible: visibleActivities.length > 0 || showReviewReminder,
+    visible: visibleActivities.length > 0,
   }
 }
 

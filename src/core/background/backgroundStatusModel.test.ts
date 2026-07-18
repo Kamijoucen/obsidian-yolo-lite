@@ -15,25 +15,21 @@ function activity(
 }
 
 describe('buildBackgroundStatusModel', () => {
-  it('shows a static review state when only due cards exist', () => {
-    expect(buildBackgroundStatusModel([], 3)).toEqual({
+  it('hides when there are no activities', () => {
+    expect(buildBackgroundStatusModel([])).toEqual({
       activities: [],
-      showReviewReminder: true,
-      tone: 'review',
-      visible: true,
+      tone: null,
+      visible: false,
     })
   })
 
-  it('keeps activity priority and sorts the reminder outside activities', () => {
-    const model = buildBackgroundStatusModel(
-      [
-        activity('failed', 'failed'),
-        activity('running-b', 'running'),
-        activity('waiting', 'waiting'),
-        activity('running-a', 'running'),
-      ],
-      5,
-    )
+  it('keeps activity priority', () => {
+    const model = buildBackgroundStatusModel([
+      activity('failed', 'failed'),
+      activity('running-b', 'running'),
+      activity('waiting', 'waiting'),
+      activity('running-a', 'running'),
+    ])
 
     expect(model.activities.map(({ id }) => id)).toEqual([
       'waiting',
@@ -41,15 +37,15 @@ describe('buildBackgroundStatusModel', () => {
       'running-b',
       'failed',
     ])
-    expect(model.showReviewReminder).toBe(true)
     expect(model.tone).toBe('running')
   })
 
-  it('hides when there are no activities or due cards', () => {
-    expect(buildBackgroundStatusModel([], 0)).toMatchObject({
-      visible: false,
-      tone: null,
-      showReviewReminder: false,
-    })
+  it('uses the highest-priority visible activity tone', () => {
+    expect(
+      buildBackgroundStatusModel([
+        activity('failed', 'failed'),
+        activity('waiting', 'waiting'),
+      ]).tone,
+    ).toBe('waiting')
   })
 })

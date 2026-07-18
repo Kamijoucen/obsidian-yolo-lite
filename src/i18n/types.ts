@@ -1,15 +1,9 @@
 export type Language = 'en' | 'zh'
 
-type TranslationBranch = {
-  [key: string]: string | TranslationBranch
-}
-
 export type TranslationKeys = {
   // Commands
   commands: {
     openChatSidebar: string
-    openLearningMode: string
-    learningModeLabel: string
     newChatCurrentView: string
     openYoloNewChat: string
     openNewChatTab: string
@@ -78,15 +72,12 @@ export type TranslationKeys = {
     }
   }
 
-  learning?: TranslationBranch
-
   // Settings
   settings: {
     title: string
     tabs: {
       models: string
       agent: string
-      learning: string
       others: string
     }
     supportYolo: {
@@ -109,11 +100,6 @@ export type TranslationKeys = {
       globalSystemPromptDesc: string
       chatTitlePrompt: string
       chatTitlePromptDesc: string
-    }
-    learning: {
-      generationTitle: string
-      generationModel: string
-      generationModelDesc: string
     }
     chatPreferences: {
       title: string
@@ -1150,10 +1136,6 @@ export type TranslationKeys = {
     backgroundStatusPanelEmpty?: string
     backgroundTasksRunning?: string
     backgroundTasksNeedAttention?: string
-    learningTasksRunning?: string
-    learningReviewLabel?: string
-    learningReviewTitle?: string
-    learningReviewDetail?: string
   }
 
   // Errors

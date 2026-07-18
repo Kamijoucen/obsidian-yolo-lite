@@ -223,16 +223,6 @@ export const yoloSettingsSchema = z.object({
 
   notificationOptions: notificationOptionsSchema,
 
-  learningOptions: z
-    .object({
-      modelId: z.string().catch(''),
-      betaNoticeAcknowledged: z.boolean().catch(false),
-    })
-    .catch({
-      modelId: '',
-      betaNoticeAcknowledged: false,
-    }),
-
   requestPolicy: z
     .object({
       streamFallbackRecoveryEnabled: z.boolean().catch(true),

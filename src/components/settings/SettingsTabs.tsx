@@ -11,7 +11,6 @@ import { useLanguage } from '../../contexts/language-context'
 import YoloPlugin from '../../main'
 
 import { AgentTab } from './tabs/AgentTab'
-import { LearningTab } from './tabs/LearningTab'
 import { ModelsTab } from './tabs/ModelsTab'
 import { OthersTab } from './tabs/OthersTab'
 
@@ -20,7 +19,7 @@ type SettingsTabsProps = {
   plugin: YoloPlugin
 }
 
-export type SettingsTabId = 'models' | 'learning' | 'agent' | 'others'
+export type SettingsTabId = 'models' | 'agent' | 'others'
 
 type SettingsTab = {
   id: SettingsTabId
@@ -38,11 +37,6 @@ const SETTINGS_TABS: SettingsTab[] = [
     id: 'agent',
     labelKey: 'settings.tabs.agent',
     component: AgentTab,
-  },
-  {
-    id: 'learning',
-    labelKey: 'settings.tabs.learning',
-    component: LearningTab,
   },
   {
     id: 'others',

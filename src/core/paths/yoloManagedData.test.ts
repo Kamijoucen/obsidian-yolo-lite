@@ -3,7 +3,6 @@ import type { App } from 'obsidian'
 import {
   YOLO_DATA_META_KEY,
   ensureJsonDbRootDir,
-  ensureLearningJsonDbRootDir,
   extractYoloDataMeta,
   relocateYoloManagedData,
   stampYoloDataMeta,
@@ -100,11 +99,6 @@ describe('yoloManagedData', () => {
 
     await expect(
       ensureJsonDbRootDir(app, { yolo: { baseDir: 'Config/YOLO' } }),
-    ).resolves.toBe('Config/YOLO/.yolo_json_db')
-    await expect(
-      ensureLearningJsonDbRootDir(app, {
-        yolo: { baseDir: 'Config/YOLO' },
-      }),
     ).resolves.toBe('Config/YOLO/.yolo_json_db')
     await expect(adapter.exists('Config/YOLO/.yolo_json_db')).resolves.toBe(
       true,

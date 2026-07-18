@@ -1,17 +1,13 @@
 export type BackgroundActivityStatus = 'running' | 'waiting' | 'failed'
 
-export type BackgroundActivityAction =
-  | {
-      type: 'open-agent-conversation'
-      conversationId: string
-    }
-  | {
-      type: 'open-learning-view'
-    }
+export type BackgroundActivityAction = {
+  type: 'open-agent-conversation'
+  conversationId: string
+}
 
 export type BackgroundActivity = {
   id: string
-  kind: 'agent' | 'learning-agent'
+  kind: 'agent'
   title: string
   detail?: string
   status: BackgroundActivityStatus

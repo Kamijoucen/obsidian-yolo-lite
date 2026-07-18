@@ -282,13 +282,13 @@ describe('agent api helpers', () => {
   it('uses an explicit request model before the assistant model', async () => {
     await resolveAgentApiRunInput(
       buildResolveAgentApiRunInputArgs({
-        prompt: 'Generate learning content',
-        modelId: 'learning-model',
+        prompt: 'Generate content',
+        modelId: 'request-model',
       }),
     )
 
     expect(jest.mocked(getChatModelClient)).toHaveBeenCalledWith(
-      expect.objectContaining({ modelId: 'learning-model' }),
+      expect.objectContaining({ modelId: 'request-model' }),
     )
   })
 
