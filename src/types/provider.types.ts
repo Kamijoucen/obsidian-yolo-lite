@@ -15,11 +15,6 @@ export const requestTransportModeSchema = z.enum([
   'node',
 ])
 
-export const requestTransportModeByPlatformSchema = z.object({
-  desktop: requestTransportModeSchema.optional(),
-  mobile: z.enum(['browser', 'obsidian']).optional(),
-})
-
 export const responseStreamingModeSchema = z.enum([
   'auto',
   'streaming',

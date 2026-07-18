@@ -1,4 +1,4 @@
-import React, { createContext, useContext } from 'react'
+import React, { createContext } from 'react'
 
 const DialogContainerContext = createContext<HTMLElement | null>(null)
 
@@ -14,14 +14,4 @@ export function DialogContainerProvider({
       {children}
     </DialogContainerContext.Provider>
   )
-}
-
-export function useDialogContainer() {
-  const context = useContext(DialogContainerContext)
-  if (!context) {
-    throw new Error(
-      'useDialogContainer must be used within a DialogContainerProvider',
-    )
-  }
-  return context
 }

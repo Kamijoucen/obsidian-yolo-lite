@@ -30,7 +30,6 @@ type ChatConversationPaneProps = {
   onContentElementChange: (element: HTMLElement | null) => void
   renderChatTimelineItem: (timelineItem: ChatTimelineItem) => ReactNode
   timelineRenderVersion?: ChatTimelineRenderVersion<ChatTimelineItem>
-  editingAssistantMessageId: string | null
   onForceScrollToBottom: () => void
   hasStreamingMessages: boolean
   scrollToBottomLabel: string
@@ -43,7 +42,6 @@ type ChatConversationPaneProps = {
   emptyStateAgentDescription: string
   emptyStateAgentFullDescription: string
   footerContent: ReactNode
-  onTimelineVirtualizationChange?: (isVirtualized: boolean) => void
   onUserMessageViewportChange?: (state: UserMessageViewportState) => void
   windowNavigationKey?: number
   windowNavigationTargetMessageId?: string | null
@@ -68,7 +66,6 @@ export function ChatConversationPane({
   onContentElementChange,
   renderChatTimelineItem,
   timelineRenderVersion,
-  editingAssistantMessageId,
   onForceScrollToBottom,
   hasStreamingMessages,
   scrollToBottomLabel,
@@ -81,7 +78,6 @@ export function ChatConversationPane({
   emptyStateAgentDescription,
   emptyStateAgentFullDescription,
   footerContent,
-  onTimelineVirtualizationChange,
   onUserMessageViewportChange,
   windowNavigationKey,
   windowNavigationTargetMessageId,
@@ -117,16 +113,11 @@ export function ChatConversationPane({
       <SharedConversationSurface
         key={`${currentConversationId}:${groupedChatMessagesLength > 0 ? 'ready' : 'empty'}`}
         items={chatTimelineItems}
-        conversationId={currentConversationId}
         scrollContainerRef={chatMessagesRef}
         onScrollContainerChange={onScrollContainerChange}
         onContentElementChange={onContentElementChange}
         renderItem={renderChatTimelineItem}
         renderVersion={timelineRenderVersion}
-        forceRenderItemIds={['bottom-anchor']}
-        virtualizationThreshold={
-          editingAssistantMessageId ? chatTimelineItems.length : undefined
-        }
         containerClassName="yolo-chat-conversation-surface"
         overlaySlot={
           <>
@@ -173,7 +164,6 @@ export function ChatConversationPane({
           </>
         }
         scrollContainerClassName={`yolo-chat-messages${isAutoFollowEnabled ? ' yolo-chat-messages--following' : ''}`}
-        onVirtualizationChange={onTimelineVirtualizationChange}
         onUserMessageViewportChange={onUserMessageViewportChange}
         windowNavigationKey={windowNavigationKey}
         windowNavigationTargetMessageId={windowNavigationTargetMessageId}

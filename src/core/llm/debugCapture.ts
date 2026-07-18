@@ -274,10 +274,6 @@ export function getLLMDebugTraces(traceIds: string[]): LLMDebugTrace[] {
   return result
 }
 
-export function hasLLMDebugTrace(traceId: string | undefined): boolean {
-  return Boolean(traceId && traces.has(traceId))
-}
-
 export function bindLLMDebugTraceToSignal(
   traceId: string | undefined,
   signal: AbortSignal | null | undefined,

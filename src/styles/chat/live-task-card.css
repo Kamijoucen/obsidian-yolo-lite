@@ -1,4 +1,4 @@
-/* 外部 Agent 工具卡：终端样式
+/* Agent 实时任务卡与终端输出样式
  * 布局：状态条 → Progress（始终展开+自动滚底） → Output → metadata chips
  * 终端命令与实时任务卡片共用此样式。
  */
@@ -15,12 +15,6 @@
 }
 
 /* ── 状态条 ── */
-.yolo-live-task-card__status-row {
-  display: flex;
-  align-items: center;
-  gap: var(--size-4-2);
-  flex-wrap: wrap;
-}
 
 .yolo-live-task-card__badge {
   display: inline-flex;
@@ -50,49 +44,6 @@
 
 .yolo-live-task-card__badge--error {
   background: color-mix(in srgb, var(--color-red) 15%, transparent);
-  color: var(--color-red);
-}
-
-.yolo-live-task-card__meta-inline {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--size-2-1);
-  color: var(--text-muted);
-  font-size: var(--font-ui-smaller);
-}
-
-.yolo-live-task-card__meta-inline-sep {
-  opacity: 0.5;
-}
-
-.yolo-live-task-card__cwd {
-  font-family: var(--font-monospace);
-  max-width: 220px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  direction: rtl;
-  text-align: left;
-}
-
-.yolo-live-task-card__abort-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--size-2-1);
-  margin-left: auto;
-  padding: var(--size-2-1) var(--size-2-3);
-  border: 1px solid var(--background-modifier-border);
-  border-radius: var(--radius-s);
-  background: var(--background-secondary);
-  color: var(--text-normal);
-  font-size: var(--font-ui-smaller);
-  cursor: pointer;
-  transition: background 0.12s ease;
-}
-
-.yolo-live-task-card__abort-btn:hover {
-  background: color-mix(in srgb, var(--color-red) 15%, transparent);
-  border-color: var(--color-red);
   color: var(--color-red);
 }
 
@@ -134,19 +85,6 @@ button.yolo-live-task-card__compact-abort-btn:focus-visible {
 }
 
 /* ── 输出块（Progress / Output 共用） ── */
-.yolo-live-task-card__stream-section {
-  display: flex;
-  flex-direction: column;
-  gap: var(--size-2-2);
-}
-
-.yolo-live-task-card__stream-label {
-  font-size: var(--font-ui-smaller);
-  font-weight: var(--font-medium);
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
 
 .yolo-live-task-card__console {
   margin: 0;
@@ -175,58 +113,9 @@ button.yolo-live-task-card__compact-abort-btn:focus-visible {
   display: block;
 }
 
-.yolo-live-task-card__line--system {
-  color: var(--text-faint);
-}
-
-.yolo-live-task-card__line--thinking {
-  color: var(--text-accent);
-  font-style: italic;
-}
-
-.yolo-live-task-card__line--tool {
-  color: var(--color-blue);
-}
-
-.yolo-live-task-card__line--tool-result {
-  color: var(--color-green);
-}
-
-.yolo-live-task-card__line--done {
-  color: var(--text-success);
-  font-weight: var(--font-medium);
-}
-
-.yolo-live-task-card__line--section {
-  color: var(--text-normal);
-  font-weight: var(--font-semibold);
-}
-
 .yolo-live-task-card__line--parse-error {
   color: var(--text-error);
   opacity: 0.7;
-}
-
-/* ── metadata chips（底部） ── */
-.yolo-live-task-card__meta-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--size-4-2);
-  padding-top: var(--size-2-2);
-  border-top: 1px solid var(--background-modifier-border);
-  font-size: var(--font-ui-smaller);
-  color: var(--text-muted);
-}
-
-.yolo-live-task-card__chip {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--size-2-1);
-}
-
-.yolo-live-task-card__chip-icon {
-  opacity: 0.7;
-  flex-shrink: 0;
 }
 
 /* ── 截断/无输出提示 ── */

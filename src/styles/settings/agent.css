@@ -87,14 +87,6 @@
   font-size: var(--font-ui-smaller);
 }
 
-.yolo-agent-cap-status {
-  color: var(--text-faint);
-}
-
-.yolo-agent-cap-status::before {
-  content: ' · ';
-}
-
 .yolo-agent-cap-tags {
   margin-top: var(--size-4-2);
   display: flex;
@@ -104,12 +96,6 @@
 
 .yolo-agent-tools-trigger {
   white-space: nowrap;
-}
-
-.yolo-agent-tools-modal-content {
-  margin-top: var(--size-4-2);
-  max-height: 420px;
-  overflow: auto;
 }
 
 .yolo-agent-tool-list {
@@ -291,11 +277,6 @@
   outline-offset: 2px;
 }
 
-.yolo-import-skill-dropzone-icon {
-  font-size: 2em;
-  line-height: 1;
-}
-
 .yolo-import-skill-dropzone-text {
   color: var(--text-muted);
   font-size: var(--font-ui-small);
@@ -366,11 +347,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.yolo-import-skill-file-meta {
-  color: var(--text-muted);
-  font-size: var(--font-ui-smaller);
 }
 
 .yolo-import-skill-file-desc {
@@ -538,38 +514,6 @@
   font-size: var(--font-ui-smaller);
 }
 
-button.yolo-agent-tool-group-disclosure {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--size-2-1);
-  margin-left: var(--size-2-2);
-  padding: 1px 4px;
-  height: auto;
-  line-height: 1.4;
-  border: none;
-  border-radius: var(--radius-s);
-  background: transparent;
-  box-shadow: none;
-  color: var(--text-muted);
-  font-size: var(--font-ui-smaller);
-  text-decoration: none;
-  cursor: pointer;
-}
-
-button.yolo-agent-tool-group-disclosure:hover {
-  color: var(--text-normal);
-  background: transparent;
-}
-
-button.yolo-agent-tool-group-disclosure svg {
-  flex: 0 0 auto;
-  opacity: 0.75;
-}
-
-button.yolo-agent-tool-group-approval-trigger {
-  margin-left: 0;
-}
-
 .yolo-agent-tool-group-meta {
   display: inline-flex;
   align-items: center;
@@ -686,11 +630,6 @@ button.yolo-agent-tool-group-bulk-toggle:hover {
   white-space: nowrap;
   text-overflow: ellipsis;
   vertical-align: middle;
-}
-
-.yolo-agent-chip--status {
-  color: var(--text-success);
-  border-color: color-mix(in srgb, var(--text-success) 30%, transparent);
 }
 
 button.yolo-agent-chip--more {
@@ -877,30 +816,6 @@ button.yolo-agent-chip--more:hover {
   gap: var(--size-2-2);
 }
 
-.yolo-web-search-row {
-  display: grid;
-  grid-template-columns: minmax(160px, 1fr) minmax(140px, 0.8fr) 80px 96px;
-  gap: var(--size-4-3);
-  align-items: center;
-  padding: var(--size-2-3) var(--size-4-3);
-  border-bottom: 1px solid var(--background-modifier-border);
-}
-
-.yolo-web-search-row:last-child {
-  border-bottom: none;
-}
-
-.yolo-web-search-header {
-  font-weight: var(--font-semibold);
-  background: var(--background-secondary);
-}
-
-.yolo-web-search-add {
-  display: flex;
-  align-items: center;
-  gap: var(--size-4-2);
-}
-
 .yolo-builtin-tools-table-description {
   min-width: 0;
 }
@@ -910,16 +825,6 @@ button.yolo-agent-chip--more:hover {
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   overflow: hidden;
-}
-
-.yolo-agent-empty {
-  border: 1px dashed var(--background-modifier-border);
-  border-radius: var(--radius-m);
-  padding: var(--size-4-4);
-  display: flex;
-  align-items: center;
-  gap: var(--size-4-2);
-  color: var(--text-muted);
 }
 
 .yolo-agent-grid {
@@ -1048,15 +953,6 @@ button.yolo-agent-chip--more:hover {
   font-size: var(--font-ui-medium);
   line-height: 1.18;
   font-weight: var(--font-semibold);
-}
-
-.yolo-agent-current-badge {
-  border: 1px solid
-    color-mix(in srgb, var(--interactive-accent) 60%, transparent);
-  border-radius: var(--radius-s);
-  color: var(--interactive-accent);
-  font-size: var(--font-ui-smaller);
-  padding: 1px 6px;
 }
 
 .yolo-agent-desc {
@@ -1219,13 +1115,6 @@ button.yolo-agent-chip--more:hover {
   }
 }
 
-.yolo-agent-modal-header-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--size-4-2);
-}
-
 .yolo-modal--agent-direct-edit .modal-header {
   display: none;
 }
@@ -1316,11 +1205,6 @@ button.yolo-agent-chip--more:hover {
 .yolo-agent-editor-direct-footer-actions {
   display: flex;
   justify-content: flex-end;
-  gap: var(--size-4-1);
-}
-
-.yolo-agent-modal-header-actions {
-  display: flex;
   gap: var(--size-4-1);
 }
 
@@ -2087,18 +1971,6 @@ button.yolo-agent-chip--more:hover {
   margin-bottom: var(--size-2-2) !important;
 }
 
-.yolo-js-exec-textarea.setting-item {
-  display: block;
-  padding: 0;
-  border: 0 !important;
-}
-
-.yolo-js-exec-textarea textarea {
-  width: 100%;
-  min-height: 88px;
-  resize: vertical;
-}
-
 @media (max-width: 720px) {
   .yolo-js-exec-modal {
     width: calc(100vw - 16px);
@@ -2116,18 +1988,6 @@ button.yolo-agent-chip--more:hover {
   .yolo-js-exec-timeout.setting-item {
     align-items: stretch;
   }
-}
-
-.yolo-js-exec-config-button {
-  width: 36px !important;
-  height: 36px !important;
-  padding: 0 !important;
-  border-radius: 6px !important;
-}
-
-.yolo-js-exec-config-button svg {
-  width: 18px;
-  height: 18px;
 }
 
 .yolo-terminal-command-modal {

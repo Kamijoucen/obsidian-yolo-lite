@@ -14,11 +14,9 @@ import {
   $isTextNode,
   COMMAND_PRIORITY_LOW,
   CommandListenerPriority,
-  LexicalCommand,
   LexicalEditor,
   RangeSelection,
   TextNode,
-  createCommand,
 } from 'lexical'
 import { startTransition, useCallback, useEffect, useState } from 'react'
 import type { JSX as ReactJSX } from 'react/jsx-runtime'
@@ -106,40 +104,6 @@ function isSelectionOnEntityBoundary(
     return false
   })
 }
-
-// Got from https://stackoverflow.com/a/42543908/2013580
-export function getScrollParent(
-  element: HTMLElement,
-  includeHidden: boolean,
-): HTMLElement | HTMLBodyElement {
-  let style = getComputedStyle(element)
-  const excludeStaticParent = style.position === 'absolute'
-  const overflowRegex = includeHidden ? /(auto|scroll|hidden)/ : /(auto|scroll)/
-  if (style.position === 'fixed') {
-    return document.body
-  }
-  for (
-    let parent: HTMLElement | null = element;
-    (parent = parent.parentElement);
-
-  ) {
-    style = getComputedStyle(parent)
-    if (excludeStaticParent && style.position === 'static') {
-      continue
-    }
-    if (
-      overflowRegex.test(style.overflow + style.overflowY + style.overflowX)
-    ) {
-      return parent
-    }
-  }
-  return document.body
-}
-
-export const SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND: LexicalCommand<{
-  index: number
-  option: MenuOption
-}> = createCommand('SCROLL_TYPEAHEAD_OPTION_INTO_VIEW_COMMAND')
 
 export function useBasicTypeaheadTriggerMatch(
   trigger: string,

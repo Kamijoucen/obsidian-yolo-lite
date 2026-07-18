@@ -23,9 +23,6 @@ export const REASONING_META: Record<
   max: { effort: 'max', budget: 65536 },
 }
 
-export const isReasoningEnabledLevel = (level: ReasoningLevel): boolean =>
-  level !== 'off'
-
 export function isReasoningLevelString(value: string): value is ReasoningLevel {
   return (REASONING_LEVELS as readonly string[]).includes(value)
 }

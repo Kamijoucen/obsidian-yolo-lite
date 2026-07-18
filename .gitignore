@@ -7,14 +7,11 @@
 
 # npm
 node_modules
-vendor/
-/runtime/
 
 # Don't include the compiled files in the repo.
 # They should be uploaded to GitHub releases instead.
 main.js
 meta.json
-main.css
 
 # Exclude sourcemaps
 *.map
@@ -29,15 +26,7 @@ AGENTS.md
 temporary
 TODO.md
 
-docs/
-.code/
-PLAN.md
 .opencode/
-Design/
-Reference/
 .cursor/
 .claude/
-scripts/bench-tool-disclosure/
 .cursorignore
-.yolo-update-staging/
-supabase/

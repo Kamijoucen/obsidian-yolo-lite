@@ -94,7 +94,6 @@ const TimelineRow = memo(TimelineRowInner) as typeof TimelineRowInner
 
 type ChatTimelineListProps<TItem extends ChatTimelineItem> = {
   items: TItem[]
-  conversationId?: string
   scrollContainerRef: RefObject<HTMLElement>
   onScrollContainerChange?: (element: HTMLElement | null) => void
   onContentElementChange?: (element: HTMLElement | null) => void
@@ -104,17 +103,8 @@ type ChatTimelineListProps<TItem extends ChatTimelineItem> = {
     context?: ChatTimelineRenderContext,
   ) => ReactNode
   renderVersion?: ChatTimelineRenderVersion<TItem>
-  overscanPx?: number
-  virtualizationThreshold?: number
-  forceRenderItemIds?: string[]
-  onRenderStateChange?: (state: {
-    visibleStartIndex: number
-    visibleEndIndex: number
-    heightByItemId: Record<string, number>
-  }) => void
   scrollContainerClassName?: string
   scrollContainerStyle?: CSSProperties
-  onVirtualizationChange?: (isVirtualized: boolean) => void
   onUserMessageViewportChange?: (state: UserMessageViewportState) => void
   windowNavigationKey?: number
   windowNavigationTargetMessageId?: string | null
@@ -297,13 +287,8 @@ export function ChatTimelineList<TItem extends ChatTimelineItem>({
   onContentElementChange,
   renderItem,
   renderVersion,
-  overscanPx,
-  virtualizationThreshold,
-  forceRenderItemIds,
-  onRenderStateChange,
   scrollContainerClassName,
   scrollContainerStyle,
-  onVirtualizationChange,
   onUserMessageViewportChange,
   windowNavigationKey,
   windowNavigationTargetMessageId,
@@ -313,9 +298,6 @@ export function ChatTimelineList<TItem extends ChatTimelineItem>({
   onLoadNewer,
   bottomSpacerHeight = 0,
 }: ChatTimelineListProps<TItem>) {
-  void overscanPx
-  void virtualizationThreshold
-  void forceRenderItemIds
   const [scrollerElement, setScrollerElement] = useState<HTMLElement | null>(
     null,
   )
@@ -335,10 +317,6 @@ export function ChatTimelineList<TItem extends ChatTimelineItem>({
     targetMessageId: string | null | undefined
   } | null>(null)
   const suppressLoadMoreUntilRef = useRef(0)
-
-  useLayoutEffect(() => {
-    onVirtualizationChange?.(false)
-  }, [onVirtualizationChange])
 
   const captureAnchorBeforeWindowChange = useCallback(() => {
     if (!scrollerElement) {
@@ -592,18 +570,6 @@ export function ChatTimelineList<TItem extends ChatTimelineItem>({
     scheduleUserMessageViewport,
     scrollerElement,
   ])
-
-  useEffect(() => {
-    if (!onRenderStateChange) {
-      return
-    }
-
-    onRenderStateChange({
-      visibleStartIndex: items.length > 0 ? 0 : -1,
-      visibleEndIndex: items.length - 1,
-      heightByItemId: {},
-    })
-  }, [items.length, onRenderStateChange])
 
   const safeSpacerHeight = Math.max(0, Math.ceil(bottomSpacerHeight))
   const resolveRenderVersion = useCallback(

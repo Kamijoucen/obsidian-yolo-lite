@@ -5,45 +5,13 @@
  * Status hues are theme-scoped variables, brightened under .theme-dark.
  */
 
-/* ---- entry button (left of "+ add chat model") ---- */
-.yolo-models-subsection-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--size-4-2);
-}
-
 /* Buttons keep their borders but drop Obsidian's default box-shadow.
  * Selectors are container-scoped to (0,2,0) so they beat Obsidian core's
  * `button:not(.clickable-icon)` rule (0,1,1), which otherwise forces
  * `--interactive-normal` onto every custom button background. */
-.yolo-models-subsection-actions .yolo-connectivity-test-btn,
+
 .yolo-connectivity-panel button {
   box-shadow: none;
-}
-
-.yolo-models-subsection-actions .yolo-connectivity-test-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-size: var(--font-ui-smaller);
-  padding: var(--size-2-1) var(--size-4-2);
-  border: none;
-  border-radius: var(--button-radius);
-  cursor: pointer;
-  color: var(--text-accent);
-  background-color: color-mix(
-    in srgb,
-    var(--interactive-accent) 14%,
-    transparent
-  );
-}
-
-.yolo-models-subsection-actions .yolo-connectivity-test-btn:hover {
-  background-color: color-mix(
-    in srgb,
-    var(--interactive-accent) 24%,
-    transparent
-  );
 }
 
 /* ---- modal shell ---- */

@@ -50,25 +50,6 @@ export function getModelDisplayName(modelId: string): string {
 }
 
 /**
- * Get display name with provider for a model
- * @param modelId - The model ID
- * @param providerName - The provider display name (optional)
- * @returns The display name with provider
- */
-export function getModelDisplayNameWithProvider(
-  modelId: string,
-  providerName?: string,
-): string {
-  const { providerId, modelName } = parseModelId(modelId)
-  if (providerId && providerName) {
-    return `${modelName} (${providerName})`
-  } else if (providerId) {
-    return `${modelName} (${providerId})`
-  }
-  return modelName
-}
-
-/**
  * Detect reasoning type based on model id keywords.
  * Returns 'openai' for known OpenAI-style reasoning models; otherwise 'none'.
  */

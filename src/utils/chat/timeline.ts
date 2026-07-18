@@ -153,26 +153,6 @@ function estimateAssistantGroupHeight(
   })
 }
 
-export const getDefaultTimelineEstimatedHeight = (
-  item: ChatTimelineItem,
-): number => {
-  switch (item.kind) {
-    case 'user-message':
-      return USER_MESSAGE_ESTIMATED_HEIGHT
-    case 'assistant-group':
-      return ASSISTANT_GROUP_ESTIMATED_HEIGHT
-    case 'compaction-divider':
-    case 'compaction-pending':
-      return COMPACTION_ESTIMATED_HEIGHT
-    case 'query-progress':
-      return QUERY_PROGRESS_ESTIMATED_HEIGHT
-    case 'continue-response':
-      return CONTINUE_RESPONSE_ESTIMATED_HEIGHT
-    case 'bottom-anchor':
-      return BOTTOM_ANCHOR_ESTIMATED_HEIGHT
-  }
-}
-
 type BuildMessageTimelineItemsParams = {
   groupedChatMessages: (ChatUserMessage | AssistantToolMessageGroup)[]
   revisionsById?: ReadonlyMap<string, number>

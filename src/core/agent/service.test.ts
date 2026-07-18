@@ -342,7 +342,7 @@ describe('AgentService abort handling', () => {
 
   it('aborting a single tool call keeps the run alive (issue #338)', async () => {
     const service = new AgentService()
-    const mcpAbortToolCall = jest.fn()
+    const abortToolCall = jest.fn()
 
     const runPromise = service.run({
       conversationId: 'conversation-parallel',
@@ -354,7 +354,7 @@ describe('AgentService abort handling', () => {
       input: {
         conversationId: 'conversation-parallel',
         messages: [createStreamingMessages()[0]],
-        toolManager: { abortToolCall: mcpAbortToolCall },
+        toolManager: { abortToolCall },
       } as never,
     })
 
@@ -390,7 +390,7 @@ describe('AgentService abort handling', () => {
       }),
     ).toBe(true)
 
-    expect(mcpAbortToolCall).toHaveBeenCalledWith('tool-call-1')
+    expect(abortToolCall).toHaveBeenCalledWith('tool-call-1')
     expect(runtime.abort).not.toHaveBeenCalled()
 
     const state = service.getState('conversation-parallel')

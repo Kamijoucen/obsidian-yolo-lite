@@ -1,24 +1,8 @@
-import { YoloSettings } from '../../settings/schema/setting.types'
-import { ChatModel } from '../../types/chat-model.types'
 import {
   LLMProvider,
   RequestTransportMode,
   ResponseStreamingMode,
 } from '../../types/provider.types'
-
-export function getProviderById(
-  settings: Pick<YoloSettings, 'providers'>,
-  providerId: string,
-): LLMProvider | undefined {
-  return settings.providers.find((provider) => provider.id === providerId)
-}
-
-export function resolveChatModelProvider(
-  settings: Pick<YoloSettings, 'providers'>,
-  model: Pick<ChatModel, 'providerId'>,
-): LLMProvider | undefined {
-  return getProviderById(settings, model.providerId)
-}
 
 export function getRequestTransportModeValue(
   additionalSettings: Record<string, unknown> | undefined,
@@ -55,11 +39,4 @@ export function providerSupportsTransportModeSelection(
   _provider: Pick<LLMProvider, 'presetType' | 'apiType'>,
 ): boolean {
   return true
-}
-
-export function isProviderOpenAIStyle(provider: LLMProvider): boolean {
-  return (
-    provider.apiType === 'openai-compatible' ||
-    provider.apiType === 'openai-responses'
-  )
 }

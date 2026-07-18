@@ -44,7 +44,6 @@ import OnMutationPlugin, {
 } from './plugins/on-mutation/OnMutationPlugin'
 import AttachmentPastePlugin from './plugins/paste/AttachmentPastePlugin'
 import PlainTextPastePlugin from './plugins/paste/PlainTextPastePlugin'
-// templates feature removed
 
 export type LexicalContentEditableProps = {
   editorRef: RefObject<LexicalEditor>
@@ -96,7 +95,6 @@ export type LexicalContentEditableProps = {
     onEnter?: {
       onVaultChat: () => void
     }
-    // templates feature removed
   }
 }
 
@@ -374,7 +372,6 @@ function LexicalContentEditable({
       )}
       <PlainTextPastePlugin />
       <ObsidianFileDropPlugin />
-      {/* templates feature removed */}
     </LexicalComposer>
   )
 }

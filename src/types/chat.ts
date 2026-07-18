@@ -245,26 +245,3 @@ export type SerializedChatMessage =
   | SerializedChatToolMessage
   | SerializedChatSubagentResultMessage
   | SerializedChatTerminalCommandResultMessage
-
-export type ChatConversation = {
-  schemaVersion: number
-  id: string
-  title: string
-  createdAt: number
-  updatedAt: number
-  isPinned?: boolean
-  pinnedAt?: number
-  messages: SerializedChatMessage[]
-  activeBranchByUserMessageId?: Record<string, string>
-  reasoningLevel?: string
-  compaction?: ChatConversationCompactionLike | null
-}
-export type ChatConversationMeta = {
-  schemaVersion: number
-  id: string
-  title: string
-  createdAt: number
-  updatedAt: number
-  isPinned?: boolean
-  pinnedAt?: number
-}

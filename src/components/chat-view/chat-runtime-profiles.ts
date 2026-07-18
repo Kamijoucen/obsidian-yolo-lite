@@ -72,7 +72,11 @@ export function resolveChatModeRuntime({
       maxAutoIterations: DEFAULT_AGENT_MAX_AUTO_ITERATIONS,
     },
     allowedToolNames,
-    toolPreferences: isAgentMode ? assistant?.toolPreferences : undefined,
+    // The allowed-name list controls which tools Ask mode may see, while the
+    // preference map is still required by the execution gateway to confirm
+    // that those tools are enabled. Dropping it here advertises safe tools
+    // such as fs_read to the model and then rejects the same call at runtime.
+    toolPreferences: assistant?.toolPreferences,
     bypassToolApproval: isAgentMode && yoloEnabled,
     toolCapabilityMode: isAgentMode ? 'agent' : 'ask',
   }

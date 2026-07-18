@@ -15,35 +15,10 @@
     color-mix(in srgb, var(--background-modifier-border) 78%, transparent);
 }
 
-.yolo-ghost-text {
-  color: var(--text-muted);
-  pointer-events: none;
-  opacity: 0.6;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-}
-
 /* Chat input: outer wrapper to anchor settings button at top-right */
 .yolo-chat-input-wrapper {
   position: relative;
   width: 100%;
-}
-
-.yolo-chat-input-settings-outer {
-  position: absolute;
-  top: 0px;
-  right: -3px;
-  left: auto !important; /* cancel any left: 0 from other rules */
-  z-index: 3;
-  background-color: transparent;
-  border-radius: var(--radius-1);
-  padding: var(--size-2-1);
-  box-shadow: none;
-}
-
-.yolo-chat-input-settings-outer:focus-within {
-  background-color: transparent;
-  box-shadow: none;
 }
 
 .yolo-chat-header-right {
@@ -187,49 +162,6 @@
   margin: 0;
 }
 
-.yolo-chat-header-title-toggle {
-  display: flex;
-  align-items: center;
-  gap: var(--size-2-1);
-  padding: 0;
-  background: transparent !important;
-  border: none;
-  border-radius: 0;
-  color: inherit;
-  cursor: pointer;
-  font: inherit;
-  box-shadow: none;
-  appearance: none;
-  -webkit-appearance: none;
-}
-
-.yolo-chat-header-title-toggle:focus-visible {
-  outline: 1px solid var(--interactive-accent);
-  outline-offset: 2px;
-}
-
-.yolo-chat-header-title-toggle:hover,
-.yolo-chat-header-title-toggle:focus,
-.yolo-chat-header-title-toggle:active {
-  background: transparent;
-  box-shadow: none;
-}
-
-.yolo-chat-header-title-toggle .yolo-chat-header-title {
-  margin: 0;
-}
-
-.yolo-chat-header-title-icon {
-  height: 14px;
-  width: 14px;
-  color: var(--text-muted);
-  transition: color 0.15s ease;
-}
-
-.yolo-chat-header-title-toggle:hover .yolo-chat-header-title-icon {
-  color: var(--text-normal);
-}
-
 .yolo-chat-header-buttons {
   display: flex;
   gap: var(--size-2-1);
@@ -238,97 +170,6 @@
     height: var(--icon-l);
     width: var(--icon-l);
     stroke-width: var(--icon-stroke);
-  }
-}
-
-.yolo-markdown {
-  line-height: var(--line-height-normal);
-  font-size: var(--font-ui-small);
-
-  h1 {
-    font-size: var(--font-ui-large);
-  }
-
-  h2 {
-    font-size: var(--font-ui-medium);
-  }
-
-  h3 {
-    font-size: var(--font-ui-small);
-  }
-
-  h4 {
-    font-size: var(--font-ui-smaller);
-  }
-
-  h5 {
-    font-size: var(--font-ui-smallest);
-  }
-
-  h6 {
-    font-size: var(--font-ui-smallest);
-  }
-
-  p {
-    font-size: var(--font-ui-small);
-  }
-
-  ul {
-    font-size: var(--font-ui-small);
-    padding-left: var(--size-4-4);
-  }
-
-  ol {
-    font-size: var(--font-ui-small);
-    padding-left: var(--size-4-4);
-  }
-
-  li {
-    font-size: var(--font-ui-small);
-  }
-
-  blockquote {
-    font-size: var(--font-ui-small);
-    font-style: var(--blockquote-style);
-    background-color: var(--blockquote-background-color);
-    margin: 0;
-    padding-left: var(--size-4-2);
-    border-left: var(--blockquote-border-thickness) solid
-      var(--blockquote-border-color);
-  }
-
-  code {
-    font-size: var(--font-ui-small);
-    border-radius: var(--code-radius);
-    padding: 0.1em 0.25em;
-    color: var(--code-normal);
-    font-size: var(--code-size);
-    background-color: var(--code-background);
-    vertical-align: baseline;
-  }
-
-  table {
-    font-size: var(--font-ui-small);
-  }
-
-  thead {
-    font-size: var(--font-ui-small);
-  }
-
-  tbody {
-    font-size: var(--font-ui-small);
-  }
-
-  tr {
-    font-size: var(--font-ui-small);
-  }
-
-  td {
-    font-size: var(--font-ui-small);
-  }
-
-  th {
-    font-size: var(--font-ui-small);
   }
 }
 
@@ -656,7 +497,6 @@ button.yolo-chat-quick-access-picker-row > svg {
   text-align: center;
 }
 
-.yolo-chat-container--sidebar > .yolo-chat-composer-wrapper,
 .yolo-chat-container--sidebar > .yolo-chat-footer,
 .yolo-chat-container--sidebar > .yolo-chat-user-input-files,
 .yolo-chat-container--sidebar > .yolo-chat-input-wrapper {
@@ -719,9 +559,6 @@ button.yolo-chat-quick-access-picker-row > svg {
 
 .yolo-chat-container--workspace-wide-header
   > .yolo-chat-header--workspace
-  .yolo-view-toggle,
-.yolo-chat-container--workspace-wide-header
-  > .yolo-chat-header--workspace
   .yolo-chat-header-right {
   pointer-events: auto;
 }
@@ -737,14 +574,6 @@ button.yolo-chat-quick-access-picker-row > svg {
       color-mix(in srgb, var(--background-modifier-box-shadow) 10%, transparent),
     0 1px 0 color-mix(in srgb, white 10%, transparent) inset;
   backdrop-filter: blur(12px);
-}
-
-.yolo-chat-container--workspace-wide-header
-  > .yolo-chat-header--workspace
-  .yolo-view-toggle {
-  background: transparent;
-  border-color: transparent;
-  box-shadow: none;
 }
 
 .yolo-chat-container--workspace-wide-header
@@ -771,16 +600,7 @@ button.yolo-chat-quick-access-picker-row > svg {
   );
 }
 
-.yolo-chat-container--workspace-wide-header > .yolo-chat-composer-wrapper {
-  padding-top: calc(
-    var(--yolo-chat-workspace-header-top) +
-      var(--yolo-chat-workspace-header-height) +
-      var(--yolo-chat-workspace-header-gap)
-  );
-}
-
 .yolo-chat-container--workspace-wide-header > .yolo-chat-messages,
-.yolo-chat-container--workspace-wide-header > .yolo-chat-composer-wrapper,
 .yolo-chat-container--workspace-wide-header > .yolo-chat-footer,
 .yolo-chat-container--workspace-wide-header > .yolo-chat-user-input-files,
 .yolo-chat-container--workspace-wide-header > .yolo-chat-input-wrapper {
@@ -838,269 +658,6 @@ button.yolo-chat-quick-access-picker-row > svg {
   width: 100%;
   flex: 1 1 auto;
   flex-direction: column;
-}
-
-.yolo-chat-composer-wrapper {
-  flex: 1 1 auto;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-}
-
-.yolo-composer-container {
-  display: flex;
-  flex-direction: column;
-  gap: var(--size-4-4);
-  height: 100%;
-  flex: 1 1 auto;
-  min-height: 0;
-  padding: var(--size-4-3) var(--size-4-3) var(--size-4-2);
-}
-
-.yolo-composer-tabs {
-  display: flex;
-  gap: var(--size-2-2);
-  padding: var(--size-2-2);
-  border-radius: var(--radius-m);
-  border: 1px solid var(--background-modifier-border);
-  background: var(--background-secondary);
-  box-shadow: inset 0 0 0 1px
-    color-mix(in srgb, var(--background-modifier-border) 40%, transparent);
-  width: 100%;
-  align-self: stretch;
-  margin: 0 calc(var(--size-4-3) * -1);
-  width: calc(100% + (var(--size-4-3) * 2));
-  min-width: 0;
-}
-
-.yolo-composer-tab {
-  flex: 1 1 0;
-  border: 1px solid transparent;
-  background: transparent !important;
-  background-color: transparent !important;
-  color: var(--text-muted);
-  font-size: var(--font-ui-small);
-  padding: 6px 8px;
-  border-radius: var(--radius-s);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  position: relative;
-  box-shadow: none !important;
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.yolo-composer-tab-label {
-  display: block;
-  min-width: 0;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.yolo-composer-tabs--glider {
-  position: relative;
-  overflow: visible;
-  gap: 0;
-  --yolo-tab-count: 3;
-  --yolo-tab-index: 0;
-  --yolo-tab-padding: var(--size-2-2);
-}
-.yolo-composer-tabs--glider .yolo-composer-tab {
-  position: relative;
-  z-index: 2;
-}
-.yolo-composer-tabs--glider .yolo-composer-tab.is-active {
-  border-color: transparent;
-  box-shadow: none;
-}
-.yolo-composer-tabs-glider {
-  position: absolute;
-  top: var(--yolo-tab-padding);
-  left: var(--yolo-tab-padding);
-  width: calc((100% - (var(--yolo-tab-padding) * 2)) / var(--yolo-tab-count));
-  height: calc(100% - (var(--yolo-tab-padding) * 2));
-  background: transparent;
-  border: 2px solid var(--h1-color, var(--interactive-accent));
-  border-radius: var(--radius-s);
-  box-shadow: 0 2px 10px
-    color-mix(in srgb, var(--interactive-accent) 18%, transparent);
-  transform: translateX(calc(100% * var(--yolo-tab-index)));
-  transition: transform 0.36s cubic-bezier(0.4, 1.2, 0.4, 1);
-  pointer-events: none;
-  z-index: 1;
-}
-
-.yolo-composer-tab:hover {
-  color: var(--text-normal);
-  background: transparent !important;
-}
-
-.yolo-composer-tab.is-active {
-  color: var(--text-normal);
-  background: transparent !important;
-  border: 2px solid var(--h1-color, var(--interactive-accent));
-  box-shadow: 0 2px 10px
-    color-mix(in srgb, var(--interactive-accent) 18%, transparent);
-}
-
-.yolo-composer-scroll {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: var(--size-4-5);
-  padding: 0;
-  margin: 0 calc(var(--size-4-3) * -1);
-  width: calc(100% + (var(--size-4-3) * 2));
-  align-self: stretch;
-}
-
-.yolo-composer-section {
-  display: flex;
-  flex-direction: column;
-  gap: var(--size-4-2);
-  padding: var(--size-4-4);
-  background: transparent !important;
-  border: 1px solid var(--background-modifier-border);
-  border-radius: var(--radius-l);
-  box-shadow: none;
-  position: relative;
-  overflow: hidden;
-  flex: 0 0 auto;
-  width: 100%;
-}
-
-.yolo-composer-heading {
-  display: flex;
-  flex-direction: column;
-  gap: var(--size-2-2);
-  margin-bottom: var(--size-2-4);
-  position: relative;
-  padding-bottom: 0;
-}
-
-.yolo-composer-heading-title {
-  color: var(--text-normal);
-  font-size: var(--font-ui-medium);
-  line-height: var(--line-height-tight);
-  font-weight: var(--font-semibold);
-  display: flex;
-  align-items: center;
-  gap: var(--size-2-2);
-}
-
-.yolo-composer-heading-title::before {
-  content: '';
-  width: 4px;
-  height: 18px;
-  background: var(--h1-color, var(--text-accent));
-  border-radius: 2px;
-  flex-shrink: 0;
-}
-
-.yolo-composer-heading-desc {
-  color: var(--text-muted);
-  font-size: var(--font-ui-smaller);
-  line-height: var(--line-height-tight);
-}
-
-.yolo-composer-option {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--size-4-3);
-  padding: var(--size-4-3);
-  border-radius: var(--radius-m);
-  background: transparent;
-  border: 1px solid var(--background-modifier-border);
-  transition: all 0.2s ease;
-  position: relative;
-}
-
-.yolo-composer-option:hover {
-  border-color: var(--background-modifier-border-hover);
-  box-shadow: none;
-  transform: translateY(-1px);
-}
-
-.yolo-composer-option--model {
-  flex-wrap: wrap;
-  gap: var(--size-4-3);
-}
-
-.yolo-composer-option--table {
-  align-items: stretch;
-}
-
-.yolo-composer-option-info {
-  display: flex;
-  flex-direction: column;
-  gap: var(--size-2-1);
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
-.yolo-composer-option-title {
-  color: var(--text-normal);
-  font-weight: var(--font-semibold);
-  font-size: var(--font-ui-small);
-  margin-bottom: var(--size-2-1);
-}
-
-.yolo-composer-option-desc {
-  color: var(--text-muted);
-  font-size: var(--font-ui-smaller);
-  line-height: var(--line-height-tight);
-}
-
-.yolo-composer-option-control {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  flex: 0 0 auto;
-  gap: var(--size-2-1);
-  min-width: auto;
-  margin-left: auto;
-}
-
-.yolo-composer-option-control--fluid {
-  flex: 1 1 auto;
-  justify-content: flex-start;
-  min-width: 0;
-  max-width: 100%;
-}
-
-.yolo-composer-option-control--stack {
-  flex-wrap: wrap;
-  justify-content: flex-start;
-  margin-left: 0;
-}
-
-.yolo-composer-option-control--full {
-  width: 100%;
-  justify-content: flex-start;
-  margin-left: 0;
-}
-
-.yolo-composer-option-control--full textarea {
-  width: 100%;
-  min-height: 120px;
-}
-
-.yolo-composer-option-control--full .yolo-textarea-container,
-.yolo-composer-option-control--full .yolo-textarea-container textarea {
-  width: 100% !important;
-}
-
-.yolo-composer-option-control select {
-  width: 100%;
-  max-width: 100%;
 }
 
 /* Simple select (custom dropdown for Sparkle sidebar) */
@@ -1284,98 +841,7 @@ button.yolo-chat-quick-access-picker-row > svg {
   opacity: 1;
 }
 
-.yolo-composer-option--model .yolo-composer-option-control {
-  flex: 1 1 auto;
-  min-width: 0;
-  margin-left: 0;
-  justify-content: flex-start;
-}
-
-.yolo-composer-option--model .yolo-composer-option-control > div,
-.yolo-composer-option--model .yolo-composer-option-control select {
-  width: 100%;
-  max-width: 100%;
-}
-
-.yolo-composer-option-control .yolo-display-contents,
-.yolo-composer-option-control .yolo-checkbox-container {
-  margin-left: auto;
-}
-
-.yolo-composer-option-control .checkbox-component,
-.yolo-composer-option-control .yolo-checkbox-container,
-.yolo-composer-option-control .setting-item-control {
-  margin-left: auto;
-}
-
-.yolo-composer-context-picker {
-  margin-top: var(--size-4-2);
-}
-
-.yolo-composer-hint {
-  margin-top: var(--size-4-2);
-  padding: var(--size-2-3) var(--size-4-2);
-  border-radius: var(--radius-m);
-  background: var(--background-secondary);
-  border: 1px dashed var(--background-modifier-border);
-  color: var(--text-faint);
-  font-size: var(--font-ui-smaller);
-}
-
-.yolo-composer-container .setting-item {
-  border-top: none;
-}
-
-/* 特殊样式：模型选择区域 */
-.yolo-composer-section--primary {
-  background: transparent !important;
-  border: 2px solid var(--interactive-accent);
-  box-shadow: none;
-}
-
-.yolo-composer-section--primary .yolo-composer-heading-title::before {
-  background: linear-gradient(
-    135deg,
-    var(--interactive-accent) 0%,
-    var(--interactive-accent-hover) 100%
-  );
-  width: 6px;
-  height: 20px;
-}
-
-/* 功能开关区域 */
-.yolo-composer-section--toggles .yolo-composer-option {
-  background: var(--background-primary);
-  border: 1px solid var(--background-modifier-border-hover);
-  border-radius: var(--radius-s);
-  padding: var(--size-4-2) var(--size-4-3);
-}
-
-.yolo-composer-section--toggles .yolo-composer-option:hover {
-  background: var(--background-modifier-hover);
-  border-color: var(--background-modifier-border-hover);
-}
-
-/* 高级设置区域 */
-.yolo-composer-section--advanced {
-  background: transparent !important;
-  border-style: dashed;
-  opacity: 0.9;
-}
-
-/* 让高级设置标题样式与默认卡片标题完全一致 */
-.yolo-composer-section--advanced .yolo-composer-heading-title::before {
-  background: var(--h1-color, var(--text-accent));
-  width: 4px;
-  height: 18px;
-}
-
-/* 与 ObsidianToggle 组件配套的外层容器 hook：
-   唯一作用是给 `.yolo-composer-option-control` 里右对齐规则提供命中目标
-   （见本文件 949 行附近的 margin-left: auto）。
-   以前这里有一整段覆写，把原本 opacity:0 的 <input> 强行画成紫色轨道 + 自定义白点，
-   导致和 Obsidian 原生 .checkbox-container::after 叠在一起出现白点凸出/偏下，
-   已移除。switch 外观完全沿用 Obsidian 原生实现。 */
+/* ObsidianToggle wrapper used by settings and chat controls. */
 .yolo-checkbox-container {
   position: relative;
   display: inline-flex;
@@ -1386,33 +852,6 @@ button.yolo-chat-quick-access-picker-row > svg {
   opacity: 0.5;
   cursor: not-allowed;
   pointer-events: none;
-}
-
-/* 优先参考目录样式优化 */
-.yolo-composer-hint {
-  margin-top: var(--size-4-3);
-  padding: var(--size-4-3);
-  border-radius: var(--radius-m);
-  background: var(--background-secondary);
-  border: 1px solid var(--background-modifier-border);
-  color: var(--text-muted);
-  font-size: var(--font-ui-smaller);
-  position: relative;
-  overflow: hidden;
-}
-
-.yolo-composer-hint::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(
-    90deg,
-    var(--interactive-accent) 0%,
-    var(--interactive-accent-hover) 100%
-  );
 }
 
 .yolo-chat-conversation-surface {
@@ -2290,20 +1729,6 @@ button.yolo-chat-quick-access-picker-row > svg {
   word-break: break-word;
 }
 
-.yolo-user-message-card__line {
-  min-height: 1.4em;
-}
-
-.yolo-user-message-card__placeholder {
-  color: var(--text-muted);
-}
-
-.yolo-chat-user-input-tools-row {
-  display: flex;
-  align-items: center;
-  gap: var(--size-4-1);
-}
-
 .yolo-chat-user-input-files {
   position: relative;
   display: flex;
@@ -2494,14 +1919,6 @@ button.yolo-chat-quick-access-picker-row > svg {
     align-items: center;
     flex-shrink: 0;
   }
-}
-
-.yolo-chat-user-input-submit-button-label {
-  min-width: 0;
-  flex: 1 1 auto;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .yolo-chat-user-input-controls__left .yolo-chat-user-input-upload-button,
@@ -3276,11 +2693,6 @@ button.yolo-chat-mode-select-item[data-state='checked'] {
     border: 1px solid var(--interactive-accent);
   }
 
-  .yolo-excluded-content {
-    text-decoration: line-through;
-    font-style: italic;
-  }
-
   svg {
     flex-shrink: 0;
   }
@@ -3340,13 +2752,6 @@ button.yolo-chat-user-input-file-badge-delete:focus-visible,
   background-color: var(--background-modifier-hover);
 }
 
-.yolo-chat-user-input-file-badge-eye {
-  height: 100%;
-  display: flex;
-  align-items: center;
-  margin: 0 var(--size-2-1) 0 var(--size-4-1);
-}
-
 .yolo-chat-user-input-file-badge-name {
   display: flex;
   flex-direction: row;
@@ -3370,29 +2775,4 @@ button.yolo-chat-user-input-file-badge-delete:focus-visible,
 .yolo-chat-user-input-file-badge-name-suffix {
   color: var(--text-faint);
   flex-grow: 0;
-}
-
-.yolo-chat-user-input-file-badge-current {
-  color: var(--color-base-50);
-}
-
-.yolo-chat-user-input-file-content-preview {
-  position: absolute;
-  bottom: 100%;
-  left: 0;
-  right: 0;
-  margin-bottom: var(--size-4-1);
-  background-color: var(--background-secondary);
-  border-radius: var(--radius-s);
-  border: 1px solid var(--background-modifier-border);
-  max-height: 350px;
-  overflow-y: auto;
-  padding: 0 var(--size-4-2);
-  z-index: 10;
-  box-shadow: var(--shadow-s);
-
-  img {
-    max-width: 100%;
-    max-height: 350px;
-  }
 }

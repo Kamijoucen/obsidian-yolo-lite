@@ -1,35 +1,9 @@
 const DEFAULT_DELIMITER = '__'
 
-export const TOOL_NAME_DELIMITER = DEFAULT_DELIMITER
-
 export class InvalidToolNameError extends Error {
   constructor(name: string) {
     super(`Invalid internal tool name: ${name}`)
     this.name = 'InvalidToolNameError'
-  }
-}
-
-/**
- * Validates that a tool namespace follows the required format.
- * @param name Namespace to validate
- * @param delimiter Optional custom delimiter
- */
-export function validateToolNamespace(
-  name: string,
-  delimiter: string = DEFAULT_DELIMITER,
-): void {
-  // OpenAI only allows alphanumeric characters, underscores, and hyphens in the tool name
-  const regex = /^[a-zA-Z0-9_-]+$/
-  if (!regex.test(name)) {
-    throw new Error(
-      `Invalid tool namespace: ${name}. Only alphanumeric characters, underscores, and hyphens are allowed.`,
-    )
-  }
-  // Namespaces cannot contain it to ensure proper parsing and formatting.
-  if (name.includes(delimiter)) {
-    throw new Error(
-      `Tool namespace ${name} should not contain the delimiter ${delimiter}.`,
-    )
   }
 }
 

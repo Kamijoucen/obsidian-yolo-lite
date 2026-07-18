@@ -5856,7 +5856,6 @@ const Chat = forwardRef<ChatRef, ChatProps>((props, ref) => {
         onScrollContainerChange={setChatMessagesElement}
         onContentElementChange={setChatContentElement}
         renderChatTimelineItem={renderChatTimelineItem}
-        editingAssistantMessageId={editingAssistantMessageId}
         hasEarlierMessages={hasEarlierMessages}
         hasNewerMessages={hasNewerMessages}
         onLoadEarlier={loadEarlier}

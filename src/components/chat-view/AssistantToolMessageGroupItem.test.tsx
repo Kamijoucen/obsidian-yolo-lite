@@ -39,10 +39,6 @@ jest.mock('./AssistantMessageContent', () => ({
   __esModule: true,
   default: () => null,
 }))
-jest.mock('./AssistantMessageEditor', () => ({
-  __esModule: true,
-  default: () => null,
-}))
 jest.mock('./AssistantMessageReasoning', () => ({
   __esModule: true,
   default: () => null,

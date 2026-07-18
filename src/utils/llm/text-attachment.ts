@@ -18,8 +18,6 @@ const EXTENSION_TO_KIND: Record<string, TextAttachmentKind> = {
   log: 'log',
 }
 
-export const TEXT_ATTACHMENT_EXTENSIONS = Object.keys(EXTENSION_TO_KIND)
-
 export function getTextAttachmentKind(file: File): TextAttachmentKind | null {
   const lower = file.name.toLowerCase()
   const dot = lower.lastIndexOf('.')

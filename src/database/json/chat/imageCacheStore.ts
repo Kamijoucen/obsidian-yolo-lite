@@ -108,40 +108,6 @@ const writeCacheStore = async (
 }
 
 /**
- * Look up a cached image by its hash.
- * Returns the dataUrl if found, null otherwise.
- * Read-only — does not update lastAccessedAt to avoid write contention.
- * lastAccessedAt is updated during batch write / prune operations.
- */
-export const lookupImageCache = async (
-  app: App,
-  hash: string,
-  settings?: YoloSettingsLike | null,
-): Promise<string | null> => {
-  const store = await readCacheStore(app, settings)
-  const entry = store.entries[hash]
-  return entry?.dataUrl ?? null
-}
-
-/**
- * Write a single image cache entry.
- */
-export const writeImageCacheEntry = async (
-  app: App,
-  entry: Omit<ImageCacheEntry, 'createdAt' | 'lastAccessedAt'>,
-  settings?: YoloSettingsLike | null,
-): Promise<void> => {
-  const store = await readCacheStore(app, settings)
-  const now = Date.now()
-  store.entries[entry.hash] = {
-    ...entry,
-    createdAt: store.entries[entry.hash]?.createdAt ?? now,
-    lastAccessedAt: now,
-  }
-  await writeCacheStore(app, store, settings)
-}
-
-/**
  * Remove cache entries not accessed within maxAgeDays.
  * Returns the number of pruned entries.
  */

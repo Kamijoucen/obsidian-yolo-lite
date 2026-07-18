@@ -18,7 +18,7 @@ describe('resolveChatModeRuntime', () => {
     },
   }
 
-  it('filters write tools in ask mode and disables bypass', () => {
+  it('filters write tools in ask mode while preserving enabled-tool preferences', () => {
     const runtime = resolveChatModeRuntime({
       mode: 'ask',
       assistant,
@@ -26,7 +26,7 @@ describe('resolveChatModeRuntime', () => {
     })
 
     expect(runtime.allowedToolNames).toEqual(['yolo_local__fs_read'])
-    expect(runtime.toolPreferences).toBeUndefined()
+    expect(runtime.toolPreferences).toEqual(assistant.toolPreferences)
     expect(runtime.bypassToolApproval).toBe(false)
     expect(runtime.toolCapabilityMode).toBe('ask')
   })

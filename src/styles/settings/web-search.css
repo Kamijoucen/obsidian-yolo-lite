@@ -362,10 +362,3 @@
 .yolo-ws-edit-form .setting-item .setting-item-description {
   margin-top: 6px;
 }
-
-.yolo-ws-system-prompt-textarea {
-  min-height: 140px !important;
-  max-height: 360px;
-  height: var(--yolo-textarea-auto-height, 140px);
-  overflow-y: var(--yolo-textarea-auto-overflow-y, auto);
-}

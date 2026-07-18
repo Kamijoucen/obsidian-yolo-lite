@@ -22,10 +22,6 @@ export const assistantSkillPreferenceSchema = z.object({
   loadMode: assistantSkillLoadModeSchema.optional(),
 })
 
-export type AssistantSkillPreference = z.infer<
-  typeof assistantSkillPreferenceSchema
->
-
 export const assistantToolApprovalModeSchema = z.enum([
   'full_access',
   'require_approval',

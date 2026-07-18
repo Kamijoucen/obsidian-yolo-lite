@@ -18,11 +18,6 @@ export type LoopDoneReason =
   | 'repeated_tool_failure'
   | 'repeated_read_call'
 
-export type LoopDecision =
-  | { type: 'tool_phase' }
-  | { type: 'llm_request'; nextIteration: number }
-  | { type: 'done'; reason: LoopDoneReason }
-
 export type LlmLoopDecision =
   | { type: 'tool_phase' }
   | { type: 'llm_request'; nextIteration: number }

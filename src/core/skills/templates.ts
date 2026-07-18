@@ -9,16 +9,6 @@ export const getSkillsPathAwareTemplate = (
   return template.split(YOLO_SKILLS_DIR).join(skillsDir)
 }
 
-export const YOLO_SKILLS_INDEX_TEMPLATE = `# YOLO Skills
-
-Store your skill files here.
-
-- Supported formats:
-  - Standalone: \`YOLO/skills/*.md\` (exclude \`Skills.md\`)
-  - Directory package: \`YOLO/skills/**/SKILL.md\`
-- Required frontmatter: \`name\` (required, kebab-case unique identifier), \`description\` (optional); \`mode\` (\`lazy\` | \`always\`, optional)
-`
-
 export const YOLO_OBSIDIAN_OUTPUT_FORMAT_TEMPLATE = `---
 name: obsidian-output-format
 description: Use <yolo_block> only for markdown file edit plans. Output the compact edit DSL only.

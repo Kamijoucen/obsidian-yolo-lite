@@ -21,5 +21,3 @@ export const builtinToolOptionsSchema = z.record(
     preferredModelId: z.string().optional(),
   }),
 )
-
-export type BuiltinToolOptions = z.infer<typeof builtinToolOptionsSchema>

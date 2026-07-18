@@ -8,10 +8,7 @@ import type {
   AnswerUserQuestionAnswer,
   AnswerUserQuestionPayload,
 } from '../../core/agent/service'
-import type {
-  AskUserQuestionInputType,
-  AskUserQuestionItem,
-} from '../../core/tools/localFileTools'
+import type { AskUserQuestionItem } from '../../core/tools/localFileTools'
 import {
   ASK_USER_QUESTION_OTHER_ID,
   validateAskUserQuestionArgs,
@@ -634,14 +631,4 @@ function renderAnsweredValue(
   }
   const text = typeof answer.value === 'string' ? answer.value : ''
   return text.trim() === '' ? '—' : text
-}
-
-export function isAskUserQuestionInputType(
-  value: string,
-): value is AskUserQuestionInputType {
-  return (
-    value === 'free_text' ||
-    value === 'single_select' ||
-    value === 'multi_select'
-  )
 }

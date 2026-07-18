@@ -36,19 +36,6 @@
   margin: var(--size-4-2) 0;
 }
 
-.yolo-settings-sub-header-container {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.yolo-settings-trigger-callout-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--size-4-3);
-}
-
 .yolo-settings-sub-header {
   color: var(--text-normal);
   font-size: var(--h4-size);
@@ -74,27 +61,6 @@
 .yolo-settings-callout + .setting-item {
   border-top: none !important;
   padding-top: 0 !important;
-}
-
-.yolo-settings-advanced-toggle {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  margin-top: var(--size-4-2);
-  padding: 8px 0;
-  color: var(--text-muted);
-  font-size: 0.9em;
-}
-
-.yolo-settings-advanced-toggle-icon {
-  transition: transform 0.2s;
-  transform: rotate(0deg);
-  transform-origin: center;
-  will-change: transform;
-}
-
-.yolo-settings-advanced-toggle.is-expanded .yolo-settings-advanced-toggle-icon {
-  transform: rotate(90deg);
 }
 
 .yolo-settings-required::after {
@@ -132,57 +98,6 @@
 }
 
 /* Settings: tables */
-
-.yolo-settings-table-container {
-  overflow-x: auto;
-}
-
-.yolo-settings-table {
-  margin: var(--size-4-3) 0;
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.yolo-settings-table th {
-  padding: var(--size-4-1) var(--size-4-1) var(--size-4-2) var(--size-4-1);
-  text-align: left;
-  vertical-align: middle;
-  font-weight: var(--font-medium);
-  color: var(--text-muted);
-}
-
-.yolo-settings-table tbody td {
-  height: var(--size-4-10);
-  padding: var(--size-4-1);
-  text-align: left;
-  vertical-align: middle;
-}
-
-.yolo-settings-table tfoot td {
-  padding: var(--size-4-1);
-  text-align: right;
-  vertical-align: middle;
-}
-
-.yolo-settings-table thead tr {
-  border-bottom: var(--border-width) solid var(--background-modifier-border);
-}
-
-.yolo-settings-table tbody tr {
-  border-bottom: var(--border-width) solid var(--background-modifier-border);
-}
-
-.yolo-settings-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--size-4-1);
-
-  svg {
-    height: var(--icon-l);
-    width: var(--icon-l);
-    stroke-width: var(--icon-stroke);
-  }
-}
 
 .yolo-settings-kv-entry.setting-item .setting-item-info {
   display: none;
@@ -280,117 +195,6 @@
   }
 }
 
-/* Drag handle for reorderable rows */
-.yolo-drag-handle {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-muted);
-  cursor: grab;
-  padding: 0 var(--size-4-1);
-  user-select: none;
-}
-
-.yolo-drag-handle:hover {
-  color: var(--text-normal);
-}
-
-.yolo-drag-handle svg {
-  width: var(--icon-m);
-  height: var(--icon-m);
-  stroke-width: var(--icon-stroke);
-}
-
-.yolo-drag-handle {
-  padding: 0; /* 去掉手柄内部左右留白 */
-  transition:
-    transform 120ms ease,
-    color 120ms ease;
-}
-
-/* 紧凑化：手柄列（第一列）不占额外空间，仅按内容宽度布局 */
-.yolo-settings-table th:first-child,
-.yolo-settings-table td:first-child,
-.yolo-models-table th:first-child,
-.yolo-models-table td:first-child {
-  padding-left: 0;
-  padding-right: 0;
-  width: 0; /* 让列宽收缩为内容宽度（图标本身宽度）*/
-}
-
-/* 覆盖 ChatModelsSubSection 中 colgroup 的第一列固定宽度 */
-.yolo-settings-table col:first-child {
-  width: 0 !important;
-}
-
-/* Plan A: 拖拽行与插入位置的视觉反馈（无布局抖动） */
-.yolo-row-dragging {
-  background-color: var(--background-modifier-hover);
-  transform: translateX(2px) scale(0.995);
-  opacity: 0.98;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  transition:
-    transform 120ms ease,
-    background-color 120ms ease,
-    box-shadow 120ms ease,
-    opacity 120ms ease;
-  will-change: transform, opacity;
-}
-
-/* 使用 inset box-shadow 绘制顶部/底部插入线，避免改变 row 高度导致抖动 */
-.yolo-row-drag-over-before {
-  box-shadow: inset 0 2px 0 0 var(--interactive-accent);
-  transition: box-shadow 120ms ease;
-}
-
-.yolo-row-drag-over-after {
-  box-shadow: inset 0 -2px 0 0 var(--interactive-accent);
-  transition: box-shadow 120ms ease;
-}
-
-/* 手柄抓取时的轻微强调 */
-.yolo-drag-handle--active {
-  color: var(--text-normal);
-  transform: scale(1.05);
-}
-
-/* 放下成功后的瞬时反馈：高亮并轻微回弹（不改变布局尺寸） */
-.yolo-row-drop-success {
-  animation: yolo-drop-flash 650ms ease-out;
-}
-
-@keyframes yolo-drop-flash {
-  0% {
-    background-color: var(--background-modifier-hover);
-    transform: translateX(2px) scale(0.995);
-    opacity: 0.98;
-  }
-  40% {
-    background-color: var(--background-modifier-hover);
-    transform: translateX(0) scale(1.002);
-    opacity: 1;
-  }
-  100% {
-    background-color: transparent;
-    transform: none;
-    opacity: 1;
-  }
-}
-
-.yolo-settings-table-api-key {
-  cursor: pointer;
-  color: var(--text-muted);
-  font-size: var(--font-ui-small);
-}
-
-.yolo-settings-table-api-key:hover {
-  text-decoration: underline;
-}
-
-.yolo-error-modal {
-  min-width: 60vw;
-}
-
 .yolo-error-modal-content {
   max-height: 50vh;
   display: flex;
@@ -411,10 +215,6 @@
   user-select: text;
   cursor: text;
   font-size: var(--font-ui-small);
-}
-
-.yolo-error-modal-buttons {
-  margin-top: 1rem;
 }
 
 .yolo-assistant-message-metadata {
@@ -771,28 +571,6 @@
   }
 }
 
-.yolo-mention-popover {
-  width: 360px;
-  max-width: 360px;
-}
-
-.yolo-mention-popover-folder-path {
-  margin-left: auto;
-  padding-left: var(--size-4-2);
-  flex-shrink: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  direction: rtl;
-  white-space: nowrap;
-  color: var(--text-muted);
-}
-
-.yolo-settings-description-preserve-whitespace {
-  .setting-item-description {
-    white-space: pre-wrap;
-  }
-}
-
 .yolo-settings-desc-copyable {
   .setting-item-description {
     user-select: text;
@@ -853,35 +631,14 @@
 .yolo-icon-error {
   color: var(--text-error);
 }
-.yolo-icon-success {
-  color: var(--text-success);
-}
 
 /* Muted small text/note */
-.yolo-muted-note {
-  margin: 4px 0 8px 0;
-  color: var(--text-muted);
-  font-size: 12px;
-  line-height: 1.4;
-}
-.yolo-text-faint-small {
-  color: var(--text-faint);
-  font-size: 12px;
-}
 
 /* Simple flex helpers */
-.yolo-flex-row-gap-8 {
-  display: flex;
-  gap: 8px;
-}
 .yolo-actions-right-gap-8 {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
-}
-
-.yolo-clickable {
-  cursor: pointer;
 }
 
 /* List reset & scroll panel */
@@ -1021,47 +778,8 @@
 }
 
 /* Indent helpers using CSS variables for depth */
-.yolo-depth {
-  --yolo-depth: 0;
-}
-.yolo-depth-0 {
-  --yolo-depth: 0;
-}
-.yolo-depth-1 {
-  --yolo-depth: 1;
-}
-.yolo-depth-2 {
-  --yolo-depth: 2;
-}
-.yolo-depth-3 {
-  --yolo-depth: 3;
-}
-.yolo-depth-4 {
-  --yolo-depth: 4;
-}
-.yolo-depth-5 {
-  --yolo-depth: 5;
-}
-.yolo-depth-6 {
-  --yolo-depth: 6;
-}
-.yolo-depth-7 {
-  --yolo-depth: 7;
-}
-.yolo-depth-8 {
-  --yolo-depth: 8;
-}
-.yolo-depth-9 {
-  --yolo-depth: 9;
-}
-.yolo-depth-10 {
-  --yolo-depth: 10;
-}
 
 /* Folder picker row indent (base 8px + depth*12px) */
-.yolo-indent-folder {
-  padding-left: calc(8px + var(--yolo-depth) * 12px);
-}
 
 .yolo-split-button {
   display: flex;

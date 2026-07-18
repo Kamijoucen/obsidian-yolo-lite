@@ -215,8 +215,6 @@ export const PROVIDER_API_INFO: Record<
   },
 }
 
-export const PROVIDER_TYPES_INFO = PROVIDER_PRESET_INFO
-
 const getDefaultProviderAdditionalSettings = (
   _presetType: LLMProviderPresetType,
 ): LLMProvider['additionalSettings'] => {

@@ -14,7 +14,6 @@ import { ChatManager } from '../../../database/json/chat/ChatManager'
 import { clearAllEditReviewSnapshotStores } from '../../../database/json/chat/editReviewSnapshotStore'
 import { clearImageCache } from '../../../database/json/chat/imageCacheStore'
 import { clearAllPromptSnapshotStores } from '../../../database/json/chat/promptSnapshotStore'
-import { clearAllTimelineHeightCacheStores } from '../../../database/json/chat/timelineHeightCacheStore'
 import { CHAT_DIR } from '../../../database/json/constants'
 import YoloPlugin from '../../../main'
 import { yoloSettingsSchema } from '../../../settings/schema/setting.types'
@@ -37,7 +36,6 @@ type StorageUsage = {
 
 const CHAT_SNAPSHOT_DIR = 'chat_snapshots'
 const EDIT_REVIEW_SNAPSHOT_DIR = 'edit_review_snapshots'
-const TIMELINE_HEIGHT_CACHE_DIR = 'timeline_height_cache'
 const IMAGE_CACHE_DIR = 'image_cache'
 
 const formatBytes = (bytes: number): string => {
@@ -95,21 +93,16 @@ const loadStorageUsage = async (
     chatHistoryBytes,
     promptSnapshotBytes,
     editReviewSnapshotBytes,
-    timelineHeightCacheBytes,
     imageCacheBytes,
   ] = await Promise.all([
     getPathSize(app, chatDir),
     getPathSize(app, normalizePath(`${chatDir}/${CHAT_SNAPSHOT_DIR}`)),
     getPathSize(app, normalizePath(`${chatDir}/${EDIT_REVIEW_SNAPSHOT_DIR}`)),
-    getPathSize(app, normalizePath(`${chatDir}/${TIMELINE_HEIGHT_CACHE_DIR}`)),
     getPathSize(app, normalizePath(`${chatDir}/${IMAGE_CACHE_DIR}`)),
   ])
 
   const snapshotAndCacheBytes =
-    promptSnapshotBytes +
-    editReviewSnapshotBytes +
-    timelineHeightCacheBytes +
-    imageCacheBytes
+    promptSnapshotBytes + editReviewSnapshotBytes + imageCacheBytes
 
   return {
     chatHistoryBytes: Math.max(0, chatHistoryBytes - snapshotAndCacheBytes),
@@ -281,7 +274,6 @@ export function EtcSection({ app, plugin, className }: EtcSectionProps) {
         void (async () => {
           await clearAllPromptSnapshotStores(app, settings)
           await clearAllEditReviewSnapshotStores(app, settings)
-          await clearAllTimelineHeightCacheStores(app, settings)
           await clearImageCache(app, settings)
           const nextUsage = await loadStorageUsage(app, settings)
           setStorageUsage(nextUsage)

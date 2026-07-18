@@ -44,20 +44,6 @@ export const getYoloSkillsDir = (
   return normalizePath(`${getYoloBaseDir(settings)}/${YOLO_SKILLS_SUBDIR}`)
 }
 
-export const getYoloSkillsDirPrefix = (
-  settings?: YoloSettingsLike | null,
-): string => {
-  return `${getYoloSkillsDir(settings)}/`
-}
-
-export const getYoloSkillsIndexPath = (
-  settings?: YoloSettingsLike | null,
-): string => {
-  return normalizePath(
-    `${getYoloSkillsDir(settings)}/${YOLO_SKILLS_INDEX_FILE_NAME}`,
-  )
-}
-
 export const getYoloSnippetsPath = (
   settings?: YoloSettingsLike | null,
 ): string => {

@@ -24,9 +24,6 @@ export type ConfigExportFile = {
   checksum: string
 }
 
-/** 导入来源类型 */
-export type ImportSource = 'file' | 'vault'
-
 /** 导入合并策略 */
 export type MergeStrategy = 'overwrite' | 'merge'
 

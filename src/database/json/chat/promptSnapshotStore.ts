@@ -238,21 +238,6 @@ export const compactConversationMessagesForStorage = async ({
   return compactedMessages
 }
 
-export const readPromptSnapshotContent = async ({
-  app,
-  conversationId,
-  hash,
-  settings,
-}: {
-  app: App
-  conversationId: string
-  hash: string
-  settings?: YoloSettingsLike | null
-}): Promise<string | ContentPart[] | null> => {
-  const store = await readSnapshotStore(app, conversationId, settings)
-  return store.entries[hash]?.content ?? null
-}
-
 export const readPromptSnapshotEntries = async ({
   app,
   conversationId,

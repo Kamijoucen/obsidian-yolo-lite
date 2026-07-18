@@ -1,7 +1,5 @@
 import { Platform } from 'obsidian'
 
-import type { RequestTransportMode } from '../../types/provider.types'
-import { createObsidianFetch } from '../../utils/llm/obsidian-fetch'
 import { shouldBypassProxy } from '../../utils/net/proxyBypass'
 import { resolveSystemProxy } from '../../utils/net/systemProxyResolver'
 
@@ -103,17 +101,3 @@ export const createDesktopNodeFetch = (
 
 export const createBrowserFetch = (): typeof fetch =>
   createLLMDebugFetch(globalThis.fetch.bind(globalThis), 'browser')
-
-export const createSdkFetchForTransportMode = (
-  mode: RequestTransportMode,
-): typeof fetch | undefined => {
-  if (mode === 'obsidian') {
-    return createObsidianFetch()
-  }
-
-  if (mode === 'node') {
-    return createDesktopNodeFetch()
-  }
-
-  return undefined
-}

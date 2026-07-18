@@ -11,8 +11,6 @@ import { getProviderClient } from './manager'
 
 export const HEALTH_CHECK_TIMEOUT_MS = 15000
 
-export type HealthStatus = 'ok' | 'fail' | 'timeout'
-
 export type HealthResult =
   | {
       status: 'ok'
