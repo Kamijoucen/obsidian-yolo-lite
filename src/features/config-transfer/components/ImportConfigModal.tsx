@@ -113,7 +113,7 @@ function ImportConfigModalComponent({
         const relativePath = file.webkitRelativePath
         // 在外部笔记库中查找 YOLO 配置文件，需要匹配常见的配置目录名
         /* eslint-disable obsidianmd/hardcoded-config-path */
-        const configDirPatterns = ['.obsidian/plugins/yolo/data.json']
+        const configDirPatterns = ['.obsidian/plugins/yolo-lite/data.json']
         /* eslint-enable obsidianmd/hardcoded-config-path */
         if (
           configDirPatterns.some((pattern) => relativePath.includes(pattern))

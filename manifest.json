@@ -1,10 +1,10 @@
 {
-  "id": "yolo",
+  "id": "yolo-lite",
   "name": "YOLO-Lite",
-  "version": "1.6.0.3",
+  "version": "1.0.0",
   "minAppVersion": "1.8.0",
   "description": "Lightweight AI agent chat with Vault tools, Skills, and web search.",
-  "author": "kamijoucen",
+  "author": "Kamijoucen",
   "authorUrl": "https://github.com/Kamijoucen",
   "isDesktopOnly": false
 }

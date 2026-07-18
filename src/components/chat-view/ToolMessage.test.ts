@@ -734,7 +734,7 @@ describe('ToolMessage headline helpers', () => {
           arguments: createCompleteToolCallArguments({
             value: {
               command:
-                '/Applications/Obsidian.app/Contents/MacOS/obsidian-cli plugin:reload id=yolo',
+                '/Applications/Obsidian.app/Contents/MacOS/obsidian-cli plugin:reload id=yolo-lite',
             },
           }),
         },
@@ -742,7 +742,7 @@ describe('ToolMessage headline helpers', () => {
       }),
     ).toEqual({
       displayName: 'Terminal command',
-      summaryText: 'obsidian-cli plugin:reload id=yolo',
+      summaryText: 'obsidian-cli plugin:reload id=yolo-lite',
     })
   })
 

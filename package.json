@@ -1,6 +1,6 @@
 {
   "name": "obsidian-yolo-lite",
-  "version": "1.6.0.3",
+  "version": "1.0.0",
   "description": "Focused Obsidian agent chat with vault tools, Skills, and web search.",
   "main": "main.js",
   "scripts": {
@@ -24,7 +24,7 @@
     "test:changed": "jest -o"
   },
   "keywords": [],
-  "author": "kamijoucen",
+  "author": "Kamijoucen",
   "license": "MIT",
   "repository": {
     "type": "git",
