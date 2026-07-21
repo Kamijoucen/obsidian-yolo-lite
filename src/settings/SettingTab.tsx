@@ -93,16 +93,6 @@ export class YoloSettingTab extends PluginSettingTab {
     new Setting(containerEl)
       .setName(t('settings.systemPrompt'))
       .setDesc(t('settings.systemPromptDesc'))
-      .addTextArea((text) => {
-        text.setValue(settings.systemPrompt).onChange(async (value) => {
-          await this.plugin.saveSettings({
-            ...this.plugin.settings,
-            systemPrompt: value.trim() || DEFAULT_SETTINGS.systemPrompt,
-          })
-        })
-        text.inputEl.rows = 10
-        text.inputEl.addClass('yolo-settings-prompt-textarea')
-      })
       .addExtraButton((button) =>
         button
           .setIcon('reset')
@@ -115,6 +105,24 @@ export class YoloSettingTab extends PluginSettingTab {
             this.display()
           }),
       )
+
+    const promptArea = containerEl.createEl('textarea', {
+      cls: 'yolo-settings-prompt-textarea',
+    })
+    promptArea.value = settings.systemPrompt
+    promptArea.rows = 12
+    promptArea.spellcheck = false
+    let promptSaveTimer: ReturnType<typeof setTimeout> | null = null
+    promptArea.addEventListener('input', () => {
+      if (promptSaveTimer) clearTimeout(promptSaveTimer)
+      promptSaveTimer = setTimeout(() => {
+        void this.plugin.saveSettings({
+          ...this.plugin.settings,
+          systemPrompt:
+            promptArea.value.trim() || DEFAULT_SETTINGS.systemPrompt,
+        })
+      }, 600)
+    })
 
     new Setting(containerEl)
       .setName(t('settings.defaultMode'))
