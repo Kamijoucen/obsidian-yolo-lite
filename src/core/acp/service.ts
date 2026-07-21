@@ -1,5 +1,4 @@
 import type {
-  AvailableCommand,
   ClientContext,
   ContentBlock,
   Implementation,
@@ -596,5 +595,3 @@ export class AcpSessionService {
     this.setAvailability('unknown')
   }
 }
-
-export type { AvailableCommand }

@@ -3,7 +3,7 @@ import { Notice, Platform, Plugin, WorkspaceLeaf, addIcon } from 'obsidian'
 import { ChatView } from './ChatView'
 import { syncAgentsMd } from './core/acp/agentsMd'
 import type { AcpSessionService } from './core/acp/service'
-import { createTranslationFunction, loadLocale } from './i18n'
+import { loadLocale, t } from './i18n'
 import {
   DEFAULT_SETTINGS,
   YoloSettings,
@@ -50,7 +50,7 @@ export default class YoloPlugin extends Plugin {
 
     this.addCommand({
       id: 'open-chat',
-      name: 'Open chat',
+      name: t('commands.openChat'),
       callback: () => {
         void this.activateView()
       },
@@ -71,14 +71,6 @@ export default class YoloPlugin extends Plugin {
   private updateStatusBar() {
     if (!this.statusBarItem || !this.sessionService) return
     const running = this.sessionService.getRunningCount()
-    const language = String(
-      document.querySelector('html')?.getAttribute('lang') ?? '',
-    )
-      .toLowerCase()
-      .startsWith('zh')
-      ? 'zh'
-      : 'en'
-    const t = createTranslationFunction(language)
     this.statusBarItem.setText(
       running > 0 ? t('statusBar.running', 'YOLO: running') : '',
     )

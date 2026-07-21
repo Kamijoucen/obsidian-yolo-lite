@@ -13,7 +13,6 @@ import type {
   ChatSessionState,
   ChatToolEntry,
   ChatUserEntry,
-  TimelineEntry,
   ToolCallState,
 } from '../../types/chat'
 
@@ -357,8 +356,4 @@ export class SessionStateStore {
     )
     return entry ?? null
   }
-}
-
-export function entryList(state: ChatSessionState): TimelineEntry[] {
-  return state.entries
 }

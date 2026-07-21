@@ -3,17 +3,12 @@ export type Language = 'en' | 'zh'
 export type TranslationKeys = {
   commands: {
     openChat: string
-    newChat: string
   }
   common: {
-    cancel: string
-    close: string
     retry: string
     loading: string
     send: string
     stop: string
-    error: string
-    copy: string
   }
   chat: {
     newChat: string
@@ -27,26 +22,19 @@ export type TranslationKeys = {
     modeBuild: string
     reasoning: string
     todoTitle: string
-    contextUsage: string
     permissionTitle: string
     allowOnce: string
     allowAlways: string
     reject: string
-    toolRunning: string
-    toolPending: string
-    toolCompleted: string
-    toolFailed: string
     emptyConversation: string
     authRequired: string
     authRequiredHint: string
     sessionLoading: string
   }
   setup: {
-    title: string
     notFound: string
     notFoundHint: string
     starting: string
-    retry: string
     openSettings: string
     exited: string
     connected: string

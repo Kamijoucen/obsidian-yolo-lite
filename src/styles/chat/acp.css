@@ -421,6 +421,10 @@ button.yolo-assistant-message-metadata-toggle:hover {
 
 /* 输入区 textarea（替代旧 Lexical contenteditable） */
 
+.yolo-chat-user-input-toolbar {
+  margin-top: var(--size-2-2);
+}
+
 .yolo-acp-textarea {
   width: 100%;
   border: none;

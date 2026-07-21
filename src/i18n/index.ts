@@ -47,4 +47,15 @@ export function createTranslationFunction(language: Language) {
   }
 }
 
+export function getUiLanguage(): Language {
+  const raw = String(document.querySelector('html')?.getAttribute('lang') ?? '')
+    .trim()
+    .toLowerCase()
+  return raw.startsWith('zh') ? 'zh' : 'en'
+}
+
+export function t(keyPath: string, fallback?: string): string {
+  return createTranslationFunction(getUiLanguage())(keyPath, fallback)
+}
+
 export type { Language, TranslationKeys } from './types'

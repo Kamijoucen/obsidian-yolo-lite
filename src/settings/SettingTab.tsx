@@ -1,6 +1,6 @@
 import { App, PluginSettingTab, Setting } from 'obsidian'
 
-import { createTranslationFunction } from '../i18n'
+import { t } from '../i18n'
 import type YoloPlugin from '../main'
 
 import { DEFAULT_SETTINGS } from './schema/setting.types'
@@ -16,14 +16,6 @@ export class YoloSettingTab extends PluginSettingTab {
   display(): void {
     const { containerEl } = this
     containerEl.empty()
-    const language = String(
-      document.querySelector('html')?.getAttribute('lang') ?? '',
-    )
-      .toLowerCase()
-      .startsWith('zh')
-      ? 'zh'
-      : 'en'
-    const t = createTranslationFunction(language)
     const { settings } = this.plugin
 
     new Setting(containerEl).setName(t('settings.title')).setHeading()

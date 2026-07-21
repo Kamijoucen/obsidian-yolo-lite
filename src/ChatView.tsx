@@ -5,7 +5,6 @@ import { Root, createRoot } from 'react-dom/client'
 import ChatApp from './components/chat/ChatApp'
 import { AppProvider } from './contexts/app-context'
 import { LanguageProvider } from './contexts/language-context'
-import { PluginProvider } from './contexts/plugin-context'
 import { ServiceProvider } from './contexts/service-context'
 import { SettingsProvider } from './contexts/settings-context'
 import YoloPlugin, { CHAT_VIEW_TYPE } from './main'
@@ -45,21 +44,19 @@ export class ChatView extends ItemView {
     this.root = root
     root.render(
       <AppProvider app={this.app}>
-        <PluginProvider plugin={this.plugin}>
-          <SettingsProvider
-            settings={this.plugin.settings}
-            setSettings={(next) => this.plugin.saveSettings(next)}
-            addSettingsChangeListener={(listener) =>
-              this.plugin.addSettingsChangeListener(listener)
-            }
-          >
-            <LanguageProvider>
-              <ServiceProvider service={this.plugin.getSessionService()}>
-                <ChatApp onOpenSettings={() => this.plugin.openSettings()} />
-              </ServiceProvider>
-            </LanguageProvider>
-          </SettingsProvider>
-        </PluginProvider>
+        <SettingsProvider
+          settings={this.plugin.settings}
+          setSettings={(next) => this.plugin.saveSettings(next)}
+          addSettingsChangeListener={(listener) =>
+            this.plugin.addSettingsChangeListener(listener)
+          }
+        >
+          <LanguageProvider>
+            <ServiceProvider service={this.plugin.getSessionService()}>
+              <ChatApp onOpenSettings={() => this.plugin.openSettings()} />
+            </ServiceProvider>
+          </LanguageProvider>
+        </SettingsProvider>
       </AppProvider>,
     )
   }
