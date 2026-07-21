@@ -3,8 +3,8 @@
   "name": "YOLO-Lite",
   "version": "1.0.0",
   "minAppVersion": "1.8.0",
-  "description": "Lightweight AI agent chat with Vault tools, Skills, and web search.",
+  "description": "Obsidian chat client powered by opencode via the Agent Client Protocol (ACP).",
   "author": "Kamijoucen",
   "authorUrl": "https://github.com/Kamijoucen",
-  "isDesktopOnly": false
+  "isDesktopOnly": true
 }

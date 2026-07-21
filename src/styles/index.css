@@ -1,25 +1,7 @@
-@import './settings/base.css';
-@import './settings/providers-models.css';
-@import './settings/provider-picker.css';
-@import './settings/builtin-tools.css';
-@import './settings/assistants.css';
-@import './settings/tabs.css';
-@import './settings/agent.css';
-@import './settings/web-search.css';
-@import './settings/connectivity-test.css';
-@import './settings/batch-add-models.css';
-
-@import './popover/index.css';
-
-@import './acknowledgement-modal.css';
 @import './yolo-icon.css';
+@import './popover/index.css';
 @import './chat/input.css';
 @import './chat/message.css';
 @import './chat/popover.css';
-@import './chat/live-task-card.css';
-@import './chat/subagent-card.css';
 @import './chat/todo-list-panel.css';
-@import './chat/ask-user-question-panel.css';
-@import './chat/new-tab-action.css';
-
-@import './config-transfer.css';
+@import './chat/acp.css';

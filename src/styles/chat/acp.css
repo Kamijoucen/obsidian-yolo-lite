@@ -1,0 +1,549 @@
+/* ACP 客户端新增元素的补充样式（配合复用的旧版 input/message/popover 样式） */
+
+.yolo-chat-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.yolo-chat-view * {
+  box-sizing: border-box;
+}
+
+.yolo-acp-session {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 顶栏（标题 + 操作按钮） */
+
+.yolo-acp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--size-4-2);
+  padding: var(--size-4-2) var(--yolo-chat-sidebar-inline-padding, 12px) 0;
+  flex-shrink: 0;
+}
+
+.yolo-acp-header-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--font-ui-medium);
+  font-weight: var(--font-medium);
+  color: var(--text-normal);
+}
+
+.yolo-acp-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+/* 弹层项统一去除 Obsidian 全局 button 外壳，恢复旧版菜单行样式 */
+
+.yolo-popover-surface button.yolo-popover-item,
+.yolo-popover-surface button.yolo-chat-mode-select-item {
+  appearance: none;
+  -webkit-appearance: none;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  width: 100%;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.yolo-popover-surface button.yolo-popover-item:hover,
+.yolo-popover-surface button.yolo-chat-mode-select-item:hover {
+  background: color-mix(
+    in srgb,
+    var(--background-modifier-hover) 90%,
+    transparent
+  );
+}
+
+/* 历史记录 */
+
+.yolo-acp-history {
+  position: relative;
+}
+
+.yolo-acp-history-popup {
+  padding: 4px;
+}
+
+.yolo-acp-history-empty {
+  padding: 12px;
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+  text-align: center;
+}
+
+.yolo-acp-history-date {
+  font-size: var(--font-ui-smaller);
+  color: var(--text-faint);
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+/* 设置引导横幅 */
+
+.yolo-setup-banner {
+  margin: 8px var(--yolo-chat-sidebar-inline-padding, 12px);
+  padding: 12px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+  background: var(--background-secondary);
+  flex-shrink: 0;
+}
+
+.yolo-setup-banner.is-error {
+  border-color: rgba(var(--color-red-rgb), 0.5);
+}
+
+.yolo-setup-title {
+  font-weight: var(--font-medium);
+  margin-bottom: 4px;
+  font-size: var(--font-ui-small);
+}
+
+.yolo-setup-hint {
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+  margin-bottom: 8px;
+}
+
+.yolo-setup-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.yolo-button {
+  padding: 4px 12px;
+  border-radius: var(--radius-s);
+  border: 1px solid var(--background-modifier-border);
+  background: var(--interactive-normal);
+  color: var(--text-normal);
+  cursor: pointer;
+  font-size: var(--font-ui-small);
+  box-shadow: none;
+}
+
+.yolo-button:hover {
+  background: var(--interactive-hover);
+}
+
+/* 时间线 */
+
+.yolo-acp-empty-hint {
+  color: var(--text-faint);
+  font-size: var(--font-ui-small);
+  text-align: center;
+  padding: 24px 12px;
+}
+
+/* 行间距：在 .yolo-chat-messages 的 gap 之上再拉开，避免气泡与上文相贴 */
+.yolo-chat-messages .yolo-chat-timeline-row {
+  margin-block: var(--size-2-2);
+}
+
+/* 输入区与最后一条消息之间留出呼吸感 */
+.yolo-chat-footer {
+  padding-top: var(--size-4-2);
+}
+
+.yolo-chat-messages-user {
+  display: flex;
+  flex-direction: column;
+}
+
+.yolo-chat-messages-assistant {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-2-1);
+  min-width: 0;
+}
+
+.yolo-acp-streaming-caret {
+  display: inline-block;
+  width: 7px;
+  height: 14px;
+  background: var(--text-accent);
+  animation: yolo-acp-caret-blink 1s step-end infinite;
+  border-radius: 1px;
+}
+
+@keyframes yolo-acp-caret-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* 推理过程 */
+
+button.yolo-assistant-message-metadata-toggle {
+  appearance: none;
+  -webkit-appearance: none;
+  display: inline-flex;
+  align-items: center;
+  width: auto;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  color: var(--text-faint);
+  font-family: inherit;
+  font-size: var(--font-ui-smaller);
+  cursor: pointer;
+  padding: 2px 0;
+  text-align: left;
+}
+
+button.yolo-assistant-message-metadata-toggle:hover {
+  color: var(--text-muted);
+  background: transparent;
+  box-shadow: none;
+}
+
+.yolo-assistant-message-metadata-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.yolo-assistant-message-metadata-content {
+  margin: 2px 0 6px;
+}
+
+.yolo-assistant-message-metadata-body {
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+  border-left: 2px solid var(--background-modifier-border);
+  padding-left: 10px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.yolo-assistant-message-metadata-body .yolo-markdown-rendered {
+  color: var(--text-muted);
+}
+
+/* 用户消息内的附件 */
+
+.yolo-acp-user-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.yolo-acp-user-link-chip {
+  font-size: var(--font-ui-smaller);
+  background: var(--background-modifier-hover);
+  border-radius: 4px;
+  padding: 1px 6px;
+  color: var(--text-muted);
+}
+
+.yolo-acp-user-images {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.yolo-acp-user-images img {
+  max-width: 160px;
+  max-height: 160px;
+  border-radius: 8px;
+}
+
+/* 工具卡片内容 */
+
+.yolo-acp-status-failed {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1.25px solid var(--color-red);
+  color: var(--color-red);
+  box-sizing: border-box;
+}
+
+.yolo-toolcall-content {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 2px var(--yolo-toolcall-header-padding-x);
+}
+
+.yolo-acp-tool-locations {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.yolo-acp-tool-location {
+  font-size: var(--font-ui-smaller);
+  font-family: var(--font-monospace);
+  color: var(--text-muted);
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  padding: 1px 6px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.yolo-acp-tool-text {
+  margin: 0;
+  padding: 6px 8px;
+  background: var(--background-secondary);
+  border-radius: var(--radius-s);
+  font-size: var(--font-ui-smaller);
+  max-height: 240px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.yolo-acp-tool-image {
+  max-width: 240px;
+  border-radius: 6px;
+}
+
+/* 权限审批 */
+
+.yolo-acp-permission {
+  margin: 2px var(--yolo-toolcall-header-padding-x);
+  padding: 8px;
+  border: 1px solid rgba(var(--color-yellow-rgb), 0.4);
+  border-radius: var(--radius-s);
+  background: var(--background-secondary);
+}
+
+.yolo-acp-permission-title {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: var(--font-ui-small);
+  color: var(--color-yellow);
+  margin-bottom: 6px;
+}
+
+.yolo-acp-permission-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.yolo-acp-permission-button {
+  padding: 3px 10px;
+  border-radius: var(--radius-s);
+  border: 1px solid var(--background-modifier-border);
+  background: var(--interactive-normal);
+  color: var(--text-normal);
+  cursor: pointer;
+  font-size: var(--font-ui-small);
+  box-shadow: none;
+}
+
+.yolo-acp-permission-button.is-allow:hover {
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+}
+
+.yolo-acp-permission-button.is-reject:hover {
+  border-color: var(--color-red);
+  color: var(--color-red);
+}
+
+/* Diff 预览 */
+
+.yolo-diff {
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-s);
+  overflow: hidden;
+}
+
+.yolo-diff-path {
+  padding: 4px 8px;
+  font-family: var(--font-monospace);
+  font-size: var(--font-ui-smaller);
+  color: var(--text-muted);
+  background: var(--background-secondary);
+  border-bottom: 1px solid var(--background-modifier-border);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.yolo-diff-body {
+  margin: 0;
+  padding: 4px 0;
+  font-size: var(--font-ui-smaller);
+  max-height: 280px;
+  overflow: auto;
+}
+
+.yolo-diff-line {
+  display: flex;
+  padding: 0 8px;
+  font-family: var(--font-monospace);
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.yolo-diff-line--added {
+  background: rgba(var(--color-green-rgb), 0.12);
+}
+
+.yolo-diff-line--removed {
+  background: rgba(var(--color-red-rgb), 0.12);
+}
+
+.yolo-diff-sign {
+  width: 14px;
+  flex-shrink: 0;
+  color: var(--text-faint);
+}
+
+/* 输入区 textarea（替代旧 Lexical contenteditable） */
+
+.yolo-acp-textarea {
+  width: 100%;
+  border: none;
+  background: transparent;
+  resize: none;
+  padding: 0 2px;
+  min-height: calc(var(--font-ui-small) * 1.5);
+  max-height: 160px;
+  font-family: inherit;
+  font-size: var(--font-ui-small);
+  line-height: 1.5;
+  color: var(--text-normal);
+  box-shadow: none;
+}
+
+.yolo-acp-textarea:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.yolo-acp-textarea::placeholder {
+  color: color-mix(in srgb, var(--text-muted) 78%, transparent);
+}
+
+button.yolo-chat-user-input-submit-button-circle.is-stop {
+  background: var(--color-red);
+  color: var(--text-on-accent);
+}
+
+.yolo-acp-input-image {
+  position: relative;
+}
+
+.yolo-acp-input-image img {
+  width: 44px;
+  height: 44px;
+  object-fit: cover;
+  border-radius: var(--radius-s);
+  border: 1px solid var(--background-modifier-border);
+}
+
+.yolo-acp-input-image-remove {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: none;
+  background: var(--background-modifier-border);
+  color: var(--text-normal);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+/* 选择器弹层（portal 到 body，向上弹出，位置由 JS 计算） */
+
+.yolo-acp-select {
+  position: relative;
+  display: flex;
+}
+
+.yolo-acp-select-popover {
+  min-width: 180px;
+  max-width: 280px;
+  overflow-y: auto;
+  z-index: 40;
+}
+/* 斜杠命令弹层 */
+
+.yolo-acp-command-popup {
+  margin-bottom: 4px;
+  padding: 4px;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.yolo-acp-command-popup .yolo-popover-item.is-active {
+  background: var(--background-modifier-hover);
+}
+
+.yolo-acp-command-desc {
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 错误横幅 */
+
+.yolo-acp-error-banner {
+  margin: 0 0 6px;
+  padding: 8px 12px;
+  border: 1px solid rgba(var(--color-red-rgb), 0.5);
+  border-radius: var(--radius-s);
+}
+
+.yolo-acp-error-title {
+  color: var(--color-red);
+  font-size: var(--font-ui-small);
+}
+
+.yolo-acp-error-hint {
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+  margin-top: 2px;
+}
+
+/* 计划面板与输入框的间距 */
+
+.yolo-chat-footer .yolo-todo-panel {
+  margin-bottom: 6px;
+}
+
+/* 设置页提示词编辑框 */
+
+.yolo-settings-prompt-textarea {
+  width: 100%;
+  min-height: 200px;
+  font-family: var(--font-monospace);
+  font-size: var(--font-ui-smaller);
+  line-height: 1.5;
+}

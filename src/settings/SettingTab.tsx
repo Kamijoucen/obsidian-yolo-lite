@@ -1,79 +1,174 @@
-import { App, PluginSettingTab } from 'obsidian'
-import type { Root } from 'react-dom/client'
+import { App, PluginSettingTab, Setting } from 'obsidian'
 
+import { createTranslationFunction } from '../i18n'
 import type YoloPlugin from '../main'
 
-export class YoloSettingTab extends PluginSettingTab {
-  plugin: YoloPlugin
-  private root: Root | null = null
-  private isClosed = true
-  private renderVersion = 0
+import { DEFAULT_SETTINGS } from './schema/setting.types'
 
-  constructor(app: App, plugin: YoloPlugin) {
+export class YoloSettingTab extends PluginSettingTab {
+  constructor(
+    app: App,
+    private readonly plugin: YoloPlugin,
+  ) {
     super(app, plugin)
-    this.plugin = plugin
   }
 
   display(): void {
     const { containerEl } = this
-    this.renderVersion += 1
-    const currentVersion = this.renderVersion
-    if (this.root) {
-      this.root.unmount()
-      this.root = null
-    }
     containerEl.empty()
-    this.isClosed = false
-
-    const loadingEl = containerEl.createDiv({ cls: 'yolo-settings-loading' })
-    loadingEl.setText('Loading settings…')
-
-    void this.renderAsync(currentVersion, loadingEl)
-  }
-
-  private async renderAsync(
-    version: number,
-    loadingEl: HTMLElement,
-  ): Promise<void> {
-    const [
-      { createRoot },
-      { SettingsTabRoot },
-      { PluginProvider },
-      { SettingsProvider },
-    ] = await Promise.all([
-      import('react-dom/client'),
-      import('../components/settings/SettingsTabRoot'),
-      import('../contexts/plugin-context'),
-      import('../contexts/settings-context'),
-    ])
-
-    if (version !== this.renderVersion || this.isClosed) return
-
-    loadingEl.remove()
-    this.root = createRoot(this.containerEl)
-    this.root.render(
-      <PluginProvider plugin={this.plugin}>
-        <SettingsProvider
-          settings={this.plugin.settings}
-          setSettings={(newSettings) => this.plugin.setSettings(newSettings)}
-          addSettingsChangeListener={(listener) =>
-            this.plugin.addSettingsChangeListener(listener)
-          }
-        >
-          <SettingsTabRoot app={this.app} plugin={this.plugin} />
-        </SettingsProvider>
-      </PluginProvider>,
+    const language = String(
+      document.querySelector('html')?.getAttribute('lang') ?? '',
     )
-  }
+      .toLowerCase()
+      .startsWith('zh')
+      ? 'zh'
+      : 'en'
+    const t = createTranslationFunction(language)
+    const { settings } = this.plugin
 
-  hide(): void {
-    this.renderVersion += 1
-    this.isClosed = true
-    if (this.root) {
-      this.root.unmount()
-      this.root = null
-    }
-    // Clear model list cache when settings page closes
-    this.plugin.clearModelListCache()
+    new Setting(containerEl).setName(t('settings.title')).setHeading()
+
+    new Setting(containerEl).setName(t('settings.connection')).setHeading()
+
+    const service = this.plugin.getSessionService()
+    const agentInfo = service.getAgentInfo()
+    const availability = service.getAvailability()
+    new Setting(containerEl)
+      .setName(t('settings.agentInfo'))
+      .setDesc(
+        agentInfo
+          ? `${agentInfo.name} ${agentInfo.version} · ${t('setup.connected')}`
+          : availability === 'starting'
+            ? t('setup.starting')
+            : t('settings.notConnected'),
+      )
+
+    new Setting(containerEl)
+      .setName(t('settings.opencodePath'))
+      .setDesc(t('settings.opencodePathDesc'))
+      .addText((text) =>
+        text
+          .setPlaceholder('/usr/local/bin/opencode')
+          .setValue(settings.opencodePath)
+          .onChange(async (value) => {
+            await this.plugin.saveSettings({
+              ...this.plugin.settings,
+              opencodePath: value.trim(),
+            })
+          }),
+      )
+
+    new Setting(containerEl)
+      .setName(t('settings.opencodeArgs'))
+      .setDesc(t('settings.opencodeArgsDesc'))
+      .addTextArea((text) =>
+        text
+          .setPlaceholder('--flag\n--option=value')
+          .setValue(settings.opencodeArgs.join('\n'))
+          .onChange(async (value) => {
+            await this.plugin.saveSettings({
+              ...this.plugin.settings,
+              opencodeArgs: value
+                .split('\n')
+                .map((line) => line.trim())
+                .filter(Boolean),
+            })
+          }),
+      )
+
+    new Setting(containerEl).setName(t('settings.behavior')).setHeading()
+
+    new Setting(containerEl)
+      .setName(t('settings.manageAgentsMd'))
+      .setDesc(t('settings.manageAgentsMdDesc'))
+      .addToggle((toggle) =>
+        toggle.setValue(settings.manageAgentsMd).onChange(async (value) => {
+          await this.plugin.saveSettings({
+            ...this.plugin.settings,
+            manageAgentsMd: value,
+          })
+        }),
+      )
+
+    new Setting(containerEl)
+      .setName(t('settings.systemPrompt'))
+      .setDesc(t('settings.systemPromptDesc'))
+      .addTextArea((text) => {
+        text.setValue(settings.systemPrompt).onChange(async (value) => {
+          await this.plugin.saveSettings({
+            ...this.plugin.settings,
+            systemPrompt: value.trim() || DEFAULT_SETTINGS.systemPrompt,
+          })
+        })
+        text.inputEl.rows = 10
+        text.inputEl.addClass('yolo-settings-prompt-textarea')
+      })
+      .addExtraButton((button) =>
+        button
+          .setIcon('reset')
+          .setTooltip(t('settings.resetPrompt'))
+          .onClick(async () => {
+            await this.plugin.saveSettings({
+              ...this.plugin.settings,
+              systemPrompt: DEFAULT_SETTINGS.systemPrompt,
+            })
+            this.display()
+          }),
+      )
+
+    new Setting(containerEl)
+      .setName(t('settings.defaultMode'))
+      .setDesc(t('settings.defaultModeDesc'))
+      .addDropdown((dropdown) =>
+        dropdown
+          .addOption('build', t('chat.modeBuild'))
+          .addOption('plan', t('chat.modePlan'))
+          .setValue(settings.defaultMode)
+          .onChange(async (value) => {
+            if (value !== 'build' && value !== 'plan') return
+            await this.plugin.saveSettings({
+              ...this.plugin.settings,
+              defaultMode: value,
+            })
+          }),
+      )
+
+    new Setting(containerEl)
+      .setName(t('settings.autoApprove'))
+      .setDesc(t('settings.autoApproveDesc'))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(settings.autoApprovePermissions)
+          .onChange(async (value) => {
+            await this.plugin.saveSettings({
+              ...this.plugin.settings,
+              autoApprovePermissions: value,
+            })
+          }),
+      )
+
+    new Setting(containerEl)
+      .setName(t('settings.showReasoning'))
+      .setDesc(t('settings.showReasoningDesc'))
+      .addToggle((toggle) =>
+        toggle.setValue(settings.showReasoning).onChange(async (value) => {
+          await this.plugin.saveSettings({
+            ...this.plugin.settings,
+            showReasoning: value,
+          })
+        }),
+      )
+
+    new Setting(containerEl)
+      .setName(t('settings.debugLog'))
+      .setDesc(t('settings.debugLogDesc'))
+      .addToggle((toggle) =>
+        toggle.setValue(settings.debugLog).onChange(async (value) => {
+          await this.plugin.saveSettings({
+            ...this.plugin.settings,
+            debugLog: value,
+          })
+        }),
+      )
   }
 }

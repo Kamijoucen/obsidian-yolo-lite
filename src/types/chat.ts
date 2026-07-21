@@ -1,247 +1,85 @@
-import { SerializedEditorState } from 'lexical'
+import type {
+  AvailableCommand,
+  ContentBlock,
+  PermissionOption,
+  PlanEntry,
+  SessionConfigOption,
+  SessionMode,
+  StopReason,
+  ToolCallContent,
+  ToolCallLocation,
+  ToolCallStatus,
+  ToolKind,
+  UsageUpdate,
+} from '@agentclientprotocol/sdk'
 
-import { ChatModel } from './chat-model.types'
-import { ContentPart } from './llm/request'
-import { Annotation, ResponseUsage } from './llm/response'
-import { Mentionable, SerializedMentionable } from './mentionable'
-import { ToolCallRequest, ToolCallResponse } from './tool-call.types'
-
-export type PromptSnapshotRef = {
-  hash: string
+export type PendingPermission = {
+  options: PermissionOption[]
 }
 
-export type ChatSelectedSkill = {
-  /**
-   * Canonical skill name (the frontmatter `name`, trim-only, case-sensitive).
-   * Also the identity used to dedupe and to re-resolve the skill on continue.
-   */
-  name: string
-  description: string
-  path: string
-}
-
-export type ChatConversationCompaction = {
-  anchorMessageId: string
-  summary: string
-  compactedAt: number
-  triggerToolCallId?: string
-  summaryModelId?: string
-  estimatedNextContextTokens?: number
-  compactedMessageCount?: number
-  estimatedTokensSaved?: number
-}
-
-export type ChatConversationCompactionState = ChatConversationCompaction[]
-
-export type ChatConversationCompactionLike =
-  | ChatConversationCompaction
-  | ChatConversationCompactionState
-
-export const normalizeChatConversationCompactionState = (
-  compaction: ChatConversationCompactionLike | null | undefined,
-): ChatConversationCompactionState => {
-  if (!compaction) {
-    return []
-  }
-
-  return Array.isArray(compaction) ? [...compaction] : [compaction]
-}
-
-export const getLatestChatConversationCompaction = (
-  compaction: ChatConversationCompactionLike | null | undefined,
-): ChatConversationCompaction | null => {
-  const normalized = normalizeChatConversationCompactionState(compaction)
-  return normalized.at(-1) ?? null
-}
-
-export type ChatUserMessage = {
-  role: 'user'
-  content: SerializedEditorState | null
-  promptContent: string | ContentPart[] | null
-  snapshotRef?: PromptSnapshotRef
-  id: string
-  mentionables: Mentionable[]
-  selectedSkills?: ChatSelectedSkill[]
-  selectedModelIds?: string[]
-  reasoningLevel?: string
-  /**
-   * 该消息「作为新用户回合进入对话」那一刻固定下来的当前时间串(如
-   * `2026-05-30 14:53 (Friday, UTC+8)`)。请求组装时以纯函数前缀注入,
-   * 固定后永不改写,故不破坏前缀缓存。旧对话无此字段 → 不注入。
-   */
-  timeContext?: string
-}
-export type ChatAssistantMessage = {
-  role: 'assistant'
-  content: string
-  reasoning?: string
-  annotations?: Annotation[]
-  toolCallRequests?: ToolCallRequest[]
-  id: string
-  metadata?: {
-    usage?: ResponseUsage
-    model?: ChatModel
-    durationMs?: number
-    generationState?: 'streaming' | 'completed' | 'aborted' | 'error'
-    errorMessage?: string
-    llmDebugTraceId?: string
-    sourceUserMessageId?: string
-    branchId?: string
-    branchModelId?: string
-    branchLabel?: string
-    branchConversationId?: string
-    branchRunStatus?: 'idle' | 'running' | 'completed' | 'aborted' | 'error'
-    branchWaitingApproval?: boolean
-  }
-}
-export type ChatToolMessage = {
-  role: 'tool'
-  id: string
-  toolCalls: {
-    request: ToolCallRequest
-    response: ToolCallResponse
-  }[]
-  metadata?: {
-    sourceUserMessageId?: string
-    branchId?: string
-    branchModelId?: string
-    branchLabel?: string
-    branchConversationId?: string
-    branchRunStatus?: 'idle' | 'running' | 'completed' | 'aborted' | 'error'
-    branchWaitingApproval?: boolean
-  }
-}
-
-export type AsyncTaskStatus =
-  | 'completed'
-  | 'failed'
-  | 'cancelled'
-  | 'timed_out'
-  | 'killed_by_shutdown'
-
-export type TaskSource = {
-  type: 'llm_tool_call'
+export type ToolCallState = {
   toolCallId: string
-  assistantMessageId: string
-}
-
-export type SubagentResultStatus = 'completed' | 'failed' | 'aborted'
-
-export type ChatSubagentResultMessage = {
-  role: 'subagent_result'
-  id: string
-  taskId: string
-  source: TaskSource
   title: string
-  status: SubagentResultStatus
-  content: string
-  activityLog?: string
-  durationMs: number
-  toolUseCount: number
-  usage?: ResponseUsage
-  prompt?: string
-  modelName?: string
-  transcript?: ChatMessage[]
-  delegateAssistantMessageId: string
-  delegateToolCallId: string
-  metadata?: {
-    branchId?: string
-    branchConversationId?: string
-  }
+  kind: ToolKind
+  status: ToolCallStatus
+  content: ToolCallContent[]
+  locations: ToolCallLocation[]
+  rawInput?: unknown
+  rawOutput?: unknown
+  permission: PendingPermission | null
 }
 
-export type ChatTerminalCommandResultMessage = {
-  role: 'terminal_command_result'
+export type ChatUserEntry = {
+  kind: 'user'
   id: string
-  taskId: string
-  source: TaskSource
+  messageId: string | null
+  timestamp: number
+  text: string
+  blocks: ContentBlock[]
+}
+
+export type ChatAssistantEntry = {
+  kind: 'assistant'
+  id: string
+  messageId: string
+  timestamp: number
+  text: string
+  reasoning: string
+  streaming: boolean
+}
+
+export type ChatToolEntry = {
+  kind: 'tool'
+  id: string
+  timestamp: number
+  toolCall: ToolCallState
+}
+
+export type TimelineEntry = ChatUserEntry | ChatAssistantEntry | ChatToolEntry
+
+export type SessionStatus = 'idle' | 'loading' | 'running' | 'error'
+
+export type SessionModeState = {
+  current: string
+  available: SessionMode[]
+}
+
+export type ChatSessionState = {
+  sessionId: string | null
   title: string
-  status: 'running' | AsyncTaskStatus
-  exitCode: number | null
-  stdout: string
-  stderr: string
-  durationMs: number
-  delegateAssistantMessageId: string
-  delegateToolCallId: string
-  metadata?: {
-    branchId?: string
-    branchConversationId?: string
-  }
+  status: SessionStatus
+  error: string | null
+  entries: TimelineEntry[]
+  plan: PlanEntry[]
+  usage: UsageUpdate | null
+  mode: SessionModeState | null
+  commands: AvailableCommand[]
+  configOptions: SessionConfigOption[]
+  lastStopReason: StopReason | null
 }
 
-export type ChatMessage =
-  | ChatUserMessage
-  | ChatAssistantMessage
-  | ChatToolMessage
-  | ChatSubagentResultMessage
-  | ChatTerminalCommandResultMessage
-
-export type AssistantToolMessageGroup = (
-  | ChatAssistantMessage
-  | ChatToolMessage
-  | ChatSubagentResultMessage
-  | ChatTerminalCommandResultMessage
-)[]
-
-export type SerializedChatUserMessage = {
-  role: 'user'
-  content: SerializedEditorState | null
-  promptContent: string | ContentPart[] | null
-  snapshotRef?: PromptSnapshotRef
-  id: string
-  mentionables: SerializedMentionable[]
-  selectedSkills?: ChatSelectedSkill[]
-  selectedModelIds?: string[]
-  reasoningLevel?: string
-  timeContext?: string
+export type HistorySessionInfo = {
+  sessionId: string
+  title: string
+  updatedAt: string | null
 }
-export type SerializedChatAssistantMessage = {
-  role: 'assistant'
-  content: string
-  reasoning?: string
-  annotations?: Annotation[]
-  toolCallRequests?: ToolCallRequest[]
-  id: string
-  metadata?: {
-    usage?: ResponseUsage
-    model?: ChatModel
-    durationMs?: number
-    generationState?: 'streaming' | 'completed' | 'aborted' | 'error'
-    errorMessage?: string
-    llmDebugTraceId?: string
-    sourceUserMessageId?: string
-    branchId?: string
-    branchModelId?: string
-    branchLabel?: string
-    branchConversationId?: string
-    branchRunStatus?: 'idle' | 'running' | 'completed' | 'aborted' | 'error'
-    branchWaitingApproval?: boolean
-  }
-}
-export type SerializedChatToolMessage = {
-  role: 'tool'
-  toolCalls: {
-    request: ToolCallRequest
-    response: ToolCallResponse
-  }[]
-  id: string
-  metadata?: {
-    sourceUserMessageId?: string
-    branchId?: string
-    branchModelId?: string
-    branchLabel?: string
-    branchConversationId?: string
-    branchRunStatus?: 'idle' | 'running' | 'completed' | 'aborted' | 'error'
-    branchWaitingApproval?: boolean
-  }
-}
-export type SerializedChatSubagentResultMessage = ChatSubagentResultMessage
-export type SerializedChatTerminalCommandResultMessage =
-  ChatTerminalCommandResultMessage
-
-export type SerializedChatMessage =
-  | SerializedChatUserMessage
-  | SerializedChatAssistantMessage
-  | SerializedChatToolMessage
-  | SerializedChatSubagentResultMessage
-  | SerializedChatTerminalCommandResultMessage

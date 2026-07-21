@@ -1,1 +1,0 @@
-export const SETTINGS_SCHEMA_VERSION = 1

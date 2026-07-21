@@ -1,0 +1,103 @@
+import type { App } from 'obsidian'
+
+import { FsBridge, FsBridgeError } from './fsBridge'
+
+type AdapterMock = {
+  getBasePath: () => string
+  exists: jest.Mock<Promise<boolean>, [string]>
+  read: jest.Mock<Promise<string>, [string]>
+  write: jest.Mock<Promise<void>, [string, string]>
+  mkdir: jest.Mock<Promise<void>, [string]>
+}
+
+function makeApp(basePath = '/vault/root'): { app: App; adapter: AdapterMock } {
+  const adapter: AdapterMock = {
+    getBasePath: () => basePath,
+    exists: jest.fn((_path: string) => Promise.resolve(true)),
+    read: jest.fn((_path: string) => Promise.resolve('file content')),
+    write: jest.fn((_path: string, _content: string) => Promise.resolve()),
+    mkdir: jest.fn((_path: string) => Promise.resolve()),
+  }
+  const app = { vault: { adapter } } as unknown as App
+  return { app, adapter }
+}
+
+describe('FsBridge', () => {
+  it('reads a file inside the vault', async () => {
+    const { app, adapter } = makeApp()
+    const bridge = new FsBridge(app)
+    const response = await bridge.readTextFile({
+      sessionId: 's1',
+      path: '/vault/root/notes/a.md',
+    })
+    expect(response).toEqual({ content: 'file content' })
+    expect(adapter.read).toHaveBeenCalledWith('notes/a.md')
+  })
+
+  it('applies line and limit slicing (1-based)', async () => {
+    const { app, adapter } = makeApp()
+    adapter.read.mockResolvedValue('l1\nl2\nl3\nl4')
+    const bridge = new FsBridge(app)
+    const response = await bridge.readTextFile({
+      sessionId: 's1',
+      path: '/vault/root/a.md',
+      line: 2,
+      limit: 2,
+    })
+    expect(response.content).toBe('l2\nl3')
+  })
+
+  it('rejects paths outside the vault', async () => {
+    const { app } = makeApp()
+    const bridge = new FsBridge(app)
+    await expect(
+      bridge.readTextFile({ sessionId: 's1', path: '/etc/passwd' }),
+    ).rejects.toBeInstanceOf(FsBridgeError)
+    await expect(
+      bridge.writeTextFile({
+        sessionId: 's1',
+        path: '/vault/root2/x.md',
+        content: 'x',
+      }),
+    ).rejects.toBeInstanceOf(FsBridgeError)
+  })
+
+  it('rejects the vault root path itself', async () => {
+    const { app } = makeApp()
+    const bridge = new FsBridge(app)
+    await expect(
+      bridge.readTextFile({ sessionId: 's1', path: '/vault/root' }),
+    ).rejects.toBeInstanceOf(FsBridgeError)
+  })
+
+  it('throws when reading a missing file', async () => {
+    const { app, adapter } = makeApp()
+    adapter.exists.mockResolvedValue(false)
+    const bridge = new FsBridge(app)
+    await expect(
+      bridge.readTextFile({ sessionId: 's1', path: '/vault/root/no.md' }),
+    ).rejects.toThrow('File not found')
+  })
+
+  it('writes a file, creating parent folders as needed', async () => {
+    const { app, adapter } = makeApp()
+    adapter.exists.mockImplementation(async (p: string) => p !== 'a/b')
+    const bridge = new FsBridge(app)
+    await bridge.writeTextFile({
+      sessionId: 's1',
+      path: '/vault/root/a/b/c.md',
+      content: 'hello',
+    })
+    expect(adapter.write).toHaveBeenCalledWith('a/b/c.md', 'hello')
+  })
+
+  it('normalizes windows-style separators', async () => {
+    const { app, adapter } = makeApp('C:/vault')
+    const bridge = new FsBridge(app)
+    await bridge.readTextFile({
+      sessionId: 's1',
+      path: 'C:\\vault\\notes\\a.md',
+    })
+    expect(adapter.read).toHaveBeenCalledWith('notes/a.md')
+  })
+})

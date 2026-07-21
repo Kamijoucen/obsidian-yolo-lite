@@ -1,0 +1,80 @@
+import { memo, useEffect, useRef } from 'react'
+
+import { useLanguage } from '../../contexts/language-context'
+import type { ChatSessionState } from '../../types/chat'
+
+import { AssistantEntryView, UserEntryView } from './entries'
+import ToolCallCard from './ToolCallCard'
+
+type TimelineProps = {
+  state: ChatSessionState
+  onPermissionRespond: (toolCallId: string, optionId: string) => void
+}
+
+function Timeline({ state, onPermissionRespond }: TimelineProps) {
+  const { t } = useLanguage()
+  const containerRef = useRef<HTMLDivElement>(null)
+  const pinnedToBottomRef = useRef(true)
+
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container || !pinnedToBottomRef.current) return
+    container.scrollTop = container.scrollHeight
+  }, [state.entries, state.plan])
+
+  const handleScroll = () => {
+    const container = containerRef.current
+    if (!container) return
+    const distance =
+      container.scrollHeight - container.scrollTop - container.clientHeight
+    pinnedToBottomRef.current = distance < 80
+  }
+
+  return (
+    <div
+      className="yolo-chat-messages yolo-chat-messages--following"
+      ref={containerRef}
+      onScroll={handleScroll}
+    >
+      {state.status === 'loading' ? (
+        <div className="yolo-acp-empty-hint">
+          {t('chat.sessionLoading', 'Loading session…')}
+        </div>
+      ) : null}
+      {state.entries.length === 0 && state.status !== 'loading' ? (
+        <div className="yolo-acp-empty-hint">
+          {t('chat.emptyConversation', 'Start a conversation with opencode.')}
+        </div>
+      ) : null}
+      {state.entries.map((entry) => {
+        switch (entry.kind) {
+          case 'user':
+            return (
+              <div key={entry.id} className="yolo-chat-timeline-row">
+                <UserEntryView entry={entry} />
+              </div>
+            )
+          case 'assistant':
+            return (
+              <div key={entry.id} className="yolo-chat-timeline-row">
+                <AssistantEntryView entry={entry} />
+              </div>
+            )
+          case 'tool':
+            return (
+              <div key={entry.id} className="yolo-chat-timeline-row">
+                <ToolCallCard
+                  toolCall={entry.toolCall}
+                  onPermissionRespond={onPermissionRespond}
+                />
+              </div>
+            )
+          default:
+            return null
+        }
+      })}
+    </div>
+  )
+}
+
+export default memo(Timeline)

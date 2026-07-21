@@ -1,5 +1,0 @@
-export { YoloDropdownContent } from './YoloDropdownContent'
-export type { YoloDropdownContentProps } from './YoloDropdownContent'
-export { YoloPopoverContent } from './YoloPopoverContent'
-export type { YoloPopoverContentProps } from './YoloPopoverContent'
-export type { YoloPopoverProps, YoloPopoverVariant } from './types'

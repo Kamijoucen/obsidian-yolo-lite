@@ -1,0 +1,364 @@
+import type {
+  ContentBlock,
+  PermissionOption,
+  SessionConfigOption,
+  SessionMode,
+  SessionUpdate,
+  StopReason,
+  ToolCallUpdate,
+} from '@agentclientprotocol/sdk'
+
+import type {
+  ChatAssistantEntry,
+  ChatSessionState,
+  ChatToolEntry,
+  ChatUserEntry,
+  TimelineEntry,
+  ToolCallState,
+} from '../../types/chat'
+
+let entrySeq = 0
+function nextEntryId(): string {
+  entrySeq += 1
+  return `e${Date.now().toString(36)}_${entrySeq}`
+}
+
+function textOfContent(content: ContentBlock): string {
+  if (content.type === 'text') return content.text
+  return ''
+}
+
+export function createInitialSessionState(title: string): ChatSessionState {
+  return {
+    sessionId: null,
+    title,
+    status: 'idle',
+    error: null,
+    entries: [],
+    plan: [],
+    usage: null,
+    mode: null,
+    commands: [],
+    configOptions: [],
+    lastStopReason: null,
+  }
+}
+
+export type SessionStateListener = (state: ChatSessionState) => void
+
+export class SessionStateStore {
+  private state: ChatSessionState
+  private listeners = new Set<SessionStateListener>()
+  private assistantEntryByMessageId = new Map<string, string>()
+  private userEntryByMessageId = new Map<string, string>()
+  private toolEntryByCallId = new Map<string, string>()
+
+  constructor(title: string) {
+    this.state = createInitialSessionState(title)
+  }
+
+  getState(): ChatSessionState {
+    return this.state
+  }
+
+  subscribe(listener: SessionStateListener): () => void {
+    this.listeners.add(listener)
+    return () => {
+      this.listeners.delete(listener)
+    }
+  }
+
+  private emit() {
+    for (const listener of this.listeners) {
+      listener(this.state)
+    }
+  }
+
+  setSessionId(sessionId: string) {
+    this.state = { ...this.state, sessionId }
+    this.emit()
+  }
+
+  setStatus(status: ChatSessionState['status'], error: string | null = null) {
+    this.state = { ...this.state, status, error }
+    this.emit()
+  }
+
+  setTitle(title: string) {
+    if (!title) return
+    this.state = { ...this.state, title }
+    this.emit()
+  }
+
+  setModeCurrent(modeId: string) {
+    const current = this.state.mode
+    this.state = {
+      ...this.state,
+      mode: { current: modeId, available: current?.available ?? [] },
+    }
+    this.emit()
+  }
+
+  applyModes(current: string, available: SessionMode[]) {
+    this.state = { ...this.state, mode: { current, available } }
+    this.emit()
+  }
+
+  applyConfigOptions(configOptions: SessionConfigOption[]) {
+    this.state = { ...this.state, configOptions }
+    this.emit()
+  }
+
+  appendLocalUserMessage(text: string, blocks: ContentBlock[]) {
+    const entry: ChatUserEntry = {
+      kind: 'user',
+      id: nextEntryId(),
+      messageId: null,
+      timestamp: Date.now(),
+      text,
+      blocks,
+    }
+    this.state = { ...this.state, entries: [...this.state.entries, entry] }
+    this.emit()
+  }
+
+  markRunning() {
+    this.setStatus('running')
+  }
+
+  markTurnEnd(stopReason: StopReason | null) {
+    const entries = this.state.entries.map((entry) =>
+      entry.kind === 'assistant' && entry.streaming
+        ? { ...entry, streaming: false }
+        : entry,
+    )
+    this.state = {
+      ...this.state,
+      entries,
+      status: 'idle',
+      lastStopReason: stopReason,
+    }
+    this.emit()
+  }
+
+  applyUpdate(update: SessionUpdate) {
+    switch (update.sessionUpdate) {
+      case 'user_message_chunk':
+        this.applyUserChunk(update.messageId ?? '', update.content)
+        break
+      case 'agent_message_chunk':
+        this.applyAssistantChunk(update.messageId ?? '', update.content, false)
+        break
+      case 'agent_thought_chunk':
+        this.applyAssistantChunk(update.messageId ?? '', update.content, true)
+        break
+      case 'tool_call':
+        this.upsertToolCall({
+          toolCallId: update.toolCallId,
+          title: update.title,
+          kind: update.kind,
+          status: update.status,
+          content: update.content,
+          locations: update.locations,
+          rawInput: update.rawInput,
+          rawOutput: update.rawOutput,
+        })
+        break
+      case 'tool_call_update':
+        this.upsertToolCall(update)
+        break
+      case 'plan':
+        this.state = { ...this.state, plan: update.entries }
+        break
+      case 'usage_update':
+        this.state = {
+          ...this.state,
+          usage: {
+            used: update.used,
+            size: update.size,
+            cost: update.cost,
+          },
+        }
+        break
+      case 'current_mode_update':
+        this.setModeCurrent(update.currentModeId)
+        return
+      case 'available_commands_update':
+        this.state = { ...this.state, commands: update.availableCommands }
+        break
+      case 'config_option_update':
+        this.state = { ...this.state, configOptions: update.configOptions }
+        break
+      case 'session_info_update':
+        if (update.title) {
+          this.state = { ...this.state, title: update.title }
+        }
+        break
+      default:
+        return
+    }
+    this.emit()
+  }
+
+  setPendingPermission(toolCall: ToolCallUpdate, options: PermissionOption[]) {
+    this.upsertToolCall({ ...toolCall, status: toolCall.status ?? 'pending' })
+    this.replaceToolEntry(toolCall.toolCallId, (entry) => ({
+      ...entry,
+      toolCall: { ...entry.toolCall, permission: { options } },
+    }))
+    this.emit()
+  }
+
+  clearPendingPermission(toolCallId: string) {
+    if (!this.hasPendingPermission(toolCallId)) return
+    this.replaceToolEntry(toolCallId, (entry) => ({
+      ...entry,
+      toolCall: { ...entry.toolCall, permission: null },
+    }))
+    this.emit()
+  }
+
+  hasPendingPermission(toolCallId: string): boolean {
+    return this.findToolEntry(toolCallId)?.toolCall.permission != null
+  }
+
+  private replaceToolEntry(
+    toolCallId: string,
+    updater: (entry: ChatToolEntry) => ChatToolEntry,
+  ) {
+    const id = this.toolEntryByCallId.get(toolCallId)
+    if (!id) return
+    this.state = {
+      ...this.state,
+      entries: this.state.entries.map((item) =>
+        item.kind === 'tool' && item.id === id ? updater(item) : item,
+      ),
+    }
+  }
+
+  private applyUserChunk(messageId: string, content: ContentBlock) {
+    const existingId = this.userEntryByMessageId.get(messageId)
+    if (existingId) {
+      this.state = {
+        ...this.state,
+        entries: this.state.entries.map((item) =>
+          item.kind === 'user' && item.id === existingId
+            ? {
+                ...item,
+                text: item.text + textOfContent(content),
+                blocks: [...item.blocks, content],
+              }
+            : item,
+        ),
+      }
+      return
+    }
+    const entry: ChatUserEntry = {
+      kind: 'user',
+      id: nextEntryId(),
+      messageId,
+      timestamp: Date.now(),
+      text: textOfContent(content),
+      blocks: [content],
+    }
+    this.userEntryByMessageId.set(messageId, entry.id)
+    this.state = { ...this.state, entries: [...this.state.entries, entry] }
+  }
+
+  private applyAssistantChunk(
+    messageId: string,
+    content: ContentBlock,
+    isThought: boolean,
+  ) {
+    const existingId = this.assistantEntryByMessageId.get(messageId)
+    if (existingId) {
+      this.state = {
+        ...this.state,
+        entries: this.state.entries.map((item) =>
+          item.kind === 'assistant' && item.id === existingId
+            ? {
+                ...item,
+                text: isThought
+                  ? item.text
+                  : item.text + textOfContent(content),
+                reasoning: isThought
+                  ? item.reasoning + textOfContent(content)
+                  : item.reasoning,
+              }
+            : item,
+        ),
+      }
+      return
+    }
+    const entry: ChatAssistantEntry = {
+      kind: 'assistant',
+      id: nextEntryId(),
+      messageId,
+      timestamp: Date.now(),
+      text: isThought ? '' : textOfContent(content),
+      reasoning: isThought ? textOfContent(content) : '',
+      streaming: true,
+    }
+    this.assistantEntryByMessageId.set(messageId, entry.id)
+    this.state = { ...this.state, entries: [...this.state.entries, entry] }
+  }
+
+  private upsertToolCall(update: ToolCallUpdate) {
+    const existing = this.findToolEntry(update.toolCallId)
+    if (existing) {
+      this.replaceToolEntry(update.toolCallId, (entry) => {
+        const prev = entry.toolCall
+        return {
+          ...entry,
+          toolCall: {
+            ...prev,
+            title: update.title ?? prev.title,
+            kind: update.kind ?? prev.kind,
+            status: update.status ?? prev.status,
+            content: update.content ?? prev.content,
+            locations: update.locations ?? prev.locations,
+            rawInput:
+              update.rawInput !== undefined ? update.rawInput : prev.rawInput,
+            rawOutput:
+              update.rawOutput !== undefined
+                ? update.rawOutput
+                : prev.rawOutput,
+          },
+        }
+      })
+      return
+    }
+    const toolCall: ToolCallState = {
+      toolCallId: update.toolCallId,
+      title: update.title ?? '',
+      kind: update.kind ?? 'other',
+      status: update.status ?? 'pending',
+      content: update.content ?? [],
+      locations: update.locations ?? [],
+      rawInput: update.rawInput,
+      rawOutput: update.rawOutput,
+      permission: null,
+    }
+    const entry: ChatToolEntry = {
+      kind: 'tool',
+      id: nextEntryId(),
+      timestamp: Date.now(),
+      toolCall,
+    }
+    this.toolEntryByCallId.set(update.toolCallId, entry.id)
+    this.state = { ...this.state, entries: [...this.state.entries, entry] }
+  }
+
+  private findToolEntry(toolCallId: string): ChatToolEntry | null {
+    const id = this.toolEntryByCallId.get(toolCallId)
+    if (!id) return null
+    const entry = this.state.entries.find(
+      (item): item is ChatToolEntry => item.kind === 'tool' && item.id === id,
+    )
+    return entry ?? null
+  }
+}
+
+export function entryList(state: ChatSessionState): TimelineEntry[] {
+  return state.entries
+}
