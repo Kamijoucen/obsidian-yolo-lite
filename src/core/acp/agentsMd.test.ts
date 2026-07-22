@@ -37,6 +37,16 @@ describe('upsertManagedBlock', () => {
     expect(result).toContain('# Bottom')
     expect(result).toContain('NEW')
   })
+
+  it('migrates legacy yolo-lite markers to the new markers', () => {
+    const doc =
+      '# Rules\n\n<!-- yolo-lite:start -->\nOLD\n<!-- yolo-lite:end -->\n'
+    const result = upsertManagedBlock(doc, 'NEW')
+    expect(result).toContain('NEW')
+    expect(result).toContain(MANAGED_BLOCK_START)
+    expect(result).not.toContain('yolo-lite')
+    expect(result).toContain('# Rules')
+  })
 })
 
 describe('removeManagedBlock', () => {
@@ -45,6 +55,14 @@ describe('removeManagedBlock', () => {
     const result = removeManagedBlock(doc)
     expect(result).not.toContain('PROMPT')
     expect(result).toContain('# Rules')
+    expect(result).toContain('more')
+  })
+
+  it('removes a legacy yolo-lite block', () => {
+    const doc =
+      '# Rules\n\n<!-- yolo-lite:start -->\nPROMPT\n<!-- yolo-lite:end -->\n\nmore\n'
+    const result = removeManagedBlock(doc)
+    expect(result).not.toContain('PROMPT')
     expect(result).toContain('more')
   })
 

@@ -1,6 +1,6 @@
 {
-  "id": "yolo-lite",
-  "name": "YOLO-Lite",
+  "id": "openyolo",
+  "name": "OpenYOLO",
   "version": "1.0.0",
   "minAppVersion": "1.8.0",
   "description": "Obsidian chat client powered by opencode via the Agent Client Protocol (ACP).",

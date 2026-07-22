@@ -25,7 +25,7 @@ export class ChatView extends ItemView {
   }
 
   getDisplayText() {
-    return 'YOLO-Lite'
+    return 'OpenYOLO'
   }
 
   getIcon() {

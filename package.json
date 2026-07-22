@@ -1,5 +1,5 @@
 {
-  "name": "obsidian-yolo-lite",
+  "name": "obsidian-openyolo",
   "version": "1.0.0",
   "description": "Obsidian chat client powered by opencode via the Agent Client Protocol (ACP).",
   "main": "main.js",

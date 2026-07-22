@@ -26,7 +26,7 @@ export default class YoloPlugin extends Plugin {
     await this.loadSettings()
 
     if (!Platform.isDesktopApp) {
-      new Notice('YOLO-Lite requires Obsidian desktop.')
+      new Notice('OpenYOLO requires Obsidian desktop.')
       return
     }
 
@@ -54,7 +54,7 @@ export default class YoloPlugin extends Plugin {
       (leaf: WorkspaceLeaf) => new ChatView(leaf, this),
     )
 
-    this.addRibbonIcon(YOLO_ICON_ID, 'YOLO-Lite', () => {
+    this.addRibbonIcon(YOLO_ICON_ID, 'OpenYOLO', () => {
       void this.activateView()
     })
 
@@ -154,7 +154,7 @@ export default class YoloPlugin extends Plugin {
         this.settings.manageAgentsMd,
       )
     } catch (error) {
-      console.warn('[yolo-lite] failed to sync AGENTS.md', error)
+      console.warn('[openyolo] failed to sync AGENTS.md', error)
     }
   }
 

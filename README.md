@@ -1,6 +1,6 @@
-# YOLO-Lite
+# OpenYOLO
 
-YOLO-Lite 是一个面向 Obsidian 的轻量级 AI 笔记助手插件。它本身**不包含任何 Agent / 模型实现**，而是通过 [Agent Client Protocol](https://agentclientprotocol.com)（ACP）接入 [opencode](https://opencode.ai) 作为后端，在 Obsidian 侧边栏中提供对话界面。
+OpenYOLO 是一个面向 Obsidian 的轻量级 AI 笔记助手插件。它本身**不包含任何 Agent / 模型实现**，而是通过 [Agent Client Protocol](https://agentclientprotocol.com)（ACP）接入 [opencode](https://opencode.ai) 作为后端，在 Obsidian 侧边栏中提供对话界面。
 
 模型接入、工具执行、文件编辑、终端命令、计划模式、会话历史与记忆全部由 opencode 原生维护。
 
@@ -34,13 +34,13 @@ Obsidian 插件 (ACP Client)  ──stdio / JSON-RPC──▶  opencode acp (子
 
 ## 安装
 
-将以下文件放入 Vault 的 `.obsidian/plugins/yolo-lite/`：
+将以下文件放入 Vault 的 `.obsidian/plugins/openyolo/`：
 
 - `manifest.json`
 - `main.js`
 - `styles.css`
 
-随后打开 Obsidian，在「设置 → 第三方插件」中启用 YOLO-Lite。
+随后打开 Obsidian，在「设置 → 第三方插件」中启用 OpenYOLO。
 
 ## 功能
 
@@ -84,7 +84,7 @@ npm run build
 开发时可以将仓库软连接到测试 Vault:
 
 ```text
-<vault>/.obsidian/plugins/yolo-lite
+<vault>/.obsidian/plugins/openyolo
 ```
 
 ## 质量检查

@@ -188,7 +188,7 @@ export class AcpSessionService {
       configuredPath: settings.opencodePath,
       extraArgs: settings.opencodeArgs,
       cwd: this.vaultCwd(),
-      clientName: 'yolo-lite',
+      clientName: 'openyolo',
       clientVersion: this.clientVersion,
     })
     const fsBridge = new FsBridge(this.app)

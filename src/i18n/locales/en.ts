@@ -45,7 +45,7 @@ export const en: TranslationKeys = {
     connected: 'Connected',
   },
   settings: {
-    title: 'YOLO-Lite',
+    title: 'OpenYOLO',
     connection: 'Backend',
     agentInfo: 'Agent',
     notConnected: 'Not connected',
@@ -75,6 +75,6 @@ export const en: TranslationKeys = {
     debugLogDesc: 'Log ACP traffic and opencode stderr to the console.',
   },
   statusBar: {
-    running: 'YOLO: running',
+    running: 'OpenYOLO: running',
   },
 }

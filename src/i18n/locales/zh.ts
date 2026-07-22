@@ -45,7 +45,7 @@ export const zh: TranslationKeys = {
     connected: '已连接',
   },
   settings: {
-    title: 'YOLO-Lite',
+    title: 'OpenYOLO',
     connection: '后端',
     agentInfo: 'Agent',
     notConnected: '未连接',
@@ -71,6 +71,6 @@ export const zh: TranslationKeys = {
     debugLogDesc: '在控制台输出 ACP 通信与 opencode stderr。',
   },
   statusBar: {
-    running: 'YOLO: 运行中',
+    running: 'OpenYOLO: 运行中',
   },
 }

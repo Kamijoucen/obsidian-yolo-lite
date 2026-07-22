@@ -1,8 +1,12 @@
 import type { App } from 'obsidian'
 
 export const AGENTS_MD_FILE = 'AGENTS.md'
-export const MANAGED_BLOCK_START = '<!-- yolo-lite:start -->'
-export const MANAGED_BLOCK_END = '<!-- yolo-lite:end -->'
+export const MANAGED_BLOCK_START = '<!-- openyolo:start -->'
+export const MANAGED_BLOCK_END = '<!-- openyolo:end -->'
+
+// 旧版 yolo-lite 标记：重命名后仍需识别并迁移为新标记
+const LEGACY_BLOCK_START = '<!-- yolo-lite:start -->'
+const LEGACY_BLOCK_END = '<!-- yolo-lite:end -->'
 
 export const DEFAULT_SYSTEM_PROMPT = `你是 Obsidian 笔记库中的 AI 笔记助手。你的主要职责是帮助用户查阅资料、整理与修改笔记，而不是完成软件工程任务。
 
@@ -20,6 +24,18 @@ function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
+function blockPattern(): RegExp {
+  const starts = [MANAGED_BLOCK_START, LEGACY_BLOCK_START]
+    .map(escapeRegExp)
+    .join('|')
+  const ends = [MANAGED_BLOCK_END, LEGACY_BLOCK_END].map(escapeRegExp).join('|')
+  return new RegExp(`(?:${starts})[\\s\\S]*?(?:${ends})`)
+}
+
+export function hasManagedBlock(existing: string): boolean {
+  return blockPattern().test(existing)
+}
+
 /**
  * Upserts the plugin-managed block inside an AGENTS.md document, preserving
  * any user content outside the managed markers.
@@ -29,9 +45,7 @@ export function upsertManagedBlock(
   blockContent: string,
 ): string {
   const block = `${MANAGED_BLOCK_START}\n${blockContent.trim()}\n${MANAGED_BLOCK_END}`
-  const pattern = new RegExp(
-    `${escapeRegExp(MANAGED_BLOCK_START)}[\\s\\S]*?${escapeRegExp(MANAGED_BLOCK_END)}`,
-  )
+  const pattern = blockPattern()
   if (pattern.test(existing)) {
     return existing.replace(pattern, block)
   }
@@ -47,9 +61,7 @@ export function upsertManagedBlock(
  * excess blank lines left behind.
  */
 export function removeManagedBlock(existing: string): string {
-  const pattern = new RegExp(
-    `\\n*${escapeRegExp(MANAGED_BLOCK_START)}[\\s\\S]*?${escapeRegExp(MANAGED_BLOCK_END)}\\n?`,
-  )
+  const pattern = new RegExp(`\\n*${blockPattern().source}\\n?`)
   return existing.replace(pattern, '\n').trim()
 }
 
@@ -66,7 +78,7 @@ export async function syncAgentsMd(
   const exists = await adapter.exists(AGENTS_MD_FILE)
   const current = exists ? await adapter.read(AGENTS_MD_FILE) : ''
   if (!enabled) {
-    if (!exists || !current.includes(MANAGED_BLOCK_START)) return
+    if (!exists || !hasManagedBlock(current)) return
     const next = removeManagedBlock(current)
     if (next !== current) {
       await adapter.write(AGENTS_MD_FILE, next)
