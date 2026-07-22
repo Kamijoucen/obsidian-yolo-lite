@@ -53,7 +53,7 @@
     "globals": "^16.5.0",
     "jest": "^29.7.0",
     "js-yaml": "^4.1.1",
-    "obsidian": "latest",
+    "obsidian": "^1.13.1",
     "postcss": "^8.5.6",
     "postcss-cli": "^11.0.1",
     "postcss-import": "^16.1.1",

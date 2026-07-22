@@ -68,7 +68,8 @@ function HistoryDropdown({
         containerRef.current &&
         !containerRef.current.contains(target) &&
         !(
-          target instanceof Element && target.closest('.yolo-acp-history-popup')
+          target.instanceOf(Element) &&
+          target.closest('.yolo-acp-history-popup')
         )
       ) {
         setOpen(false)

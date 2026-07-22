@@ -19,7 +19,7 @@ export default class YoloPlugin extends Plugin {
   private sessionService: AcpSessionService | null = null
   private settingsListeners = new Set<(settings: YoloSettings) => void>()
   private statusBarItem: HTMLElement | null = null
-  private agentsMdSyncTimer: ReturnType<typeof setTimeout> | null = null
+  private agentsMdSyncTimer: number | null = null
 
   async onload() {
     await Promise.all([loadLocale('en'), loadLocale('zh')])
@@ -73,8 +73,8 @@ export default class YoloPlugin extends Plugin {
     this.updateStatusBar()
   }
 
-  async onunload() {
-    await this.sessionService?.dispose()
+  onunload() {
+    void this.sessionService?.dispose()
     this.sessionService = null
   }
 
@@ -101,7 +101,7 @@ export default class YoloPlugin extends Plugin {
         leaf = workspace.getRightLeaf(false) ?? workspace.getLeaf(true)
         await leaf.setViewState({ type: CHAT_VIEW_TYPE, active: true })
       }
-      workspace.revealLeaf(leaf)
+      void workspace.revealLeaf(leaf)
     }
     if (workspace.layoutReady) {
       await open()
@@ -137,9 +137,9 @@ export default class YoloPlugin extends Plugin {
 
   private scheduleAgentsMdSync() {
     if (this.agentsMdSyncTimer) {
-      clearTimeout(this.agentsMdSyncTimer)
+      window.clearTimeout(this.agentsMdSyncTimer)
     }
-    this.agentsMdSyncTimer = setTimeout(() => {
+    this.agentsMdSyncTimer = window.setTimeout(() => {
       this.agentsMdSyncTimer = null
       void this.syncAgentsMdNow()
     }, 1000)

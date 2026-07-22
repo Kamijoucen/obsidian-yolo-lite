@@ -32,7 +32,7 @@ export default function ChatApp({ onOpenSettings }: ChatAppProps) {
     }
     // Defer spawning opencode until after the current restore/paint cycle so
     // app startup isn't competing with the ACP subprocess boot.
-    const timer = setTimeout(() => {
+    const timer = window.setTimeout(() => {
       void service
         .openMostRecentTab()
         .then((id) => {
@@ -44,7 +44,7 @@ export default function ChatApp({ onOpenSettings }: ChatAppProps) {
     }, 0)
     return () => {
       cancelled = true
-      clearTimeout(timer)
+      window.clearTimeout(timer)
     }
   }, [service])
 

@@ -212,14 +212,16 @@ const StreamingMarkdown = memo(function StreamingMarkdown({
       }
 
       animationFrameRef.current =
-        nextRevealIndex < target.length ? requestAnimationFrame(tick) : null
+        nextRevealIndex < target.length
+          ? window.requestAnimationFrame(tick)
+          : null
 
       if (nextRevealIndex >= target.length) {
         lastFrameTimeRef.current = null
       }
     }
 
-    animationFrameRef.current = requestAnimationFrame(tick)
+    animationFrameRef.current = window.requestAnimationFrame(tick)
   }, [])
 
   useEffect(() => {

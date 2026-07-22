@@ -108,10 +108,10 @@ export class YoloSettingTab extends PluginSettingTab {
     promptArea.value = settings.systemPrompt
     promptArea.rows = 12
     promptArea.spellcheck = false
-    let promptSaveTimer: ReturnType<typeof setTimeout> | null = null
+    let promptSaveTimer: number | null = null
     promptArea.addEventListener('input', () => {
-      if (promptSaveTimer) clearTimeout(promptSaveTimer)
-      promptSaveTimer = setTimeout(() => {
+      if (promptSaveTimer) window.clearTimeout(promptSaveTimer)
+      promptSaveTimer = window.setTimeout(() => {
         void this.plugin.saveSettings({
           ...this.plugin.settings,
           systemPrompt:

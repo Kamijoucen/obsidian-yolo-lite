@@ -70,7 +70,7 @@ export function usePopover() {
         containerRef.current &&
         !containerRef.current.contains(target) &&
         !(
-          target instanceof Element &&
+          target.instanceOf(Element) &&
           target.closest('.yolo-acp-select-popover')
         )
       ) {

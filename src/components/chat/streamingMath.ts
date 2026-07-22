@@ -41,7 +41,7 @@ export function markUnclosedDisplayMathNodes(tree: Root, source: string): void {
     node.children?.forEach(visit)
   }
 
-  visit(tree as MarkdownNode)
+  visit(tree)
 }
 
 export const preserveUnclosedMathSource: Plugin<[], Root> = () => {
@@ -173,7 +173,7 @@ function scheduleFinishRenderMath(): void {
   }
 
   finishScheduled = true
-  requestAnimationFrame(() => {
+  window.requestAnimationFrame(() => {
     void flushRenderedMath()
   })
 }
