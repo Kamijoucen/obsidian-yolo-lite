@@ -197,14 +197,14 @@ export const ConfigOptionSelect = memo(function ConfigOptionSelect({
   )
 })
 
-function modeIcon(modeId: string) {
+function modeIcon(modeId: string, size = 16) {
   switch (modeId) {
     case 'plan':
-      return <ListChecks size={16} />
+      return <ListChecks size={size} />
     case 'build':
-      return <Hammer size={16} />
+      return <Hammer size={size} />
     default:
-      return <Wrench size={16} />
+      return <Wrench size={size} />
   }
 }
 
@@ -243,6 +243,7 @@ export const ModeSelect = memo(function ModeSelect({
         data-state={open ? 'open' : 'closed'}
         onClick={() => setOpen(!open)}
       >
+        {modeIcon(active.id, 12)}
         <div className="yolo-chat-input-model-select__label">
           {modeLabel(active)}
         </div>

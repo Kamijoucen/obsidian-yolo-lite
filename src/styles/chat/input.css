@@ -743,7 +743,7 @@ body.is-mobile .yolo-chat-container--mobile-keyboard-managed {
 }
 
 .yolo-chat-user-input-toolbar__right .yolo-chat-input-model-select {
-  max-width: 160px;
+  max-width: 260px;
   min-width: 0;
   flex-shrink: 1;
 }
@@ -754,7 +754,7 @@ body.is-mobile .yolo-chat-container--mobile-keyboard-managed {
 }
 
 .yolo-chat-user-input-toolbar__right .yolo-chat-input-model-select__model-name {
-  max-width: 120px;
+  max-width: none;
 }
 
 /* 底部工具栏控件：默认用 text-muted + normal 字重，比全局 medium 略轻但仍可读 */

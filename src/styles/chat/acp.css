@@ -422,7 +422,19 @@ button.yolo-assistant-message-metadata-toggle:hover {
 /* 输入区 textarea（替代旧 Lexical contenteditable） */
 
 .yolo-chat-user-input-toolbar {
-  margin-top: var(--size-2-2);
+  margin-top: var(--size-4-2);
+}
+
+/* 底部工具栏内选择器：允许收缩（长模型名截断而非撑破布局） */
+.yolo-chat-user-input-toolbar .yolo-acp-select {
+  min-width: 0;
+}
+
+/* 选择器按钮内图标与文字的间距（如思考强度前的 Brain 图标） */
+.yolo-chat-user-input-toolbar button.yolo-chat-input-model-select {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--size-4-1);
 }
 
 .yolo-acp-textarea {
