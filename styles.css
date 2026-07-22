@@ -2266,7 +2266,7 @@ button.yolo-todo-panel__icon-button svg {
   align-items: center;
   justify-content: space-between;
   gap: var(--size-4-2);
-  padding: var(--size-4-2) var(--yolo-chat-sidebar-inline-padding, 12px) 0;
+  padding: var(--size-4-2) var(--yolo-chat-sidebar-inline-padding, 12px);
   flex-shrink: 0;
 }
 .yolo-acp-header-title {
