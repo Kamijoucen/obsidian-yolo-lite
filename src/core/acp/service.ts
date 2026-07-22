@@ -35,7 +35,6 @@ type TabRecord = {
   store: SessionStateStore
   sessionId: string | null
   desiredMode: string | null
-  desiredConfig: Map<string, string>
   closed: boolean
 }
 
@@ -85,6 +84,19 @@ function isUntitledSessionTitle(title: string | null | undefined): boolean {
   return /^new session( -|$)/i.test(title.trim())
 }
 
+function flatSelectValues(option: SessionConfigOption): string[] {
+  if (option.type !== 'select') return []
+  const values: string[] = []
+  for (const item of option.options) {
+    if ('options' in item) {
+      for (const child of item.options) values.push(child.value)
+    } else {
+      values.push(item.value)
+    }
+  }
+  return values
+}
+
 export class AcpSessionService {
   private client: AcpClient | null = null
   private startPromise: Promise<void> | null = null
@@ -102,6 +114,10 @@ export class AcpSessionService {
     private readonly app: App,
     private readonly getSettings: () => YoloSettings,
     private readonly clientVersion: string,
+    private readonly persistConfigSelection: (
+      configId: string,
+      value: string,
+    ) => void = () => undefined,
   ) {
     this.permissionManager = new PermissionManager(
       () => this.getSettings().autoApprovePermissions,
@@ -309,7 +325,6 @@ export class AcpSessionService {
       store,
       sessionId: null,
       desiredMode: this.getSettings().defaultMode,
-      desiredConfig: new Map(),
       closed: false,
     }
     this.tabs.set(tabId, tab)
@@ -348,7 +363,6 @@ export class AcpSessionService {
       store,
       sessionId,
       desiredMode: null,
-      desiredConfig: new Map(),
       closed: false,
     }
     this.tabs.set(tabId, tab)
@@ -369,6 +383,7 @@ export class AcpSessionService {
       if (response.configOptions) {
         this.setLastConfigOptions(response.configOptions)
         store.applyConfigOptions(response.configOptions)
+        await this.applyConfigSelections(tab, sessionId, response.configOptions)
       }
       store.markTurnEnd(null)
     } catch (error) {
@@ -452,21 +467,11 @@ export class AcpSessionService {
       this.setLastConfigOptions(response.configOptions)
       tab.store.applyConfigOptions(response.configOptions)
     }
-    for (const [configId, value] of tab.desiredConfig) {
-      await this.agent()
-        .request('session/set_config_option', {
-          sessionId: response.sessionId,
-          configId,
-          value,
-        })
-        .then((res) => {
-          if (res.configOptions) {
-            this.setLastConfigOptions(res.configOptions)
-            tab.store.applyConfigOptions(res.configOptions)
-          }
-        })
-        .catch(() => undefined)
-    }
+    await this.applyConfigSelections(
+      tab,
+      response.sessionId,
+      response.configOptions ?? [],
+    )
     const desired = tab.desiredMode
     if (desired) {
       const available = modes?.available ?? []
@@ -490,6 +495,55 @@ export class AcpSessionService {
   private agent(): ClientContext {
     if (!this.client) throw new Error('ACP client is not connected')
     return this.client.agent()
+  }
+
+  /**
+   * 计算会话应应用的 configOption 选择：使用用户持久化的选择；
+   * 持久化值已从列表下架时回退到列表第一项并更新记录。
+   */
+  private resolveConfigSelections(
+    options: SessionConfigOption[],
+  ): Array<{ configId: string; value: string }> {
+    const selections: Array<{ configId: string; value: string }> = []
+    const saved = this.getSettings().savedConfigSelections ?? {}
+    for (const option of options) {
+      if (option.type !== 'select') continue
+      const values = flatSelectValues(option)
+      if (values.length === 0) continue
+      const savedValue = saved[option.id]
+      if (savedValue === undefined) continue
+      const desired = values.includes(savedValue) ? savedValue : values[0]
+      if (desired !== savedValue) {
+        this.persistConfigSelection(option.id, desired)
+      }
+      if (desired !== option.currentValue) {
+        selections.push({ configId: option.id, value: desired })
+      }
+    }
+    return selections
+  }
+
+  private async applyConfigSelections(
+    tab: TabRecord,
+    sessionId: string,
+    options: SessionConfigOption[],
+  ) {
+    const selections = this.resolveConfigSelections(options)
+    for (const selection of selections) {
+      await this.agent()
+        .request('session/set_config_option', {
+          sessionId,
+          configId: selection.configId,
+          value: selection.value,
+        })
+        .then((res) => {
+          if (res.configOptions) {
+            this.setLastConfigOptions(res.configOptions)
+            tab.store.applyConfigOptions(res.configOptions)
+          }
+        })
+        .catch(() => undefined)
+    }
   }
 
   private friendlyError(error: unknown): string {
@@ -552,8 +606,8 @@ export class AcpSessionService {
   ): Promise<void> {
     const tab = this.tabs.get(tabId)
     if (!tab) return
+    this.persistConfigSelection(configId, value)
     if (!tab.sessionId || !this.client?.isConnected) {
-      tab.desiredConfig.set(configId, value)
       const optimistic = tab.store
         .getState()
         .configOptions.map((option) =>

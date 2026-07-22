@@ -35,6 +35,16 @@ export default class YoloPlugin extends Plugin {
       this.app,
       () => this.settings,
       this.manifest.version,
+      (configId, value) => {
+        this.settings = {
+          ...this.settings,
+          savedConfigSelections: {
+            ...this.settings.savedConfigSelections,
+            [configId]: value,
+          },
+        }
+        void this.saveData(this.settings)
+      },
     )
     void this.syncAgentsMdNow()
 

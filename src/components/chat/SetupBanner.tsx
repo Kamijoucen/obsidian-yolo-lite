@@ -1,3 +1,4 @@
+import { Loader2 } from 'lucide-react'
 import { memo, useCallback } from 'react'
 
 import { useLanguage } from '../../contexts/language-context'
@@ -22,9 +23,15 @@ function SetupBanner({ availability, onOpenSettings }: SetupBannerProps) {
 
   if (availability === 'starting') {
     return (
-      <div className="yolo-setup-banner">
-        <div className="yolo-setup-title">
-          {t('setup.starting', 'Starting…')}
+      <div className="yolo-setup-banner is-starting">
+        <Loader2 size={18} className="yolo-setup-spinner" />
+        <div>
+          <div className="yolo-setup-title">
+            {t('setup.starting', 'Starting…')}
+          </div>
+          <div className="yolo-setup-hint">
+            {t('setup.startingHint', 'This may take a few seconds.')}
+          </div>
         </div>
       </div>
     )

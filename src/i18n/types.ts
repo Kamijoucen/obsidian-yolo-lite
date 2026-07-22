@@ -38,6 +38,7 @@ export type TranslationKeys = {
     notFound: string
     notFoundHint: string
     starting: string
+    startingHint: string
     openSettings: string
     exited: string
     connected: string

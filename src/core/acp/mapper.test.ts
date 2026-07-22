@@ -78,6 +78,45 @@ describe('SessionStateStore', () => {
     expect(entries[0]).toMatchObject({ kind: 'user', text: 'hi there' })
   })
 
+  it('skips synthetic/ignored chunks flagged via audience annotations', () => {
+    const store = new SessionStateStore('test')
+    store.applyUpdate({
+      sessionUpdate: 'user_message_chunk',
+      messageId: 'u1',
+      content: { type: 'text', text: 'hi' },
+    } as SessionUpdate)
+    // opencode 把附件展开为 user 消息里的 synthetic 文本（模型上下文），
+    // 回放时带 audience=['assistant']；不应混入用户气泡。
+    store.applyUpdate({
+      sessionUpdate: 'user_message_chunk',
+      messageId: 'u1',
+      content: {
+        type: 'text',
+        text: 'Called the Read tool with the following input: {}',
+        annotations: { audience: ['assistant'] },
+      },
+    } as SessionUpdate)
+    store.applyUpdate({
+      sessionUpdate: 'agent_message_chunk',
+      messageId: 'a1',
+      content: {
+        type: 'text',
+        text: 'hidden',
+        annotations: { audience: ['user'] },
+      },
+    } as SessionUpdate)
+    store.applyUpdate({
+      sessionUpdate: 'agent_message_chunk',
+      messageId: 'a1',
+      content: { type: 'text', text: 'shown' },
+    } as SessionUpdate)
+
+    const entries = store.getState().entries
+    expect(entries).toHaveLength(2)
+    expect(entries[0]).toMatchObject({ kind: 'user', text: 'hi' })
+    expect(entries[1]).toMatchObject({ kind: 'assistant', text: 'shown' })
+  })
+
   it('creates and updates tool calls in place', () => {
     const store = new SessionStateStore('test')
     store.applyUpdate({

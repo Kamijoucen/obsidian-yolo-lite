@@ -39,6 +39,7 @@ export const zh: TranslationKeys = {
     notFoundHint:
       '请先安装 opencode（https://opencode.ai），确保 `opencode` 在 PATH 中，或在设置中指定二进制路径。',
     starting: '正在启动 opencode…',
+    startingHint: '首次连接可能需要几秒钟。',
     openSettings: '打开设置',
     exited: 'opencode 进程已退出',
     connected: '已连接',

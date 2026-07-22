@@ -39,6 +39,7 @@ export const en: TranslationKeys = {
     notFoundHint:
       'Install opencode (https://opencode.ai) and make sure `opencode` is on PATH, or set the binary path in settings.',
     starting: 'Starting opencode…',
+    startingHint: 'This may take a few seconds.',
     openSettings: 'Open settings',
     exited: 'opencode process exited',
     connected: 'Connected',

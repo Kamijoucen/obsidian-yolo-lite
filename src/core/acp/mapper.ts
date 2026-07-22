@@ -27,6 +27,21 @@ function textOfContent(content: ContentBlock): string {
   return ''
 }
 
+/**
+ * opencode 会把附件（resource_link 文件）在提示词处理时展开为 user 消息里的
+ * synthetic 文本（"Called the Read tool…"+文件内容），回放时通过
+ * annotations.audience 标记（['assistant']=synthetic、['user']=ignored）。
+ * 这类内容是给模型的上下文，不应显示在气泡里。
+ */
+function isSyntheticContent(content: ContentBlock): boolean {
+  const audience = content.annotations?.audience
+  return (
+    Array.isArray(audience) &&
+    audience.length === 1 &&
+    (audience[0] === 'assistant' || audience[0] === 'user')
+  )
+}
+
 export function createInitialSessionState(title: string): ChatSessionState {
   return {
     sessionId: null,
@@ -236,6 +251,7 @@ export class SessionStateStore {
   }
 
   private applyUserChunk(messageId: string, content: ContentBlock) {
+    if (isSyntheticContent(content)) return
     const existingId = this.userEntryByMessageId.get(messageId)
     if (existingId) {
       this.state = {
@@ -269,6 +285,7 @@ export class SessionStateStore {
     content: ContentBlock,
     isThought: boolean,
   ) {
+    if (isSyntheticContent(content)) return
     const existingId = this.assistantEntryByMessageId.get(messageId)
     if (existingId) {
       this.state = {

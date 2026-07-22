@@ -11,6 +11,8 @@ export type YoloSettings = {
   debugLog: boolean
   systemPrompt: string
   manageAgentsMd: boolean
+  /** 记录用户选择的模型/思考强度等 configOption（configId → value），跨会话与重启恢复 */
+  savedConfigSelections: Record<string, string>
 }
 
 export const DEFAULT_SETTINGS: YoloSettings = {
@@ -22,6 +24,7 @@ export const DEFAULT_SETTINGS: YoloSettings = {
   debugLog: false,
   systemPrompt: DEFAULT_SYSTEM_PROMPT,
   manageAgentsMd: true,
+  savedConfigSelections: {},
 }
 
 export function normalizeSettings(raw: unknown): YoloSettings {
@@ -63,5 +66,17 @@ export function normalizeSettings(raw: unknown): YoloSettings {
       typeof source.manageAgentsMd === 'boolean'
         ? source.manageAgentsMd
         : DEFAULT_SETTINGS.manageAgentsMd,
+    savedConfigSelections:
+      typeof source.savedConfigSelections === 'object' &&
+      source.savedConfigSelections !== null &&
+      !Array.isArray(source.savedConfigSelections)
+        ? Object.fromEntries(
+            Object.entries(
+              source.savedConfigSelections as Record<string, unknown>,
+            ).filter((entry): entry is [string, string] => {
+              return typeof entry[1] === 'string'
+            }),
+          )
+        : DEFAULT_SETTINGS.savedConfigSelections,
   }
 }

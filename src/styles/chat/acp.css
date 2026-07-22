@@ -110,6 +110,48 @@
   border-color: rgba(var(--color-red-rgb), 0.5);
 }
 
+/* 启动中：强调色边框/底色 + 旋转 spinner，明显提示 opencode 正在拉起 */
+
+.yolo-setup-banner.is-starting {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-color: color-mix(in srgb, var(--interactive-accent) 50%, transparent);
+  background: color-mix(
+    in srgb,
+    var(--interactive-accent) 8%,
+    var(--background-secondary)
+  );
+}
+
+.yolo-setup-banner.is-starting .yolo-setup-title {
+  margin-bottom: 2px;
+  font-size: var(--font-ui-medium);
+  color: var(--text-normal);
+}
+
+.yolo-setup-banner.is-starting .yolo-setup-hint {
+  margin-bottom: 0;
+}
+
+.yolo-setup-spinner {
+  flex-shrink: 0;
+  color: var(--interactive-accent);
+  animation: yolo-setup-spin 1s linear infinite;
+}
+
+@keyframes yolo-setup-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .yolo-setup-spinner {
+    animation: none;
+  }
+}
+
 .yolo-setup-title {
   font-weight: var(--font-medium);
   margin-bottom: 4px;
