@@ -607,17 +607,13 @@ button.yolo-chat-user-input-submit-button-circle.is-stop {
 .yolo-acp-select-popover {
   min-width: 180px;
   max-width: 280px;
-  overflow-y: auto;
   z-index: 40;
-}
-
-.yolo-acp-select-popover:has(.yolo-acp-select-search) {
   display: flex;
   flex-direction: column;
   overflow-y: hidden;
 }
 
-.yolo-acp-select-popover:has(.yolo-acp-select-search) .yolo-model-select-list {
+.yolo-acp-select-popover .yolo-model-select-list {
   overflow-y: auto;
 }
 

@@ -1724,7 +1724,7 @@ button.yolo-chat-user-input-file-badge-delete:focus-visible,
   max-height: 300px;
   overflow-y: auto;
   background-color: var(--background-primary);
-  border: 1px solid var(--background-modifier-border);
+  border: 0;
   margin: 0 8px 0 8px;
   padding: var(--size-2-3) var(--size-4-2);
   color: var(--text-normal);
@@ -1735,13 +1735,10 @@ button.yolo-chat-user-input-file-badge-delete:focus-visible,
   align-content: center;
   flex-direction: row;
   flex-shrink: 0;
-  background-color: var(--background-primary);
   border-radius: 8px;
-  border: 0;
   min-height: 20px;
-  align-items: center;
-  gap: var(--size-4-1);
   align-items: start;
+  gap: var(--size-4-1);
 }
 .yolo-popover-surface li.active {
   display: flex;
@@ -2758,15 +2755,12 @@ button.yolo-chat-user-input-submit-button-circle.is-stop {
 .yolo-acp-select-popover {
   min-width: 180px;
   max-width: 280px;
-  overflow-y: auto;
   z-index: 40;
-}
-.yolo-acp-select-popover:has(.yolo-acp-select-search) {
   display: flex;
   flex-direction: column;
   overflow-y: hidden;
 }
-.yolo-acp-select-popover:has(.yolo-acp-select-search) .yolo-model-select-list {
+.yolo-acp-select-popover .yolo-model-select-list {
   overflow-y: auto;
 }
 .yolo-acp-select-search {

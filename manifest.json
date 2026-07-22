@@ -3,7 +3,7 @@
   "name": "OpenYOLO",
   "version": "1.0.0",
   "minAppVersion": "1.8.0",
-  "description": "Obsidian chat client powered by opencode via the Agent Client Protocol (ACP).",
+  "description": "Chat client powered by opencode via the Agent Client Protocol (ACP).",
   "author": "Kamijoucen",
   "authorUrl": "https://github.com/Kamijoucen",
   "isDesktopOnly": true

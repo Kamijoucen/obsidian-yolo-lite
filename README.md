@@ -1,54 +1,56 @@
 # OpenYOLO
 
-OpenYOLO 是一个 Obsidian 桌面端的 AI 笔记助手插件。插件本身不实现任何 Agent / 模型逻辑，而是通过 [Agent Client Protocol](https://agentclientprotocol.com)(ACP)接入 [opencode](https://opencode.ai) 作为后端,在侧边栏提供对话界面。模型接入、工具执行、会话历史与记忆全部由 opencode 原生维护。
+English | [中文](./README.zh-CN.md)
 
-## 功能
+OpenYOLO is an AI note assistant plugin for Obsidian (desktop only). The plugin itself contains no agent or model implementation — instead, it connects to [opencode](https://opencode.ai) as its backend via the [Agent Client Protocol](https://agentclientprotocol.com) (ACP), and provides a chat interface in the sidebar. Model access, tool execution, session history and memory are all maintained natively by opencode.
 
-- **对话**:流式输出、推理过程折叠、工具调用卡片(读写/编辑/终端/搜索,编辑带 diff 预览)、计划面板
-- **上下文感知**:自动附带当前打开的笔记;可通过附件面板多选库内笔记,或添加外部文本文件/图片(支持粘贴)
-- **权限审批**:工具权限请求以卡片呈现(允许一次/总是允许/拒绝),可开启 YOLO 模式自动批准
-- **模式切换**:计划(只读)/ 构建(可修改),映射 opencode session mode
-- **模型与思考强度**:列出 opencode 已配置的全部模型并可搜索切换,选择结果持久化,重启后自动恢复(已下架的模型回退到列表第一项)
-- **斜杠命令**:输入 `/` 唤起 opencode commands / skills
-- **历史会话**:自动恢复最近一次会话,历史列表随时切换
-- **笔记助手提示词**:在库根目录 `AGENTS.md` 中维护一段托管区块,引导 opencode 面向笔记场景工作,可在设置中编辑或关闭
+## Features
 
-## 实现方案
+- **Chat**: streaming output, collapsible reasoning, tool-call cards (read/write/edit/terminal/search, with diff preview for edits), plan panel
+- **Context awareness**: automatically attaches the currently open note; attach multiple vault notes via the attachment panel, or add external text files / images (paste supported)
+- **Permission approvals**: tool permission requests shown as cards (allow once / always allow / reject); optional YOLO mode auto-approves everything
+- **Mode switching**: plan (read-only) / build (writable), mapped to opencode session modes
+- **Model & effort selection**: searchable list of all models configured in opencode; selections are persisted and restored across restarts (falls back to the first model if the saved one disappears)
+- **Slash commands**: type `/` to invoke opencode commands / skills
+- **History**: automatically restores the most recent session; browse all persisted sessions
+- **Note-assistant prompt**: maintains a managed block in the vault-root `AGENTS.md` to guide opencode toward note-centric work; editable or disable-able in settings
+
+## How it works
 
 ```
-Obsidian 插件 (ACP Client)  ──stdio / JSON-RPC──▶  opencode acp (子进程)
+Obsidian plugin (ACP client)  ──stdio / JSON-RPC──▶  opencode acp (subprocess)
 ```
 
-- 以子进程方式启动 `opencode acp`,使用官方 SDK `@agentclientprotocol/sdk` 通信
-- 会话由 opencode 持久化,插件通过 `session/list` + `session/load` 回放历史
-- 附件以 ACP `resource_link` 发送,由 opencode 原生读取文件
-- 文件读写能力(`fs/read_text_file` / `fs/write_text_file`)经 Obsidian vault adapter 实现,并强制限制在库根目录内
-- 权限请求(`session/request_permission`)路由到插件内审批卡片
-- 前端为 React 渲染的 ItemView,`session/update` 经不可变状态映射驱动流式渲染
+- Spawns `opencode acp` as a subprocess and communicates via the official `@agentclientprotocol/sdk`
+- Sessions are persisted by opencode; the plugin replays history via `session/list` + `session/load`
+- Attachments are sent as ACP `resource_link` blocks and read natively by opencode
+- File access (`fs/read_text_file` / `fs/write_text_file`) is implemented through the vault adapter, strictly confined to the vault root
+- Permission requests (`session/request_permission`) are routed to in-plugin approval cards
+- The UI is a React-rendered ItemView; `session/update` notifications are mapped to immutable state for streaming rendering
 
-## 前置条件
+## Prerequisites
 
-1. 安装 opencode:`curl -fsSL https://opencode.ai/install | bash`
-2. 配置模型供应商:`opencode auth login`
-3. 仅限桌面端 Obsidian(需 Node 子进程能力)
+1. Install opencode: `curl -fsSL https://opencode.ai/install | bash`
+2. Configure a model provider: `opencode auth login`
+3. Desktop only (requires Node subprocess capability)
 
-## 安装
+## Installation
 
-将 `manifest.json`、`main.js`、`styles.css` 放入库的 `.obsidian/plugins/openyolo/`,然后在「设置 → 第三方插件」中启用。
+Copy `manifest.json`, `main.js` and `styles.css` into `.obsidian/plugins/openyolo/` of your vault, then enable OpenYOLO in "Settings → Community plugins".
 
-## 本地开发
+## Development
 
 ```bash
 npm install
-npm run dev        # 监听构建
-npm run build      # 生产构建
-npm run type:check && npm run lint:check && npm test   # 质量检查
+npm run dev        # watch build
+npm run build      # production build
+npm run type:check && npm run lint:check && npm test   # quality gates
 ```
 
-## 声明
+## Disclaimer
 
-本插件 fork 自 [obsidian-yolo](https://github.com/lapis0x0/obsidian-yolo),现已完全独立开发:不同步上游功能,也不保持兼容。
+This plugin was forked from [obsidian-yolo](https://github.com/lapis0x0/obsidian-yolo) and is now developed fully independently: it neither syncs upstream features nor maintains compatibility.
 
-## 许可证
+## License
 
 [MIT](./LICENSE)
