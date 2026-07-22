@@ -18,6 +18,8 @@ export const zh: TranslationKeys = {
     inputPlaceholder: '输入消息…（ / 唤起命令）',
     stopGenerating: '停止生成',
     attachImage: '添加图片',
+    attach: '添加附件',
+    searchNotes: '搜索笔记…',
     modePlan: '计划',
     modeBuild: '构建',
     searchModels: '搜索模型…',

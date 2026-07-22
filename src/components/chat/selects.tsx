@@ -45,7 +45,7 @@ function flattenConfigOptions(option: SessionConfigOption): FlatOption[] {
 const POPOVER_OPEN_EVENT = 'yolo-acp-popover-open'
 let popoverSeq = 0
 
-function usePopover() {
+export function usePopover() {
   const [open, setOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const idRef = useRef<string>(`popover-${++popoverSeq}`)
@@ -97,7 +97,7 @@ function usePopover() {
   return { open, setOpen: setOpenWrapped, containerRef }
 }
 
-function SelectPopover({
+export function SelectPopover({
   open,
   anchorRef,
   align = 'left',

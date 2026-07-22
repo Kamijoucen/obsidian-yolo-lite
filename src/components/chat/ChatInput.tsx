@@ -2,24 +2,29 @@ import type {
   AvailableCommand,
   SessionConfigOption,
 } from '@agentclientprotocol/sdk'
-import { ArrowUp, ImagePlus, Square, X } from 'lucide-react'
+import { ArrowUp, FileText, Square, X } from 'lucide-react'
+import { TFile } from 'obsidian'
 import { KeyboardEvent, useEffect, useMemo, useRef, useState } from 'react'
 
 import { useLanguage } from '../../contexts/language-context'
 import type { SessionModeState } from '../../types/chat'
 
+import { AttachedNote, NotePicker } from './NotePicker'
 import {
   ConfigOptionSelect,
   EFFORT_ICON,
   ModeSelect,
   findConfigOption,
 } from './selects'
+import { useActiveFile } from './useActiveFile'
 
 export type InputImage = {
   mimeType: string
   data: string
   previewUrl: string
 }
+
+export type { AttachedNote }
 
 type ChatInputProps = {
   running: boolean
@@ -29,7 +34,7 @@ type ChatInputProps = {
   configOptions: SessionConfigOption[]
   onModeChange: (modeId: string) => void
   onConfigOptionChange: (configId: string, value: string) => void
-  onSubmit: (text: string, images: InputImage[]) => void
+  onSubmit: (text: string, images: InputImage[], notes: AttachedNote[]) => void
   onCancel: () => void
 }
 
@@ -70,9 +75,45 @@ function ChatInput({
   const { t } = useLanguage()
   const [text, setText] = useState('')
   const [images, setImages] = useState<InputImage[]>([])
+  const [notes, setNotes] = useState<TFile[]>([])
+  const [excludedCurrentPath, setExcludedCurrentPath] = useState<string | null>(
+    null,
+  )
   const [commandIndex, setCommandIndex] = useState(0)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const activeFile = useActiveFile()
+
+  const currentNote =
+    activeFile &&
+    activeFile.extension === 'md' &&
+    activeFile.path !== excludedCurrentPath
+      ? activeFile
+      : null
+
+  const activePath = activeFile?.path ?? null
+  useEffect(() => {
+    setExcludedCurrentPath(null)
+  }, [activePath])
+
+  const selectedNotePaths = useMemo(() => {
+    const paths = new Set(notes.map((note) => note.path))
+    if (currentNote) paths.add(currentNote.path)
+    return paths
+  }, [notes, currentNote])
+
+  const toggleNote = (file: TFile) => {
+    if (activeFile && file.path === activeFile.path) {
+      setExcludedCurrentPath((prev) => (prev === file.path ? null : file.path))
+      setNotes((prev) => prev.filter((note) => note.path !== file.path))
+      return
+    }
+    setNotes((prev) =>
+      prev.some((note) => note.path === file.path)
+        ? prev.filter((note) => note.path !== file.path)
+        : [...prev, file],
+    )
+  }
 
   const commandQuery = useMemo(() => {
     if (!text.startsWith('/')) return null
@@ -103,10 +144,18 @@ function ChatInput({
 
   const doSubmit = () => {
     const trimmed = text.trim()
-    if ((!trimmed && images.length === 0) || disabled) return
-    onSubmit(trimmed, images)
+    const attached: AttachedNote[] = [
+      ...(currentNote
+        ? [{ path: currentNote.path, name: currentNote.basename }]
+        : []),
+      ...notes.map((note) => ({ path: note.path, name: note.basename })),
+    ]
+    if ((!trimmed && images.length === 0 && attached.length === 0) || disabled)
+      return
+    onSubmit(trimmed, images, attached)
     setText('')
     setImages([])
+    setNotes([])
   }
 
   const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -210,8 +259,49 @@ function ChatInput({
       ) : null}
       <div className="yolo-chat-user-input-container">
         <div className="yolo-chat-user-input-wrapper">
-          {images.length > 0 ? (
+          {currentNote || notes.length > 0 || images.length > 0 ? (
             <div className="yolo-chat-user-input-files">
+              {currentNote ? (
+                <span
+                  className="yolo-acp-note-chip is-current"
+                  title={currentNote.path}
+                >
+                  <button
+                    type="button"
+                    className="yolo-acp-note-chip__remove"
+                    onClick={() => setExcludedCurrentPath(currentNote.path)}
+                  >
+                    <X size={12} />
+                  </button>
+                  <FileText size={12} className="yolo-acp-note-chip__icon" />
+                  <span className="yolo-acp-note-chip__name">
+                    {currentNote.basename}
+                  </span>
+                </span>
+              ) : null}
+              {notes.map((note) => (
+                <span
+                  key={note.path}
+                  className="yolo-acp-note-chip"
+                  title={note.path}
+                >
+                  <button
+                    type="button"
+                    className="yolo-acp-note-chip__remove"
+                    onClick={() =>
+                      setNotes((prev) =>
+                        prev.filter((item) => item.path !== note.path),
+                      )
+                    }
+                  >
+                    <X size={12} />
+                  </button>
+                  <FileText size={12} className="yolo-acp-note-chip__icon" />
+                  <span className="yolo-acp-note-chip__name">
+                    {note.basename}
+                  </span>
+                </span>
+              ))}
               {images.map((image, index) => (
                 <div key={index} className="yolo-acp-input-image">
                   <img src={image.previewUrl} alt="" />
@@ -241,15 +331,12 @@ function ChatInput({
             />
           </div>
           <div className="yolo-chat-user-input-send-row">
-            <button
-              type="button"
-              className="yolo-chat-user-input-submit-button yolo-chat-user-input-upload-button"
-              title={t('chat.attachImage', 'Attach image')}
-              onClick={() => fileInputRef.current?.click()}
+            <NotePicker
+              selected={selectedNotePaths}
               disabled={disabled}
-            >
-              <ImagePlus size={14} />
-            </button>
+              onToggle={toggleNote}
+              onPickImage={() => fileInputRef.current?.click()}
+            />
             <input
               ref={fileInputRef}
               type="file"

@@ -18,6 +18,8 @@ export const en: TranslationKeys = {
     inputPlaceholder: 'Ask anything… ( / for commands)',
     stopGenerating: 'Stop generating',
     attachImage: 'Attach image',
+    attach: 'Add attachment',
+    searchNotes: 'Search notes…',
     modePlan: 'Plan',
     modeBuild: 'Build',
     searchModels: 'Search models…',

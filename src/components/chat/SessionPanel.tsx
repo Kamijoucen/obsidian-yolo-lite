@@ -1,15 +1,29 @@
+import { pathToFileURL } from 'url'
+
 import type { ContentBlock } from '@agentclientprotocol/sdk'
+import type { App } from 'obsidian'
 import { memo, useCallback, useEffect, useState } from 'react'
 
+import { useApp } from '../../contexts/app-context'
 import { useLanguage } from '../../contexts/language-context'
 import { useSessionService } from '../../contexts/service-context'
 import type { ChatSessionState } from '../../types/chat'
 
-import ChatInput, { InputImage } from './ChatInput'
+import ChatInput, { AttachedNote, InputImage } from './ChatInput'
 import PlanView from './PlanView'
 import Timeline from './Timeline'
 
-function buildPromptBlocks(text: string, images: InputImage[]): ContentBlock[] {
+function vaultBasePath(app: App): string {
+  const adapter = app.vault.adapter as { getBasePath?: () => string }
+  return typeof adapter.getBasePath === 'function' ? adapter.getBasePath() : ''
+}
+
+function buildPromptBlocks(
+  text: string,
+  images: InputImage[],
+  notes: AttachedNote[],
+  basePath: string,
+): ContentBlock[] {
   const blocks: ContentBlock[] = []
   if (text) {
     blocks.push({ type: 'text', text })
@@ -19,6 +33,15 @@ function buildPromptBlocks(text: string, images: InputImage[]): ContentBlock[] {
       type: 'image',
       data: image.data,
       mimeType: image.mimeType,
+    })
+  }
+  for (const note of notes) {
+    const absolutePath = basePath ? `${basePath}/${note.path}` : note.path
+    blocks.push({
+      type: 'resource_link',
+      uri: pathToFileURL(absolutePath).href,
+      name: note.name,
+      mimeType: 'text/markdown',
     })
   }
   return blocks
@@ -55,6 +78,7 @@ type SessionPanelProps = {
 
 function SessionPanel({ tabId, isActive }: SessionPanelProps) {
   const service = useSessionService()
+  const app = useApp()
   const [state, setState] = useState<ChatSessionState | null>(() =>
     service.getState(tabId),
   )
@@ -67,11 +91,11 @@ function SessionPanel({ tabId, isActive }: SessionPanelProps) {
   }, [service, tabId])
 
   const handleSubmit = useCallback(
-    (text: string, images: InputImage[]) => {
-      const blocks = buildPromptBlocks(text, images)
+    (text: string, images: InputImage[], notes: AttachedNote[]) => {
+      const blocks = buildPromptBlocks(text, images, notes, vaultBasePath(app))
       void service.submit(tabId, text, blocks)
     },
-    [service, tabId],
+    [service, tabId, app],
   )
 
   const handleCancel = useCallback(() => {

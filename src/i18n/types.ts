@@ -18,6 +18,8 @@ export type TranslationKeys = {
     inputPlaceholder: string
     stopGenerating: string
     attachImage: string
+    attach: string
+    searchNotes: string
     modePlan: string
     modeBuild: string
     searchModels: string
