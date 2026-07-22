@@ -40,7 +40,11 @@ export class YoloSettingTab extends PluginSettingTab {
       .setDesc(t('settings.opencodePathDesc'))
       .addText((text) =>
         text
-          .setPlaceholder('/usr/local/bin/opencode')
+          .setPlaceholder(
+            process.platform === 'win32'
+              ? 'C:\\path\\to\\opencode.exe'
+              : '/usr/local/bin/opencode',
+          )
           .setValue(settings.opencodePath)
           .onChange(async (value) => {
             await this.plugin.saveSettings({

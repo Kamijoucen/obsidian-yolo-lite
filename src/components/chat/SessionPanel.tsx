@@ -1,3 +1,4 @@
+import { join } from 'path'
 import { pathToFileURL } from 'url'
 
 import type { ContentBlock } from '@agentclientprotocol/sdk'
@@ -18,6 +19,13 @@ function vaultBasePath(app: App): string {
   return typeof adapter.getBasePath === 'function' ? adapter.getBasePath() : ''
 }
 
+function mimeTypeFor(name: string): string {
+  const ext = name.split('.').pop()?.toLowerCase() ?? ''
+  if (ext === 'md' || ext === 'markdown') return 'text/markdown'
+  if (ext === 'json' || ext === 'jsonc') return 'application/json'
+  return 'text/plain'
+}
+
 function buildPromptBlocks(
   text: string,
   images: InputImage[],
@@ -36,12 +44,16 @@ function buildPromptBlocks(
     })
   }
   for (const note of notes) {
-    const absolutePath = basePath ? `${basePath}/${note.path}` : note.path
+    const absolutePath = note.absolute
+      ? note.path
+      : basePath
+        ? join(basePath, note.path)
+        : note.path
     blocks.push({
       type: 'resource_link',
       uri: pathToFileURL(absolutePath).href,
       name: note.name,
-      mimeType: 'text/markdown',
+      mimeType: mimeTypeFor(note.name),
     })
   }
   return blocks

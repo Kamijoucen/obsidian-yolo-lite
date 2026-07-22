@@ -2,7 +2,7 @@ import type {
   AvailableCommand,
   SessionConfigOption,
 } from '@agentclientprotocol/sdk'
-import { ArrowUp, FileText, Square, X } from 'lucide-react'
+import { ArrowUp, FileText, Paperclip, Square, X } from 'lucide-react'
 import { TFile } from 'obsidian'
 import { KeyboardEvent, useEffect, useMemo, useRef, useState } from 'react'
 
@@ -61,6 +61,35 @@ function readImageFile(file: File): Promise<InputImage> {
   })
 }
 
+const TEXT_FILE_EXT =
+  /\.(md|markdown|txt|text|json|jsonc|csv|tsv|log|ya?ml|xml|toml|ini)$/i
+
+function isTextLikeFile(file: File): boolean {
+  return (
+    file.type.startsWith('text/') ||
+    file.type === 'application/json' ||
+    TEXT_FILE_EXT.test(file.name)
+  )
+}
+
+function resolveFilePath(file: File): string | null {
+  try {
+    const req = (window as unknown as { require?: (id: string) => unknown })
+      .require
+    const electron = req?.('electron') as
+      | { webUtils?: { getPathForFile?: (target: File) => string } }
+      | undefined
+    const resolved = electron?.webUtils?.getPathForFile?.(file)
+    if (resolved) return resolved
+  } catch {
+    // fall through to the legacy property
+  }
+  return (file as File & { path?: string }).path ?? null
+}
+
+export const FILE_INPUT_ACCEPT =
+  'image/*,text/*,.md,.markdown,.json,.jsonc,.csv,.tsv,.log,.yaml,.yml,.xml,.toml,.ini'
+
 function ChatInput({
   running,
   disabled,
@@ -76,6 +105,7 @@ function ChatInput({
   const [text, setText] = useState('')
   const [images, setImages] = useState<InputImage[]>([])
   const [notes, setNotes] = useState<TFile[]>([])
+  const [externalFiles, setExternalFiles] = useState<AttachedNote[]>([])
   const [excludedCurrentPath, setExcludedCurrentPath] = useState<string | null>(
     null,
   )
@@ -149,6 +179,7 @@ function ChatInput({
         ? [{ path: currentNote.path, name: currentNote.basename }]
         : []),
       ...notes.map((note) => ({ path: note.path, name: note.basename })),
+      ...externalFiles.map((file) => ({ ...file, absolute: true })),
     ]
     if ((!trimmed && images.length === 0 && attached.length === 0) || disabled)
       return
@@ -156,6 +187,7 @@ function ChatInput({
     setText('')
     setImages([])
     setNotes([])
+    setExternalFiles([])
   }
 
   const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -211,10 +243,22 @@ function ChatInput({
   const handleFiles = (files: FileList | null) => {
     if (!files) return
     for (const file of Array.from(files)) {
-      if (!file.type.startsWith('image/')) continue
-      void readImageFile(file).then((image) => {
-        setImages((prev) => [...prev, image])
-      })
+      if (file.type.startsWith('image/')) {
+        void readImageFile(file).then((image) => {
+          setImages((prev) => [...prev, image])
+        })
+        continue
+      }
+      if (isTextLikeFile(file)) {
+        const absolutePath = resolveFilePath(file)
+        if (absolutePath) {
+          setExternalFiles((prev) =>
+            prev.some((item) => item.path === absolutePath)
+              ? prev
+              : [...prev, { name: file.name, path: absolutePath }],
+          )
+        }
+      }
     }
   }
 
@@ -259,7 +303,10 @@ function ChatInput({
       ) : null}
       <div className="yolo-chat-user-input-container">
         <div className="yolo-chat-user-input-wrapper">
-          {currentNote || notes.length > 0 || images.length > 0 ? (
+          {currentNote ||
+          notes.length > 0 ||
+          externalFiles.length > 0 ||
+          images.length > 0 ? (
             <div className="yolo-chat-user-input-files">
               {currentNote ? (
                 <span
@@ -302,6 +349,27 @@ function ChatInput({
                   </span>
                 </span>
               ))}
+              {externalFiles.map((file) => (
+                <span
+                  key={file.path}
+                  className="yolo-acp-note-chip"
+                  title={file.path}
+                >
+                  <button
+                    type="button"
+                    className="yolo-acp-note-chip__remove"
+                    onClick={() =>
+                      setExternalFiles((prev) =>
+                        prev.filter((item) => item.path !== file.path),
+                      )
+                    }
+                  >
+                    <X size={12} />
+                  </button>
+                  <Paperclip size={12} className="yolo-acp-note-chip__icon" />
+                  <span className="yolo-acp-note-chip__name">{file.name}</span>
+                </span>
+              ))}
               {images.map((image, index) => (
                 <div key={index} className="yolo-acp-input-image">
                   <img src={image.previewUrl} alt="" />
@@ -335,12 +403,12 @@ function ChatInput({
               selected={selectedNotePaths}
               disabled={disabled}
               onToggle={toggleNote}
-              onPickImage={() => fileInputRef.current?.click()}
+              onPickFile={() => fileInputRef.current?.click()}
             />
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/*"
+              accept={FILE_INPUT_ACCEPT}
               multiple
               style={{ display: 'none' }}
               onChange={(event) => {

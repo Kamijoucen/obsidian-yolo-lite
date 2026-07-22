@@ -100,4 +100,20 @@ describe('FsBridge', () => {
     })
     expect(adapter.read).toHaveBeenCalledWith('notes/a.md')
   })
+
+  it('matches drive letter case-insensitively on win32', async () => {
+    const original = Object.getOwnPropertyDescriptor(process, 'platform')
+    Object.defineProperty(process, 'platform', { value: 'win32' })
+    try {
+      const { app, adapter } = makeApp('C:/vault')
+      const bridge = new FsBridge(app)
+      await bridge.readTextFile({
+        sessionId: 's1',
+        path: 'c:/vault/notes/a.md',
+      })
+      expect(adapter.read).toHaveBeenCalledWith('notes/a.md')
+    } finally {
+      if (original) Object.defineProperty(process, 'platform', original)
+    }
+  })
 })

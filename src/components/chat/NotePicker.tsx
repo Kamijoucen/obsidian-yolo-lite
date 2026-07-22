@@ -1,4 +1,4 @@
-import { Check, ImagePlus, Plus } from 'lucide-react'
+import { Check, Paperclip, Plus } from 'lucide-react'
 import { TFile } from 'obsidian'
 import { useEffect, useMemo, useState } from 'react'
 
@@ -10,18 +10,20 @@ import { SelectPopover, usePopover } from './selects'
 export type AttachedNote = {
   path: string
   name: string
+  /** true 表示 path 为库外绝对路径，false/缺省为库内相对路径 */
+  absolute?: boolean
 }
 
 export function NotePicker({
   selected,
   disabled,
   onToggle,
-  onPickImage,
+  onPickFile,
 }: {
   selected: Set<string>
   disabled?: boolean
   onToggle: (file: TFile) => void
-  onPickImage: () => void
+  onPickFile: () => void
 }) {
   const app = useApp()
   const { t } = useLanguage()
@@ -62,14 +64,14 @@ export function NotePicker({
             className="yolo-popover-item"
             onClick={() => {
               setOpen(false)
-              onPickImage()
+              onPickFile()
             }}
           >
             <span className="yolo-acp-attach-actions__icon">
-              <ImagePlus size={14} />
+              <Paperclip size={14} />
             </span>
             <span className="yolo-popover-item__label">
-              {t('chat.attachImage', 'Attach image')}
+              {t('chat.attachFile', 'Attach file')}
             </span>
           </button>
         </div>

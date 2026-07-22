@@ -17,7 +17,7 @@ export type TranslationKeys = {
     historyEmpty: string
     inputPlaceholder: string
     stopGenerating: string
-    attachImage: string
+    attachFile: string
     attach: string
     searchNotes: string
     modePlan: string

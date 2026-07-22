@@ -32,10 +32,14 @@ export class FsBridge {
   toVaultRelativePath(absolutePath: string): string {
     const base = this.vaultBasePath()
     const normalized = toForwardSlashes(absolutePath).replace(/\/+$/, '')
-    if (normalized === base) {
+    // Windows 文件系统大小写不敏感（盘符尤其常见 c:\ vs C:\）
+    const isWindows = process.platform === 'win32'
+    const baseCmp = isWindows ? base.toLowerCase() : base
+    const pathCmp = isWindows ? normalized.toLowerCase() : normalized
+    if (pathCmp === baseCmp) {
       throw new FsBridgeError(`Path is the vault root: ${absolutePath}`)
     }
-    if (!normalized.startsWith(`${base}/`)) {
+    if (!pathCmp.startsWith(`${baseCmp}/`)) {
       throw new FsBridgeError(`Path is outside the vault: ${absolutePath}`)
     }
     return normalizePath(normalized.slice(base.length + 1))
