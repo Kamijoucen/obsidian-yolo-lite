@@ -20,6 +20,7 @@ export const en: TranslationKeys = {
     attachImage: 'Attach image',
     modePlan: 'Plan',
     modeBuild: 'Build',
+    searchModels: 'Search models…',
     reasoning: 'Reasoning',
     todoTitle: 'Plan',
     permissionTitle: 'Permission required',

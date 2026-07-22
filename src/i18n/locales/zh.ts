@@ -20,6 +20,7 @@ export const zh: TranslationKeys = {
     attachImage: '添加图片',
     modePlan: '计划',
     modeBuild: '构建',
+    searchModels: '搜索模型…',
     reasoning: '推理过程',
     todoTitle: '计划',
     permissionTitle: '需要授权',

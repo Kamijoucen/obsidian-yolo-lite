@@ -141,16 +141,30 @@ function SelectPopover({
 export const ConfigOptionSelect = memo(function ConfigOptionSelect({
   option,
   icon,
+  searchable = false,
   onChange,
 }: {
   option: SessionConfigOption
   icon?: React.ReactNode
+  searchable?: boolean
   onChange: (value: string) => void
 }) {
+  const { t } = useLanguage()
   const { open, setOpen, containerRef } = usePopover()
+  const [query, setQuery] = useState('')
   const flat = useMemo(() => flattenConfigOptions(option), [option])
   const currentValue = option.type === 'select' ? option.currentValue : ''
   const current = flat.find((item) => item.value === currentValue)
+
+  useEffect(() => {
+    if (!open) setQuery('')
+  }, [open])
+
+  const visible = useMemo(() => {
+    const keyword = query.trim().toLowerCase()
+    if (!keyword) return flat
+    return flat.filter((item) => item.name.toLowerCase().includes(keyword))
+  }, [flat, query])
 
   return (
     <div className="yolo-acp-select" ref={containerRef}>
@@ -169,8 +183,19 @@ export const ConfigOptionSelect = memo(function ConfigOptionSelect({
         </div>
       </button>
       <SelectPopover open={open} anchorRef={containerRef} align="right">
+        {searchable ? (
+          <div className="yolo-acp-select-search">
+            <input
+              type="text"
+              autoFocus
+              placeholder={t('chat.searchModels', 'Search models…')}
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+            />
+          </div>
+        ) : null}
         <div className="yolo-model-select-list" role="menu">
-          {flat.map((item) => (
+          {visible.map((item) => (
             <button
               key={item.value}
               type="button"

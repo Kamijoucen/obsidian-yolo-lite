@@ -20,6 +20,7 @@ export type TranslationKeys = {
     attachImage: string
     modePlan: string
     modeBuild: string
+    searchModels: string
     reasoning: string
     todoTitle: string
     permissionTitle: string

@@ -184,7 +184,7 @@ function ChatInput({
               <button
                 key={command.name}
                 type="button"
-                className={`yolo-popover-item${
+                className={`yolo-popover-item yolo-acp-command-item${
                   index === commandIndex ? ' is-active' : ''
                 }`}
                 onMouseDown={(event) => {
@@ -193,11 +193,15 @@ function ChatInput({
                   textareaRef.current?.focus()
                 }}
               >
-                <span className="yolo-popover-item__label">
-                  /{command.name}
-                </span>
-                <span className="yolo-acp-command-desc">
-                  {command.description}
+                <span className="yolo-acp-command-item__content">
+                  <span className="yolo-acp-command-item__label">
+                    /{command.name}
+                  </span>
+                  {command.description ? (
+                    <span className="yolo-acp-command-desc">
+                      {command.description}
+                    </span>
+                  ) : null}
                 </span>
               </button>
             ))}
@@ -301,6 +305,7 @@ function ChatInput({
           {modelOption ? (
             <ConfigOptionSelect
               option={modelOption}
+              searchable
               onChange={(value) => onConfigOptionChange(modelOption.id, value)}
             />
           ) : null}
