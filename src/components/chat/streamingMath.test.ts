@@ -19,17 +19,19 @@ describe('renderStreamingMath', () => {
     mockRenderMath.mockReset()
     mockFinishRenderMath.mockReset()
     mockFinishRenderMath.mockResolvedValue(undefined)
-    Object.defineProperty(globalThis, 'requestAnimationFrame', {
+    Object.defineProperty(globalThis, 'window', {
       configurable: true,
-      value: jest.fn((callback: FrameRequestCallback) => {
-        animationFrames.push(callback)
-        return animationFrames.length
-      }),
+      value: {
+        requestAnimationFrame: jest.fn((callback: FrameRequestCallback) => {
+          animationFrames.push(callback)
+          return animationFrames.length
+        }),
+      },
     })
   })
 
   afterEach(() => {
-    Reflect.deleteProperty(globalThis, 'requestAnimationFrame')
+    Reflect.deleteProperty(globalThis, 'window')
   })
 
   it('renders formulas with the Obsidian math engine', async () => {

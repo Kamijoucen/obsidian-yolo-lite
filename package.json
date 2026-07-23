@@ -1,6 +1,6 @@
 {
   "name": "obsidian-openyolo",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Obsidian chat client powered by opencode via the Agent Client Protocol (ACP).",
   "main": "main.js",
   "scripts": {
@@ -27,12 +27,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Kamijoucen/obsidian-yolo-lite.git"
+    "url": "git+https://github.com/Kamijoucen/obsidian-openyolo.git"
   },
   "bugs": {
-    "url": "https://github.com/Kamijoucen/obsidian-yolo-lite/issues"
+    "url": "https://github.com/Kamijoucen/obsidian-openyolo/issues"
   },
-  "homepage": "https://github.com/Kamijoucen/obsidian-yolo-lite#readme",
+  "homepage": "https://github.com/Kamijoucen/obsidian-openyolo#readme",
   "devDependencies": {
     "@eslint/js": "^9.39.2",
     "@types/cross-spawn": "^6.0.6",
@@ -53,7 +53,7 @@
     "globals": "^16.5.0",
     "jest": "^29.7.0",
     "js-yaml": "^4.1.1",
-    "obsidian": "^1.13.1",
+    "obsidian": "1.12.3",
     "postcss": "^8.5.6",
     "postcss-cli": "^11.0.1",
     "postcss-import": "^16.1.1",
